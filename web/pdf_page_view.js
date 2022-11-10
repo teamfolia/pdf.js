@@ -135,6 +135,7 @@ class PDFPageView {
     this.renderingQueue = options.renderingQueue;
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
+    this.foliaPageLayerFactory = options.foliaPageLayerFactory;
     this.annotationEditorLayerFactory = options.annotationEditorLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
     this.textHighlighter =
@@ -166,6 +167,7 @@ class PDFPageView {
     this._annotationCanvasMap = null;
 
     this.annotationLayer = null;
+    this.foliaPageLayer = null;
     this.annotationEditorLayer = null;
     this.textLayer = null;
     this.zoomLayer = null;
@@ -224,6 +226,25 @@ class PDFPageView {
     this.pdfPage?.cleanup();
   }
 
+  /**
+   * @private
+   */
+
+  async _renderFoliaPageLayer() {
+    let error = null;
+    try {
+      await this.foliaPageLayer.render(this.viewport);
+    } catch (ex) {
+      console.error(`_renderFoliaPageLayer: "${ex}".`);
+      error = ex;
+    } finally {
+      this.eventBus.dispatch("foliapagelayerrendered", {
+        source: this,
+        pageNumber: this.id,
+        error,
+      });
+    }
+  }
   /**
    * @private
    */
@@ -738,6 +759,16 @@ class PDFPageView {
         });
     }
 
+    this.foliaPageLayer ||= this.foliaPageLayerFactory.createFoliaPageLayer({
+      pageDiv: div,
+      pdfPage,
+      imageResourcesPath: this.imageResourcesPath,
+      renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
+      l10n: this.l10n,
+      annotationCanvasMap: this._annotationCanvasMap,
+      accessibilityManager: this._accessibilityManager,
+    })
+
     if (this.xfaLayer?.div) {
       // The xfa layer needs to stay on top.
       div.append(this.xfaLayer.div);
@@ -832,6 +863,10 @@ class PDFPageView {
                 this._renderAnnotationEditorLayer();
               }
             });
+          }
+
+          if (this.foliaPageLayer) {
+            this._renderFoliaPageLayer()
           }
         });
       },

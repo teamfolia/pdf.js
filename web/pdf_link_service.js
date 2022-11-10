@@ -122,6 +122,7 @@ class PDFLinkService {
     this.pdfDocument = null;
     this.pdfViewer = null;
     this.pdfHistory = null;
+    this.foliaCore = null;
   }
 
   setDocument(pdfDocument, baseUrl = null) {
@@ -136,6 +137,10 @@ class PDFLinkService {
 
   setHistory(pdfHistory) {
     this.pdfHistory = pdfHistory;
+  }
+
+  setFoliaCore(foliaCoreInstance) {
+    this.foliaCore = foliaCoreInstance;
   }
 
   /**

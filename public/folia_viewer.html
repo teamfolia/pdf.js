@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<!--
+Copyright 2012 Mozilla Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Adobe CMap resources are covered by their own copyright but the same license:
+
+    Copyright 1990-2015 Adobe Systems Incorporated.
+
+See https://github.com/adobe-type-tools/cmap-resources
+-->
+<html dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="google" content="notranslate">
+    <title>Folia.PDF.js viewer</title>
+
+    <link rel="stylesheet" href="folia_viewer.css">
+    <link rel="stylesheet" href="folia_layer.css">
+    <link rel="resource" type="application/l10n" href="../web/locale/locale.properties">
+    <style>
+      .folia_ui {
+        position: absolute;
+        left: 40px;
+        top: 30px;
+        min-width: 250px;
+        color: black;
+        background: silver;
+        border-radius: 5px;
+        padding: 5px;
+        box-shadow: white 0px 0px 15px;
+      }
+
+      .folia_block {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+
+      .folia_divider {
+        width: 100%;
+        border-top: solid gray 2px;
+        margin: 5px 0;
+      }
+
+      .folia_btn {
+        margin: 5px;
+        width: 30px;
+        height: 30px;
+        border-radius: 5px;
+        border: solid black 2px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.5rem;
+      }
+    </style>
+    <script src="folia_viewer.js" type="module-shim"></script>
+  </head>
+  <body tabindex="1">
+    <div id="viewerContainer" tabindex="0">
+      <div id="viewer" class="pdfViewer"></div>
+    </div>
+
+    <div id="dialogContainer">
+      <dialog id="passwordDialog">
+        <div class="row">
+          <label for="password" id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</label>
+        </div>
+        <div class="row">
+          <input type="password" id="password" class="toolbarField">
+        </div>
+        <div class="buttonRow">
+          <button id="passwordCancel" class="dialogButton"><span data-l10n-id="password_cancel">Cancel</span></button>
+          <button id="passwordSubmit" class="dialogButton"><span data-l10n-id="password_ok">OK</span></button>
+        </div>
+      </dialog>
+    </div>
+
+    <div class="folia_ui">
+      <p>Folia ui elements of interface</p>
+      <div class="folia_divider"></div>
+
+      <div class="folia_block">
+        <span>ZOOM</span>
+        <button id="zoomInBtn" class="folia_btn">+</button>
+        <button id="zoomOutBtn" class="folia_btn">-</button>
+        <button id="zoomResetBtn" class="folia_btn">r</button>
+      </div>
+      <div class="folia_divider"></div>
+
+      <div class="folia_block">
+        <div class="folia_block">
+          <span>zoom&nbsp;</span>
+          <span id="zoom-value">-</span>
+          <span>%</span>
+        </div>
+        <div class="folia_block">
+          <span>page&nbsp;</span>
+          <span id="current-page">-</span>
+          <span>&nbsp;of&nbsp;</span>
+          <span id="total-pages">-</span>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

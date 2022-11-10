@@ -71,6 +71,7 @@ import {
 } from "./ui_utils.js";
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
+import FoliaPageLayer from "./folia/FoliaPageLayer";
 import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
@@ -763,6 +764,7 @@ class PDFViewer {
             textLayerFactory,
             textLayerMode,
             annotationLayerFactory,
+            foliaPageLayerFactory: this,
             annotationMode,
             xfaLayerFactory,
             annotationEditorLayerFactory,
@@ -1726,6 +1728,19 @@ class PDFViewer {
       annotationCanvasMap,
       accessibilityManager,
     });
+  }
+
+  createFoliaPageLayer({
+    pageDiv,
+    pdfPage,
+    annotationStorage = this.pdfDocument?.annotationStorage
+  }) {
+    return new FoliaPageLayer({
+      pageDiv,
+      pdfPage,
+      annotationStorage,
+      linkService: this.linkService
+    })
   }
 
   /**

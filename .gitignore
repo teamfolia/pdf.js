@@ -7,3 +7,11 @@ Makefile
 node_modules/
 examples/node/svgdump/
 examples/node/pdf2png/*.png
+/.idea/.gitignore
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/vcs.xml
+/.idea/codeStyles/Project.xml
+/.idea/codeStyles/codeStyleConfig.xml
+/.idea/modules.xml
+/.idea/pdf.js.iml
+/dist/
