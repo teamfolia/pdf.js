@@ -107,6 +107,7 @@ class PDFLinkService {
    * @param {PDFLinkServiceOptions} options
    */
   constructor({
+    foliaAPI,
     eventBus,
     externalLinkTarget = null,
     externalLinkRel = null,
@@ -122,7 +123,7 @@ class PDFLinkService {
     this.pdfDocument = null;
     this.pdfViewer = null;
     this.pdfHistory = null;
-    this.foliaCore = null;
+    this.foliaAPI = foliaAPI;
   }
 
   setDocument(pdfDocument, baseUrl = null) {
@@ -137,10 +138,6 @@ class PDFLinkService {
 
   setHistory(pdfHistory) {
     this.pdfHistory = pdfHistory;
-  }
-
-  setFoliaCore(foliaCoreInstance) {
-    this.foliaCore = foliaCoreInstance;
   }
 
   /**

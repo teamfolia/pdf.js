@@ -1,7 +1,7 @@
+import PDFJSDev from './PDFJSDev'
 import {
   AnnotationMode, getDocument,
 } from "pdfjs-lib";
-import {AppOptions} from "../app_options";
 import {EventBus} from "../event_utils"
 import {PDFFindController} from "../pdf_find_controller";
 import {PDFHistory} from "../pdf_history";
@@ -9,11 +9,12 @@ import {PDFLinkService} from "../pdf_link_service";
 import {PDFRenderingQueue} from "../pdf_rendering_queue"
 import {PDFViewer} from "../pdf_viewer";
 import {ViewHistory} from "../view_history";
-import FoliaCore from "./FoliaCore";
 import {
   animationStarted, DEFAULT_SCALE_VALUE,
-  isValidRotation, isValidScrollMode, isValidSpreadMode, SidebarView
+  isValidRotation, isValidScrollMode, isValidSpreadMode
 } from "../ui_utils";
+
+import './css/folia.css'
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -24,57 +25,53 @@ const promisedTimeout = (timeout) => {
 }
 
 class FoliaPDFViewerApp {
-  #config;
-  #api;
-  #initialized = false;
-  #foliaCore;
-  #container;
-  #viewer;
-  #eventBus;
-  #pdfRenderingQueue;
-  #pdfLinkService;
-  #findController;
-  #pdfHistory;
+  foliaAPI;
+  uiConfig;
+  eventBus;
+  pdfRenderingQueue;
+  pdfLinkService;
+  findController;
+  pdfHistory;
   pdfViewer;
   pdfDocument;
   pdfLoadingTask;
 
-  constructor(config, api) {
-    this.#config = config
-    this.#api = api
+  constructor() {
+    window.PDFJSDev = new PDFJSDev()
   }
-
-  async #initialize(config) {
+  async init(ui, foliaAPI) {
     window.pdfjsWorker = await import("pdfjs-worker")
 
-    this.#foliaCore = new FoliaCore(this.#api)
-    this.#container = config.mainContainer
-    this.#viewer = config.viewerContainer
-    this.#eventBus = new EventBus()
+    this.eventBus = new EventBus()
 
-    this.#pdfRenderingQueue = new PDFRenderingQueue()
-    this.#pdfRenderingQueue.onIdle = this._cleanup.bind(this);
+    this.foliaAPI = foliaAPI
+    this.uiConfig = ui
+    this.foliaAPI.connectEventBus(this.eventBus)
 
-    this.#pdfLinkService = new PDFLinkService({
-      eventBus: this.#eventBus,
+    this.pdfRenderingQueue = new PDFRenderingQueue()
+    this.pdfRenderingQueue.onIdle = this._cleanup.bind(this);
+
+    this.pdfLinkService = new PDFLinkService({
+      foliaAPI: this.foliaAPI,
+      eventBus: this.eventBus,
       externalLinkTarget: 0,
       externalLinkRel: "noopener noreferrer nofollow",
       ignoreDestinationZoom: false,
     })
 
-    this.#findController = new PDFFindController({
-      linkService: this.#pdfLinkService,
-      eventBus: this.#eventBus,
+    this.findController = new PDFFindController({
+      linkService: this.pdfLinkService,
+      eventBus: this.eventBus,
     })
 
     this.pdfViewer = new PDFViewer({
-      container: this.#container,
-      viewer: this.#viewer,
-      eventBus: this.#eventBus,
-      renderingQueue: this.#pdfRenderingQueue,
-      linkService: this.#pdfLinkService,
+      container: this.uiConfig.container,
+      viewer: this.uiConfig.viewer,
+      eventBus: this.eventBus,
+      renderingQueue: this.pdfRenderingQueue,
+      linkService: this.pdfLinkService,
       downloadManager: null,
-      findController: this.#findController,
+      findController: this.findController,
       scriptingManager: null,
       renderer: null,
       l10n: null,
@@ -89,19 +86,17 @@ class FoliaPDFViewerApp {
       pageColors: null,
     })
 
-    this.#pdfRenderingQueue.setViewer(this.pdfViewer)
-    this.#pdfLinkService.setViewer(this.pdfViewer)
-    this.#pdfLinkService.setFoliaCore(this.#foliaCore)
+    this.pdfRenderingQueue.setViewer(this.pdfViewer)
+    this.pdfLinkService.setViewer(this.pdfViewer)
 
-    this.#pdfHistory = new PDFHistory({
-      linkService: this.#pdfLinkService,
-      eventBus: this.#eventBus
+    this.pdfHistory = new PDFHistory({
+      linkService: this.pdfLinkService,
+      eventBus: this.eventBus
     })
 
     this.#addEventBusListener()
     console.log('initialized')
   }
-
   #addEventBusListener() {
     const events = [
       "documentloaded", "resize", "hashchange", "pagerendered", "updateviewarea",
@@ -115,35 +110,36 @@ class FoliaPDFViewerApp {
     ]
 
     for (const event of events) {
-      this.#eventBus.on(event, this.#eventBusHandler.bind(this, event))
+      this.eventBus.on(event, this.eventBusHandler.bind(this, event))
     }
   }
-  #eventBusHandler() {
+  eventBusHandler() {
     const args = Array.from(arguments)
     const eventName = args[0]
     const eventData = args[1]
     // console.log('-->', eventName)
     switch (eventName) {
+      case 'folia:has_changes': {
+        console.log('-->', eventName, eventData)
+        break
+      }
       case 'pagechanging': {
         break
       }
       default: break
     }
   }
-
   _cleanup() {
     this.pdfViewer.cleanup()
     this.pdfDocument.cleanup()
   }
   forceRendering() {
-    this.#pdfRenderingQueue.printing = false
-    this.#pdfRenderingQueue.renderHighestPriority();
+    this.pdfRenderingQueue.printing = false
+    this.pdfRenderingQueue.renderHighestPriority();
   }
-  async open(documentBlob, annotationList = []) {
-    // console.log('open', documentBlob, annotationList)
-    if (!this.#initialized) {
-      await this.#initialize(this.#config)
-    }
+  async open(documentBlob, foliaDocumentIds) {
+    console.log('open', documentBlob, foliaDocumentIds)
+
     if (this.pdfLoadingTask) {
       await this.close();
     }
@@ -153,7 +149,7 @@ class FoliaPDFViewerApp {
 
     loadingTask.onPassword = (updateCallback, reason) => {
       console.log(`TODO: implement password support`)
-      // this.#pdfLinkService.externalLinkEnabled = false;
+      // this.pdfLinkService.externalLinkEnabled = false;
       // this.passwordPrompt.setUpdateCallback(updateCallback, reason);
       // this.passwordPrompt.open();
     };
@@ -164,9 +160,10 @@ class FoliaPDFViewerApp {
     };
 
     const pdfDocument = await loadingTask.promise
+    pdfDocument.foliaDocumentIds = foliaDocumentIds
     this.pdfDocument = pdfDocument
     this.pdfViewer.setDocument(pdfDocument)
-    this.#pdfLinkService.setDocument(pdfDocument)
+    this.pdfLinkService.setDocument(pdfDocument)
     const {length} = await pdfDocument.getDownloadInfo()
     this._contentLength = length // Ensure that the correct length is used.
     this.downloadComplete = true
@@ -174,7 +171,7 @@ class FoliaPDFViewerApp {
     const { firstPagePromise, onePageRendered, pagesPromise } = this.pdfViewer
 
     firstPagePromise.then(() => {
-      this.#eventBus.dispatch("documentloaded", { source: this })
+      this.eventBus.dispatch("documentloaded", { source: this })
     })
 
     const storedPromise = (this.store = new ViewHistory(pdfDocument.fingerprints[0]))
@@ -186,7 +183,7 @@ class FoliaPDFViewerApp {
         .then(async ([timeStamp, stored, pageLayout, pageMode, openAction]) => {
           const hash = `page=${stored.page}&zoom=${stored.zoom},${stored.scrollLeft},${stored.scrollTop}`
           this.setInitialView(hash, {rotation: 0, sidebarView: null, scrollMode: null, spreadMode: null});
-          this.#eventBus.dispatch("documentinit", { source: this });
+          this.eventBus.dispatch("documentinit", { source: this });
           this.pdfViewer.focus()
           await Promise.race([pagesPromise, promisedTimeout(FORCE_PAGES_LOADED_TIMEOUT)]);
           if (this.pdfViewer.hasEqualPageSizes) return;
@@ -203,7 +200,6 @@ class FoliaPDFViewerApp {
     pagesPromise.then(() => this._unblockDocumentLoadEvent(), console.error)
     await this._initializePageLabels(pdfDocument)
   }
-
   setInitialView(storedHash, props = {}) {
     const {rotation = 0, sidebarView, scrollMode = 0, spreadMode = 0} = props
     this.isInitialViewSet = true;
@@ -211,10 +207,10 @@ class FoliaPDFViewerApp {
     if (isValidSpreadMode(spreadMode)) this.pdfViewer.spreadMode = spreadMode
     if (isValidRotation(rotation)) this.pdfViewer.pagesRotation = rotation
     console.log({storedHash})
-    this.#pdfLinkService.setHash(storedHash);
-    this.#pdfLinkService.page = 1
+    this.pdfLinkService.setHash(storedHash);
+    this.pdfLinkService.page = 1
     // setTimeout(() => {
-    //   this.#pdfLinkService.page = 3
+    //   this.pdfLinkService.page = 3
     // }, 3000)
     if (!this.pdfViewer.currentScaleValue) {
       this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
@@ -261,7 +257,7 @@ class FoliaPDFViewerApp {
   setTitle(title = this._title) { this._title = title }
   async close() {
     this._unblockDocumentLoadEvent();
-    this._hideViewBookmark();
+    // this._hideViewBookmark();
 
     if (!this.pdfLoadingTask) return
     const promises = [];
@@ -272,10 +268,10 @@ class FoliaPDFViewerApp {
       this.pdfDocument = null;
 
       this.pdfViewer.setDocument(null);
-      this.#pdfLinkService.setDocument(null);
+      this.pdfLinkService.setDocument(null);
       // this.pdfDocumentProperties.setDocument(null);
     }
-    this.#pdfLinkService.externalLinkEnabled = true;
+    this.pdfLinkService.externalLinkEnabled = true;
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
@@ -294,11 +290,14 @@ class FoliaPDFViewerApp {
   }
   zoomIn() {
     this.pdfViewer.increaseScale()
+    this.pdfViewer.update()
   }
   zoomOut() {
     this.pdfViewer.decreaseScale()
+    this.pdfViewer.update()
   }
   zoomReset() {
+    // this.pdfViewer.update()
     this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE
   }
   get zoom() {
@@ -314,7 +313,7 @@ class FoliaPDFViewerApp {
     this.pdfViewer.currentPageNumber = val;
   }
   get eventBus() {
-    return this.#eventBus
+    return this.eventBus
   }
 }
 

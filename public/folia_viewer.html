@@ -26,50 +26,56 @@ See https://github.com/adobe-type-tools/cmap-resources
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta name="google" content="notranslate">
     <title>Folia.PDF.js viewer</title>
-
-    <link rel="stylesheet" href="folia_viewer.css">
-    <link rel="stylesheet" href="folia_layer.css">
     <link rel="resource" type="application/l10n" href="../web/locale/locale.properties">
     <style>
       .folia_ui {
         position: absolute;
         left: 40px;
         top: 30px;
-        min-width: 250px;
         color: black;
         background: silver;
         border-radius: 5px;
         padding: 5px;
         box-shadow: white 0px 0px 15px;
       }
-
       .folia_block {
         display: flex;
         justify-content: space-around;
         align-items: center;
       }
+      .folia_block.vertical {
+        flex-direction: column;
+        align-items: flex-start;
 
+      }
       .folia_divider {
         width: 100%;
         border-top: solid gray 2px;
         margin: 5px 0;
       }
-
       .folia_btn {
+        outline: none;
         margin: 5px;
-        width: 30px;
-        height: 30px;
+        min-width: 30px;
+        min-height: 30px;
         border-radius: 5px;
-        border: solid black 2px;
+        /*border: solid black 2px;*/
 
         display: flex;
         align-items: center;
         justify-content: center;
+        padding: 0 5px;
         font-weight: bold;
-        font-size: 1.5rem;
+        /*font-size: 1.5rem;*/
+      }
+      .folia_btn.loading {
+        color: transparent;
+        background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTYsMkgxOFY4SDE4VjhMMTQsMTJMMTgsMTZWMTZIMThWMjJINlYxNkg2VjE2TDEwLDEyTDYsOFY4SDZWMk0xNiwxNi41TDEyLDEyLjVMOCwxNi41VjIwSDE2VjE2LjVNMTIsMTEuNUwxNiw3LjVWNEg4VjcuNUwxMiwxMS41TTEwLDZIMTRWNi43NUwxMiw4Ljc1TDEwLDYuNzVWNloiIC8+PC9zdmc+");
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 20px;
       }
     </style>
-    <script src="folia_viewer.js" type="module-shim"></script>
   </head>
   <body tabindex="1">
     <div id="viewerContainer" tabindex="0">
@@ -92,11 +98,15 @@ See https://github.com/adobe-type-tools/cmap-resources
     </div>
 
     <div class="folia_ui">
-      <p>Folia ui elements of interface</p>
+      <div class="folia_block">
+        <button id="sign-in" class="folia_btn">sign out ➡︎ sign in</button>
+      </div>
+      <div class="folia_divider"></div>
+
+      <div id="workspaces-list" class="folia_block vertical"></div>
       <div class="folia_divider"></div>
 
       <div class="folia_block">
-        <span>ZOOM</span>
         <button id="zoomInBtn" class="folia_btn">+</button>
         <button id="zoomOutBtn" class="folia_btn">-</button>
         <button id="zoomResetBtn" class="folia_btn">r</button>
@@ -105,14 +115,12 @@ See https://github.com/adobe-type-tools/cmap-resources
 
       <div class="folia_block">
         <div class="folia_block">
-          <span>zoom&nbsp;</span>
           <span id="zoom-value">-</span>
           <span>%</span>
         </div>
         <div class="folia_block">
-          <span>page&nbsp;</span>
           <span id="current-page">-</span>
-          <span>&nbsp;of&nbsp;</span>
+          <span>&nbsp;/&nbsp;</span>
           <span id="total-pages">-</span>
         </div>
       </div>

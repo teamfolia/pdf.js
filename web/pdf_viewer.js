@@ -1733,11 +1733,13 @@ class PDFViewer {
   createFoliaPageLayer({
     pageDiv,
     pdfPage,
+    viewport,
     annotationStorage = this.pdfDocument?.annotationStorage
   }) {
     return new FoliaPageLayer({
       pageDiv,
       pdfPage,
+      viewport,
       annotationStorage,
       linkService: this.linkService
     })

@@ -762,6 +762,7 @@ class PDFPageView {
     this.foliaPageLayer ||= this.foliaPageLayerFactory.createFoliaPageLayer({
       pageDiv: div,
       pdfPage,
+      viewport: this.viewport,
       imageResourcesPath: this.imageResourcesPath,
       renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
       l10n: this.l10n,
