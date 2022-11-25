@@ -1,0 +1,12 @@
+@font-face {
+  font-family: 'Eagle Lake';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('Eagle-Lake-Regular.eot'); /* IE9 */
+  src: url('Eagle-Lake-Regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Eagle-Lake-Regular.woff2') format('woff2'), /* Modern Browsers */
+    url('Eagle-Lake-Regular.woff') format('woff'), /* Modern Browsers */
+    url('Eagle-Lake-Regular.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Eagle-Lake-Regular.svg#EagleLake') format('svg'); /* Legacy iOS */
+}

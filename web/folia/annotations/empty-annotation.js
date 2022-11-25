@@ -1,4 +1,4 @@
-import FoliaBaseAnnotation from "./folia-base-annotation";
+import FoliaBaseAnnotation from "./base-annotation";
 
 class FoliaEmptyAnnotation extends FoliaBaseAnnotation {
 

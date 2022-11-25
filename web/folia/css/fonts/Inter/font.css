@@ -1,0 +1,108 @@
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+  src: url('Inter-100.eot'); /* IE9 */
+  src: url('Inter-100.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-100.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-100.woff') format('woff'), /* Modern Browsers */
+    url('Inter-100.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-100.svg#Inter') format('svg'); /* Legacy iOS */
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('Inter-200.eot'); /* IE9 */
+  src: url('Inter-200.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-200.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-200.woff') format('woff'), /* Modern Browsers */
+    url('Inter-200.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-200.svg#Inter') format('svg'); /* Legacy iOS */
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('Inter-300.eot'); /* IE9 */
+  src: url('Inter-300.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-300.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-300.woff') format('woff'), /* Modern Browsers */
+    url('Inter-300.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-300.svg#Inter') format('svg'); /* Legacy iOS */
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('Inter-Regular.eot'); /* IE9 */
+  src: url('Inter-Regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-Regular.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-Regular.woff') format('woff'), /* Modern Browsers */
+    url('Inter-Regular.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-Regular.svg#Inter') format('svg'); /* Legacy iOS */
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('Inter-500.eot'); /* IE9 */
+  src: url('Inter-500.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-500.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-500.woff') format('woff'), /* Modern Browsers */
+    url('Inter-500.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-500.svg#Inter') format('svg'); /* Legacy iOS */
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('Inter-600.eot'); /* IE9 */
+  src: url('Inter-600.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-600.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-600.woff') format('woff'), /* Modern Browsers */
+    url('Inter-600.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-600.svg#Inter') format('svg'); /* Legacy iOS */
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('Inter-700.eot'); /* IE9 */
+  src: url('Inter-700.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-700.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-700.woff') format('woff'), /* Modern Browsers */
+    url('Inter-700.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-700.svg#Inter') format('svg'); /* Legacy iOS */
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('Inter-800.eot'); /* IE9 */
+  src: url('Inter-800.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-800.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-800.woff') format('woff'), /* Modern Browsers */
+    url('Inter-800.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-800.svg#Inter') format('svg'); /* Legacy iOS */
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('Inter-900.eot'); /* IE9 */
+  src: url('Inter-900.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Inter-900.woff2') format('woff2'), /* Modern Browsers */
+    url('Inter-900.woff') format('woff'), /* Modern Browsers */
+    url('Inter-900.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Inter-900.svg#Inter') format('svg'); /* Legacy iOS */
+}

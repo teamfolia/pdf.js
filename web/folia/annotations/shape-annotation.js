@@ -1,5 +1,5 @@
 import {pdfColor2rgba, pdfPoint2viewPoint} from "../folia-util";
-import FoliaBaseAnnotation from "./folia-base-annotation";
+import FoliaBaseAnnotation from "./base-annotation";
 
 class FoliaShapeAnnotation extends FoliaBaseAnnotation {
 

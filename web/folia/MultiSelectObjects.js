@@ -51,6 +51,11 @@ class MultipleSelect {
     this.objects.clear()
     this.lastBounds = this.bounds
   }
+  startEditMode = (annoObject, shiftKey) => {
+    this.clear()
+    this.addObject(annoObject)
+    annoObject.startEditMode(shiftKey)
+  }
   toggleObject = (obj, withShift) => {
     if (withShift) {
       if (this.objects.has(obj)) {

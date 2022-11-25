@@ -1,0 +1,12 @@
+@font-face {
+  font-family: 'Cookie';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('Cookie-Regular.eot'); /* IE9 */
+  src: url('Cookie-Regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('Cookie-Regular.woff2') format('woff2'), /* Modern Browsers */
+    url('Cookie-Regular.woff') format('woff'), /* Modern Browsers */
+    url('Cookie-Regular.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('Cookie-Regular.svg#Cookie') format('svg'); /* Legacy iOS */
+}

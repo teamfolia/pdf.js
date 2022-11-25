@@ -1,5 +1,5 @@
 import {pdfColor2rgba, pdfPath2viewPath, pdfPoint2viewPoint, viewPath2pdfPath} from "../folia-util";
-import FoliaBaseAnnotation from "./folia-base-annotation";
+import FoliaBaseAnnotation from "./base-annotation";
 
 class FoliaInkAnnotation extends FoliaBaseAnnotation {
   relativeInkPaths = []

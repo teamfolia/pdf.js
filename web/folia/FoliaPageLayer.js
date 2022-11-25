@@ -1,7 +1,8 @@
+import FoliaTypewriterAnnotation from "./annotations/typewriter-annotation";
 import MultipleSelect from "./MultiSelectObjects";
-import FoliaInkAnnotation from "./annotations/folia-ink-annotation";
-import FoliaShapeAnnotation from "./annotations/folia-shape-annotation";
-import FoliaEmptyAnnotation from "./annotations/folia-empty-annotation";
+import FoliaInkAnnotation from "./annotations/ink-annotation";
+import FoliaShapeAnnotation from "./annotations/shape-annotation";
+import FoliaEmptyAnnotation from "./annotations/empty-annotation";
 
 export const FOLIA_LAYER_ROLES = {
   FOLIA_LAYER: 'folia-layer',
@@ -80,6 +81,7 @@ class FoliaPageLayer {
           let ItemAnnotationClass = FoliaEmptyAnnotation
           if (annotationRawData.annoType === 'ink') ItemAnnotationClass = FoliaInkAnnotation
           else if (annotationRawData.annoType === 'shape') ItemAnnotationClass = FoliaShapeAnnotation
+          else if (annotationRawData.annoType === 'typewriter') ItemAnnotationClass = FoliaTypewriterAnnotation
           const item = new ItemAnnotationClass(annotationRawData, this.viewport, this.foliaLayer)
           item.render(this.viewport, annotationRawData)
           if (item) this.annotationObjects.push(item)
@@ -105,8 +107,8 @@ class FoliaPageLayer {
 
   #onFoliaLayerMouseDown(e) {
     e.stopPropagation()
-    e.preventDefault()
     const {role, localId} = e.target.dataset
+    this.actionTarget = {role, localId}
     if (role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
       return this.multipleSelect.clear()
     }
@@ -115,17 +117,23 @@ class FoliaPageLayer {
     this.foliaLayer.onmouseup = this.#onFoliaLayerMouseUp.bind(this)
     this.foliaLayer.onmousemove = this.#onFoliaLayerMouseMove.bind(this)
     this.isMouseDown = true
-    this.actionTarget = {role, localId}
     this.startPoint = {x: e.clientX, y: e.clientY}
     this.multipleSelect.prepare2moving(this.startPoint)
+
+    const annoObject = this.annotationObjects.find(obj => obj.localId === this.actionTarget.localId)
+    if (annoObject && annoObject.editable && annoObject.isFocused) {
+      return;
+    }
+    e.preventDefault()
   }
 
   #onFoliaLayerMouseMove(e) {
     e.stopPropagation()
-    e.preventDefault()
     if (!this.isMouseDown) return
-
     const annoObject = this.annotationObjects.find(obj => obj.localId === this.actionTarget.localId)
+    if (annoObject && annoObject.editable && annoObject.isFocused) return;
+    e.preventDefault()
+
     if (annoObject && this.actionTarget.role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
       if (this.multipleSelect.isEmpty() && !this.multipleSelect.includes(annoObject)) {
         this.multipleSelect.toggleObject(annoObject, e.shiftKey)
@@ -160,11 +168,19 @@ class FoliaPageLayer {
     this.foliaLayer.onmouseup = null
     this.foliaLayer.onmousemove = null
 
+    console.log('MouseUp -> ', e.target.tagName)
     if (this.actionTarget.role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
       this.multipleSelect.clear()
     } else if (!this.isMouseMoved && this.actionTarget.role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
       const annoObject = this.annotationObjects.find(obj => obj.localId === this.actionTarget.localId)
-      if (annoObject) this.multipleSelect.toggleObject(annoObject, e.shiftKey)
+      if (annoObject && !annoObject.editable) {
+        this.multipleSelect.toggleObject(annoObject, e.shiftKey)
+      }
+      else if (annoObject && annoObject.editable) {
+        this.multipleSelect.includes(annoObject)
+          ? this.multipleSelect.startEditMode(annoObject, e.shiftKey)
+          : this.multipleSelect.toggleObject(annoObject, e.shiftKey)
+      }
     }
 
     this.multipleSelect.checkForOutOfBounds(SAFE_MARGIN, this.actionTarget.role)

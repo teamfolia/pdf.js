@@ -1,3 +1,7 @@
+function toFixed(value, fractionDigits) {
+  return parseFloat(Number(value).toFixed(fractionDigits))
+}
+
 export const pdfRect2viewRect = (rect, viewport) => {
   return [
     Math.round(rect[0] * viewport.width),
@@ -6,13 +10,11 @@ export const pdfRect2viewRect = (rect, viewport) => {
     Math.round(rect[3] * viewport.height)
   ]
 }
-
 export const pdfPoint2viewPoint = (point, viewport, offset) => {
   const x = Math.round(point.x * viewport.width) - (offset ? offset.x : 0)
   const y = Math.round(point.y * viewport.height) - (offset ? offset.y : 0)
   return {x, y}
 }
-
 export const pdfPath2viewPath = (path, viewport, offset) => {
   return path.reduce((acc, num, index, arr) => {
     if (index % 2 === 0) return acc
@@ -21,10 +23,6 @@ export const pdfPath2viewPath = (path, viewport, offset) => {
     acc.push(point)
     return acc
   }, [])
-}
-
-function toFixed(value, fractionDigits) {
-  return parseFloat(Number(value).toFixed(fractionDigits))
 }
 
 export const viewRect2pdfRect = (rect, viewport) => {
