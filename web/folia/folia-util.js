@@ -57,5 +57,20 @@ export const pdfColor2rgba = (pdfColor = [0, 0, 0, 1]) => {
   return `rgba(${red}, ${green}, ${blue}, ${opacity})`
 }
 
+export const blob2base64 = async (blob) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const fileReader = new FileReader()
+      fileReader.onload = () => {
+        resolve(fileReader.result)
+      }
+      fileReader.onerror = reject
+      fileReader.readAsDataURL(blob)
+    } catch (e) {
+      reject(e)
+    }
+  })
+}
+
 
 

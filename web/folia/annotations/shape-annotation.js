@@ -22,8 +22,10 @@ class FoliaShapeAnnotation extends FoliaBaseAnnotation {
     }
     else if (this.annotationRawData.annoSubType === 'arrow') {
 
-      const linePoint1 = pdfPoint2viewPoint(this.annotationRawData.linePoint1, this.viewport)
-      const linePoint2 = pdfPoint2viewPoint(this.annotationRawData.linePoint2, this.viewport)
+      const pdfLinePoint1 = {x: this.annotationRawData.linePoint1[0], y: this.annotationRawData.linePoint1[1]}
+      const pdfLinePoint2 = {x: this.annotationRawData.linePoint2[0], y: this.annotationRawData.linePoint2[1]}
+      const linePoint1 = pdfPoint2viewPoint(pdfLinePoint1, this.viewport)
+      const linePoint2 = pdfPoint2viewPoint(pdfLinePoint2, this.viewport)
       const width = Math.sqrt(
         Math.pow(linePoint1.x - linePoint2.x, 2) + Math.pow(linePoint1.y - linePoint2.y, 2)
       )

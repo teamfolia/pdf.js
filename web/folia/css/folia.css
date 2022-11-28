@@ -27,6 +27,7 @@
 }
 
 .folia-annotation.selected {
+  display: flex;
   border: solid 1px silver;
   align-items: center;
 }
@@ -42,6 +43,19 @@
 .typewriter:focus {
   background-color: white;
   cursor: text;
+}
+
+.image-stamp {
+  width: 100%;
+  height: 100%;
+}
+
+.image-stamp.loading {
+  background-image: url("./loading-icon.gif");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 24px !important;
+  border: dashed 1px silver !important;
 }
 
 .corner-div {

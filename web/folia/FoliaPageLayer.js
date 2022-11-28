@@ -1,3 +1,4 @@
+import FoliaImageStampAnnotation from "./annotations/image-stamp-annotation";
 import FoliaTypewriterAnnotation from "./annotations/typewriter-annotation";
 import MultipleSelect from "./MultiSelectObjects";
 import FoliaInkAnnotation from "./annotations/ink-annotation";
@@ -82,6 +83,8 @@ class FoliaPageLayer {
           if (annotationRawData.annoType === 'ink') ItemAnnotationClass = FoliaInkAnnotation
           else if (annotationRawData.annoType === 'shape') ItemAnnotationClass = FoliaShapeAnnotation
           else if (annotationRawData.annoType === 'typewriter') ItemAnnotationClass = FoliaTypewriterAnnotation
+          else if (annotationRawData.annoType === 'stamp') ItemAnnotationClass = FoliaImageStampAnnotation
+          else console.warn(`annotation ${annotationRawData.annoType} has unknown type: "${annotationRawData.annoType}"`)
           const item = new ItemAnnotationClass(annotationRawData, this.viewport, this.foliaLayer)
           item.render(this.viewport, annotationRawData)
           if (item) this.annotationObjects.push(item)
