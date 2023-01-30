@@ -1,0 +1,18 @@
+.annotation-builder-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.typewriter-builder {
+  cursor: text;
+}
+
+.typewriter-builder textarea {
+  position: absolute;
+  outline: none;
+  resize: none;
+}

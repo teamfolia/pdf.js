@@ -1,86 +1,100 @@
 class MultipleSelect {
-  viewport;
-  objects = new Set();
+  #objects = new Set();
   lastBounds;
 
-  constructor(viewport) {
-    this.viewport = viewport
+  constructor(viewport, dataProxy) {
+    this.viewport = viewport;
+    this.dataProxy = dataProxy;
   }
-
+  getObjects() {
+    return Array.from(this.#objects);
+  }
   prepare2moving = (startPoint) => {
-    this.objects.forEach(obj => {
-      obj.memorizeMovingOffset(startPoint)
-    })
+    this.#objects.forEach((obj) => {
+      obj.memorizeMovingOffset(startPoint);
+    });
+  };
+  deleteFromCanvas() {
+    this.#objects.forEach((obj) => {
+      obj.removeFromCanvas(point);
+    });
   }
-
   moveTo = (point) => {
-    this.objects.forEach(obj => {
-      obj.moveTo(point)
-    })
+    this.#objects.forEach((obj) => {
+      obj.moveTo(point);
+    });
+  };
+  resizeTo(point, corner, withAlt) {
+    this.#objects.forEach((obj) => {
+      obj.resizeTo(point, corner, withAlt);
+    });
   }
-
-  resizeTo(point, corner, withShift) {
-    this.objects.forEach(obj => {
-      obj.resizeTo(point, corner, withShift)
-    })
+  pointTo(point, corner, withAlt) {
+    this.#objects.forEach((obj) => {
+      obj.pointTo(point, corner, withAlt);
+    });
   }
-
-  pointTo(point, corner, withShift) {
-    this.objects.forEach(obj => {
-      obj.pointTo(point, corner, withShift)
-    })
-  }
-
   checkForOutOfBounds(margin = 5, role) {
-    this.objects.forEach(obj => {
-      obj.snapToBounds(margin, role)
-    })
+    this.#objects.forEach((obj) => {
+      obj.snapToBounds(margin, role);
+    });
   }
-
   isEmpty = () => {
-    return this.objects.size === 0
-  }
+    return this.#objects.size === 0;
+  };
   includes = (obj) => {
-    return this.objects.has(obj)
-  }
-
+    return this.#objects.has(obj);
+  };
   clear = () => {
-    this.objects.forEach(obj => {
-      obj.markAsUnselected()
-    })
-    this.objects.clear()
-    this.lastBounds = this.bounds
-  }
-  startEditMode = (annoObject, shiftKey) => {
-    this.clear()
-    this.addObject(annoObject)
-    annoObject.startEditMode(shiftKey)
-  }
+    this.#objects.forEach((obj) => {
+      this.deleteObject(obj);
+    });
+    this.lastBounds = this.bounds;
+  };
+  startEditMode = (annoObject) => {
+    if (!this.includes(annoObject)) this.addObject(annoObject);
+    annoObject.startEditMode();
+  };
   toggleObject = (obj, withShift) => {
     if (withShift) {
-      if (this.objects.has(obj)) {
-        this.deleteObject(obj)
+      if (this.#objects.has(obj)) {
+        this.deleteObject(obj);
       } else {
-        this.addObject(obj)
+        this.addObject(obj);
+      }
+    } else {
+      if (this.#objects.has(obj)) {
+        this.clear();
+      } else {
+        this.clear();
+        this.addObject(obj);
       }
     }
-    else {
-      if (this.objects.has(obj)) {
-        this.clear()
-      } else {
-        this.clear()
-        this.addObject(obj)
-      }
-    }
-    this.lastBounds = this.bounds
-  }
+    this.lastBounds = this.bounds;
+  };
   addObject(obj) {
-    this.objects.add(obj)
-    obj.markAsSelected()
+    this.#objects.add(obj);
+    obj.markAsSelected();
+
+    this.dataProxy.objectsSelected({
+      objects: Array.from(this.#objects),
+    });
   }
   deleteObject(obj) {
-    this.objects.delete(obj)
-    obj.markAsUnselected()
+    this.#objects.delete(obj);
+    obj.markAsUnselected();
+
+    this.dataProxy.objectsSelected({
+      objects: Array.from(this.#objects),
+    });
+  }
+  updateObjectsDrawingProperties(data) {
+    const promises = [];
+    for (const obj of this.#objects) {
+      promises.push(obj.editableProperties.set(data));
+    }
+
+    return promises;
   }
   get bounds() {
     let left = this.viewport.width,
@@ -88,15 +102,15 @@ class MultipleSelect {
       right = 0,
       bottom = 0;
 
-    for (const obj of this.objects) {
-      left = Math.min(left, obj.rect.left)
-      top = Math.min(top, obj.rect.top)
-      right = Math.max(right, obj.rect.left + obj.rect.width)
-      bottom = Math.max(bottom, obj.rect.top + obj.rect.height)
+    for (const obj of this.#objects) {
+      left = Math.min(left, obj.rect.left);
+      top = Math.min(top, obj.rect.top);
+      right = Math.max(right, obj.rect.left + obj.rect.width);
+      bottom = Math.max(bottom, obj.rect.top + obj.rect.height);
     }
 
-    return {left, top, right, bottom}
+    return { left, top, right, bottom };
   }
 }
 
-export default MultipleSelect
+export default MultipleSelect;

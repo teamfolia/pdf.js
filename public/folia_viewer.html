@@ -25,18 +25,24 @@ See https://github.com/adobe-type-tools/cmap-resources
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta name="google" content="notranslate">
-    <title>Folia.PDF.js viewer</title>
+    <title>folia.pdf.js.viewer</title>
     <link rel="resource" type="application/l10n" href="../web/locale/locale.properties">
     <style>
       .folia_ui {
-        position: absolute;
-        left: 40px;
-        top: 30px;
+        display: none;
+        position: fixed;
+        left: 20px;
+        top: 20px;
         color: black;
         background: silver;
         border-radius: 5px;
         padding: 5px;
         box-shadow: white 0px 0px 15px;
+        height: 900px;
+        width: 250px;
+        overflow-y: auto;
+        text-align: center;
+        z-index: 3000;
       }
       .folia_block {
         display: flex;
@@ -59,14 +65,15 @@ See https://github.com/adobe-type-tools/cmap-resources
         min-width: 30px;
         min-height: 30px;
         border-radius: 5px;
-        /*border: solid black 2px;*/
+        max-width: 150px;
 
         display: flex;
         align-items: center;
-        justify-content: center;
         padding: 0 5px;
-        font-weight: bold;
-        /*font-size: 1.5rem;*/
+
+        white-space: nowrap;
+        overflow: hidden;
+        justify-content: flex-start;
       }
       .folia_btn.loading {
         color: transparent;
@@ -75,56 +82,142 @@ See https://github.com/adobe-type-tools/cmap-resources
         background-repeat: no-repeat;
         background-size: 20px;
       }
+      .folia_btn.inline {
+        display: inline-flex;
+        justify-content: center;
+      }
+      .folia_btn.selected {
+        background-color: yellow;
+      }
+      .folia_btn.refresh {
+        font-size: 20px;
+      }
+      #users-role {
+        padding-left: 20px;
+      }
+      .folia-app {
+        position: absolute;
+        left: 0;
+        top: 70px;
+        right: 0;
+        bottom: 0;
+      }
+      .floating-bar {
+        position: absolute;
+        background-color: rgb(147, 147, 192);
+        color: yellow;
+        padding: 5px 15px;
+        width: 200px;
+      }
     </style>
   </head>
   <body tabindex="1">
-    <div id="viewerContainer" tabindex="0">
-      <div id="viewer" class="pdfViewer"></div>
-    </div>
-
-    <div id="dialogContainer">
-      <dialog id="passwordDialog">
-        <div class="row">
-          <label for="password" id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</label>
-        </div>
-        <div class="row">
-          <input type="password" id="password" class="toolbarField">
-        </div>
-        <div class="buttonRow">
-          <button id="passwordCancel" class="dialogButton"><span data-l10n-id="password_cancel">Cancel</span></button>
-          <button id="passwordSubmit" class="dialogButton"><span data-l10n-id="password_ok">OK</span></button>
-        </div>
-      </dialog>
-    </div>
-
-    <div class="folia_ui">
-      <div class="folia_block">
-        <button id="sign-in" class="folia_btn">sign out ➡︎ sign in</button>
+    <div class="folia-app">
+      <div id="viewerContainer" tabindex="0" class="viewer-container">
+        <div id="viewer" class="pdfViewer"></div>
       </div>
-      <div class="folia_divider"></div>
-
-      <div id="workspaces-list" class="folia_block vertical"></div>
-      <div class="folia_divider"></div>
-
-      <div class="folia_block">
-        <button id="zoomInBtn" class="folia_btn">+</button>
-        <button id="zoomOutBtn" class="folia_btn">-</button>
-        <button id="zoomResetBtn" class="folia_btn">r</button>
+      <div id="dialogContainer">
+        <dialog id="passwordDialog">
+          <div class="row">
+            <label for="password" id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</label>
+          </div>
+          <div class="row">
+            <input type="password" id="password" class="toolbarField">
+          </div>
+          <div class="buttonRow">
+            <button id="passwordCancel" class="dialogButton"><span data-l10n-id="password_cancel">Cancel</span></button>
+            <button id="passwordSubmit" class="dialogButton"><span data-l10n-id="password_ok">OK</span></button>
+          </div>
+        </dialog>
       </div>
-      <div class="folia_divider"></div>
+      <div class="folia_ui">
+        <span id="users-role">User's role</span>
+        <div class="folia_divider"></div>
+        <div style="display: inline-flex;">
+          <select class="folia_btn" id="workspaces-list"></select>
+          <button id="refresh" class="folia_btn inline refresh">⟲</button>
+        </div>
 
-      <div class="folia_block">
+        <div class="folia_divider"></div>
+        <div id="documentsList"></div>
+
+        <div class="folia_divider"></div>
+        <button id="zoomOutBtn" class="folia_btn inline">-</button>
+        <button id="zoomResetBtn" class="folia_btn inline">r</button>
+        <button id="zoomInBtn" class="folia_btn inline">+</button>
+
+        <div class="folia_divider"></div>
+
         <div class="folia_block">
-          <span id="zoom-value">-</span>
-          <span>%</span>
+          <div class="folia_block">
+            <span id="zoom-value">-</span>
+            <span>%</span>
+          </div>
+          <div class="folia_block">
+            <span id="current-page">-</span>
+            <span>&nbsp;/&nbsp;</span>
+            <span id="total-pages">-</span>
+          </div>
         </div>
-        <div class="folia_block">
-          <span id="current-page">-</span>
-          <span>&nbsp;/&nbsp;</span>
-          <span id="total-pages">-</span>
+
+        <div class="folia_divider"></div>
+        <input id="color-picker" type="color" disabled>
+        <select id="width-picker" class="folia_btn inline" disabled>
+          <option value="0"> 0 </option>
+          <option value="1"> 1 </option>
+          <option value="3"> 3 </option>
+          <option value="5"> 5 </option>
+          <option value="7"> 7 </option>
+          <option value="9"> 9 </option>
+          <option value="11"> 11 </option>
+          <option value="13"> 13 </option>
+          <option value="15"> 15 </option>
+          <option value="17"> 17 </option>
+          <option value="19"> 19 </option>
+          <option value="21"> 21 </option>
+        </select>
+        <div class="folia_divider"></div>
+        <button id="stopCreating" class="folia_btn inline">✔️</button>
+        <button id="ink" class="folia_btn inline">ink</button>
+        <div class="folia_divider"></div>
+
+        <button id="arrow" class="folia_btn inline">arrow</button>
+        <button id="circle" class="folia_btn inline">circle</button>
+        <button id="square" class="folia_btn inline">square</button>
+
+        <div class="folia_divider"></div>
+        <button id="typewriter" class="folia_btn inline">typewriter</button>
+        <button id="conversation" class="folia_btn inline">conversation</button>
+        <button id="imageStamp" class="folia_btn inline">image</button>
+
+        <div class="_floating-bar" style="visibility: visible;">
+          <div class="folia_divider"></div>
+
+          <button id="color_1" class="folia_btn inline" data-value="#1A1A1A">#1A1A1A</button>
+          <button id="color_2" class="folia_btn inline" data-value="#CEE741">#CEE741</button>
+          <button id="color_3" class="folia_btn inline" data-value="#4CA0E8">#4CA0E8</button>
+          <button id="color_4" class="folia_btn inline" data-value="#F24726">#F24726</button>
+
+          <div class="folia_divider"></div>
+
+          <button id="width_1" class="folia_btn inline" data-value="2">02</button>
+          <button id="width_2" class="folia_btn inline" data-value="7">07</button>
+          <button id="width_3" class="folia_btn inline" data-value="14">14</button>
+          <button id="width_4" class="folia_btn inline" data-value="21">21</button>
+
+          <div class="folia_divider"></div>
+
+          <button id="alpha_1" class="folia_btn inline" data-value="0.25">25%</button>
+          <button id="alpha_2" class="folia_btn inline" data-value="0.5">50%</button>
+          <button id="alpha_3" class="folia_btn inline" data-value="1">100%</button>
+
+          <div class="folia_divider"></div>
+
+          <button id="font_1" class="folia_btn inline" data-value="Fantasy">Fantasy</button>
+          <button id="font_2" class="folia_btn inline" data-value="Monospace">Monospace</button>
         </div>
       </div>
+      <div class="floating-bar">asd aslkj;salkjf ;asldfjk sdkl;j</div>
     </div>
-
   </body>
 </html>

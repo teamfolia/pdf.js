@@ -235,7 +235,8 @@ class PDFPageView {
     try {
       await this.foliaPageLayer.render(this.viewport);
     } catch (ex) {
-      console.error(`_renderFoliaPageLayer: "${ex}".`);
+      console.error('_renderFoliaPageLayer:', ex)
+      // console.error(`_renderFoliaPageLayer: "${ex}".`);
       error = ex;
     } finally {
       this.eventBus.dispatch("foliapagelayerrendered", {
@@ -337,12 +338,15 @@ class PDFPageView {
   }
 
   reset({
+    // keepFoliaLayer = true,
     keepZoomLayer = false,
     keepAnnotationLayer = false,
     keepAnnotationEditorLayer = false,
     keepXfaLayer = false,
   } = {}) {
+    // console.log('pdfPageView.reset')
     this.cancelRendering({
+      // keepFoliaLayer,
       keepAnnotationLayer,
       keepAnnotationEditorLayer,
       keepXfaLayer,
@@ -355,6 +359,7 @@ class PDFPageView {
 
     const childNodes = div.childNodes,
       zoomLayerNode = (keepZoomLayer && this.zoomLayer) || null,
+      // foliaLayer = (keepFoliaLayer && this.foliaPageLayer) || null,
       annotationLayerNode =
         (keepAnnotationLayer && this.annotationLayer?.div) || null,
       annotationEditorLayerNode =
@@ -363,6 +368,7 @@ class PDFPageView {
     for (let i = childNodes.length - 1; i >= 0; i--) {
       const node = childNodes[i];
       switch (node) {
+        // case foliaLayer:
         case zoomLayerNode:
         case annotationLayerNode:
         case annotationEditorLayerNode:
@@ -373,6 +379,9 @@ class PDFPageView {
     }
     div.removeAttribute("data-loaded");
 
+    // if (foliaLayer) {
+    //   this.foliaPageLayer.hide()
+    // }
     if (annotationLayerNode) {
       // Hide the annotation layer until all elements are resized
       // so they are not displayed on the already resized page.
@@ -551,6 +560,10 @@ class PDFPageView {
       this.textLayer.cancel();
       this.textLayer = null;
     }
+    // if (this.foliaPageLayer) {
+    //   this.foliaPageLayer.cancel();
+    //   this.foliaPageLayer = null;
+    // }
     if (
       this.annotationLayer &&
       (!keepAnnotationLayer || !this.annotationLayer.div)
@@ -763,11 +776,6 @@ class PDFPageView {
       pageDiv: div,
       pdfPage,
       viewport: this.viewport,
-      imageResourcesPath: this.imageResourcesPath,
-      renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
-      l10n: this.l10n,
-      annotationCanvasMap: this._annotationCanvasMap,
-      accessibilityManager: this._accessibilityManager,
     })
 
     if (this.xfaLayer?.div) {

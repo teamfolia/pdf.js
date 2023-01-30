@@ -13,17 +13,18 @@
  * limitations under the License.
  */
 @import url(text_layer_builder.css);
-@import url(annotation_layer_builder.css);
-@import url(xfa_layer_builder.css);
-@import url(annotation_editor_layer_builder.css);
+/*@import url(annotation_layer_builder.css);*/
+/*@import url(xfa_layer_builder.css);*/
+/*@import url(annotation_editor_layer_builder.css);*/
 
 :root {
+  --page-margin: 10px auto;
   --viewer-container-height: 0;
   --pdfViewer-padding-bottom: 0;
-  --page-margin: 1px auto -8px;
-  --page-border: 9px solid transparent;
-  --page-border-image: url(images/shadow.png) 9 9 repeat;
-  --spreadHorizontalWrapped-margin-LR: -3.5px;
+  /*  --page-margin: 1px auto -8px;*/
+  /*  --page-border: 9px solid transparent;*/
+  /*  --page-border-image: url(images/shadow.png) 9 9 repeat;*/
+  /*  --spreadHorizontalWrapped-margin-LR: -3.5px;*/
   --scale-factor: 1;
 }
 

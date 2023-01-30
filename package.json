@@ -13,7 +13,7 @@
     "babel-register": "^6.26.0",
     "caniuse-lite": "^1.0.30001426",
     "canvas": "^2.10.1",
-    "core-js": "^3.26.0",
+    "core-js": "^3.26.1",
     "cross-env": "^7.0.3",
     "css-loader": "^6.7.1",
     "dialog-polyfill": "^0.5.6",
@@ -50,6 +50,7 @@
     "postcss-logical": "^5.0.4",
     "prettier": "^2.7.1",
     "puppeteer": "^19.0.0",
+    "raw-loader": "^4.0.2",
     "rimraf": "^3.0.2",
     "sass": "^1.56.1",
     "sass-loader": "^13.2.0",
@@ -86,8 +87,19 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@babel/polyfill": "^7.12.1",
+    "@turf/turf": "^6.5.0",
+    "ajv": "^8.11.2",
+    "browserify-zlib": "^0.2.0",
+    "colord": "^2.9.3",
+    "https-browserify": "^1.0.0",
+    "localforage": "^1.10.0",
     "lodash": "^4.17.21",
+    "moment": "^2.29.4",
     "paper": "^0.12.17",
+    "querystring-es3": "^0.2.1",
+    "stream-browserify": "^3.0.0",
+    "stream-http": "^3.2.0",
     "uuid": "^9.0.0"
   }
 }

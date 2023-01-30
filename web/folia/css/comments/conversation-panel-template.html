@@ -1,0 +1,100 @@
+<div class="conversation-container right">
+  <template id="comment-item-template">
+    <div class="conversation-reply">
+      <div class="conversation-reply-header">
+        <div class="reply-header-icon"></div>
+        <div class="reply-header-username"></div>
+        <div class="reply-header-date"></div>
+        <div class="reply-header-expander"></div>
+        <button class="conversation-btn" data-role="context-menu-button">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="4" cy="10" r="1.5" fill="#484848" />
+            <circle cx="10" cy="10" r="1.5" fill="#484848" />
+            <circle cx="16" cy="10" r="1.5" fill="#484848" />
+          </svg>
+        </button>
+      </div>
+      <div class="conversation-textarea" data-role="reply-text"></div>
+      <div class="conversation-reply-buttons collapsed">
+        <button class="conversation-btn text-btn" data-role="button" data-role-act="cancel-editing-reply">
+          Cancel
+        </button>
+        <button
+          class="conversation-btn text-btn save-btn"
+          data-role="button"
+          data-role-act="submit-editing-reply"
+        >
+          Save
+        </button>
+      </div>
+      <div class="conversation-edited">(edited)</div>
+    </div>
+  </template>
+  <template id="show-more-template">
+    <div class="conversation-show-more">show <span>777</span> more</div>
+  </template>
+  <div class="conversation-header">
+    <button
+      class="conversation-btn"
+      data-role="context-menu-button"
+      data-role-act="conversation-context-menu"
+    >
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="4" cy="10" r="1.5" fill="#484848" />
+        <circle cx="10" cy="10" r="1.5" fill="#484848" />
+        <circle cx="16" cy="10" r="1.5" fill="#484848" />
+      </svg>
+    </button>
+    <button class="conversation-btn" data-role="context-menu-button" data-role-act="close-conversation-panel">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect
+          x="14.2427"
+          y="4.34277"
+          width="2"
+          height="14"
+          rx="1"
+          transform="rotate(45 14.2427 4.34277)"
+          fill="#484848"
+        />
+        <rect
+          x="15.6567"
+          y="14.2422"
+          width="2"
+          height="14"
+          rx="1"
+          transform="rotate(135 15.6567 14.2422)"
+          fill="#484848"
+        />
+      </svg>
+    </button>
+  </div>
+  <div class="conversation-middle"></div>
+  <div class="conversation-footer">
+    <textarea class="conversation-textarea" placeholder="Reply ..." rows="1"></textarea>
+    <div class="footer-buttons collapsed">
+      <button class="conversation-btn text-btn" data-role="button" data-role-act="cancel-new-reply">
+        Cancel
+      </button>
+      <button class="conversation-btn text-btn save-btn" data-role="button" data-role-act="submit-new-reply">
+        Save
+      </button>
+    </div>
+  </div>
+  <div class="conversation-context-menu-overlay"></div>
+  <div class="conversation-context-menu">
+    <button class="context-menu-item" data-role="button" data-role-act="mark-as-unread">
+      Mark as unread
+    </button>
+    <button class="context-menu-item" data-role="button" data-role-act="delete-thread">Delete thread</button>
+    <button class="context-menu-item" data-role="button" data-role-act="delete-comment">
+      Delete initial comment
+    </button>
+
+    <button class="context-menu-item" data-role="button" data-role-act="edit-comment">
+      Edit initial comment
+    </button>
+
+    <button class="context-menu-item" data-role="button" data-role-act="delete-reply">Delete reply</button>
+    <button class="context-menu-item" data-role="button" data-role-act="edit-reply">Edit reply</button>
+  </div>
+</div>

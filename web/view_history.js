@@ -29,7 +29,7 @@ class ViewHistory {
     this.fingerprint = fingerprint;
     this.cacheSize = cacheSize;
 
-    this._initializedPromise = this._readFromStorage().then(databaseStr => {
+    this._initializedPromise = this._readFromStorage().then((databaseStr) => {
       const database = JSON.parse(databaseStr || "{}");
       let index = -1;
       if (!Array.isArray(database.files)) {
