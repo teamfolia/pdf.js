@@ -34,6 +34,32 @@ const promisedTimeout = (timeout) => {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 };
 
+function onClickHandler(e) {
+  if (e.target.id === "viewer") {
+    // console.log('onClickHandler', e.target)
+    this.pdfViewer._pages.map((_page) => {
+      if (!_page.foliaPageLayer) return;
+      _page.foliaPageLayer.clickByViewerContainer();
+    });
+  }
+}
+function keyDownHandler(e) {
+  const { key, keyCode, altKey, ctrlKey, metaKey, shiftKey, target, currentTarget } = e;
+  // console.log('keyDownHandler', target.nodeName)
+  if (target.nodeName === "TEXTAREA") return;
+  if (target.nodeName === "DIV" && target.hasAttribute("contenteditable")) return;
+  switch (key) {
+    case "Backspace": {
+      e.preventDefault();
+      e.stopPropagation();
+      this.deleteSelectedAnnotations();
+      break;
+    }
+    default:
+      break;
+  }
+}
+
 // export const foliaUtils = _foliaUtils;
 export class FoliaPDFViewer {
   uiConfig;
@@ -52,8 +78,8 @@ export class FoliaPDFViewer {
 
   constructor() {
     window.PDFJSDev = new PDFJSDev();
-    window.addEventListener("keydown", this.keyDownHandler.bind(this), true);
-    window.addEventListener("click", this.onClickHandler.bind(this), true);
+    this.keyDownHandler = keyDownHandler.bind(this);
+    this.onClickHandler = onClickHandler.bind(this);
   }
 
   async init(uiConfig, dataProxy) {
@@ -111,7 +137,15 @@ export class FoliaPDFViewer {
 
     this.eventBus.on("updateviewarea", this.webViewerUpdateViewarea.bind(this));
 
+    window.addEventListener("keydown", this.keyDownHandler, true);
+    window.addEventListener("click", this.onClickHandler, true);
+
     console.log("foliaPdfViewer has been initialized");
+  }
+
+  deinit() {
+    window.removeEventListener("keydown", this.keyDownHandler, true);
+    window.removeEventListener("click", this.onClickHandler, true);
   }
 
   webViewerUpdateViewarea({ location }) {
@@ -128,52 +162,6 @@ export class FoliaPDFViewer {
         .catch(() => {
           // Unable to write to storage.
         });
-    }
-  }
-
-  // onDocumentLoaded(e) {
-  //   if (this.uiConfig.totalPages) {
-  //     this.uiConfig.totalPages.innerText = window.foliaPdfViewer.pdfViewer.pagesCount;
-  //   }
-  //   if (this.uiConfig.currentPage) {
-  //     this.uiConfig.currentPage.innerText = window.foliaPdfViewer.pdfViewer.currentPageNumber;
-  //   }
-  // }
-  // onPageChanging(e) {
-  //   if (this.uiConfig.currentPage) {
-  //     this.uiConfig.currentPage.innerText = window.foliaPdfViewer.pdfViewer.currentPageNumber;
-  //   }
-  // }
-  // onScaleChanging(e) {
-  //   if (this.uiConfig.zoomValue) {
-  //     const zoom = Number(window.foliaPdfViewer.pdfViewer._currentScale * 100).toFixed(0);
-  //     this.uiConfig.zoomValue.innerText = zoom;
-  //   }
-  // }
-
-  onClickHandler(e) {
-    if (e.target.id === "viewer") {
-      // console.log('onClickHandler', e.target)
-      this.pdfViewer._pages.map((_page) => {
-        if (!_page.foliaPageLayer) return;
-        _page.foliaPageLayer.clickByViewerContainer();
-      });
-    }
-  }
-  keyDownHandler(e) {
-    const { key, keyCode, altKey, ctrlKey, metaKey, shiftKey, target, currentTarget } = e;
-    // console.log('keyDownHandler', target.nodeName)
-    if (target.nodeName === "TEXTAREA") return;
-    if (target.nodeName === "DIV" && target.hasAttribute("contenteditable")) return;
-    switch (key) {
-      case "Backspace": {
-        e.preventDefault();
-        e.stopPropagation();
-        this.deleteSelectedAnnotations();
-        break;
-      }
-      default:
-        break;
     }
   }
 
