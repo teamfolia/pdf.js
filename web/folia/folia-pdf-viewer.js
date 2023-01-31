@@ -311,6 +311,7 @@ export class FoliaPDFViewer {
     pagesPromise.then(() => this._unblockDocumentLoadEvent(), console.error);
     await this._initializePageLabels(pdfDocument);
   }
+
   async close() {
     this._unblockDocumentLoadEvent();
     // this._hideViewBookmark();

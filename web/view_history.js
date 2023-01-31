@@ -58,17 +58,17 @@ class ViewHistory {
   async _writeToStorage() {
     const databaseStr = JSON.stringify(this.database);
 
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      sessionStorage.setItem("pdfjs.history", databaseStr);
-      return;
-    }
+    // if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    //   sessionStorage.setItem("pdfjs.history", databaseStr);
+    //   return;
+    // }
     localStorage.setItem("pdfjs.history", databaseStr);
   }
 
   async _readFromStorage() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      return sessionStorage.getItem("pdfjs.history");
-    }
+    // if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    //   return sessionStorage.getItem("pdfjs.history");
+    // }
     return localStorage.getItem("pdfjs.history");
   }
 

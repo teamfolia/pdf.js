@@ -201,6 +201,27 @@ class Viewer {
         get documentId() {
           return documentId;
         },
+        get permissions() {
+          return [
+            "MANAGE_ANNOTATION",
+            "DELETE_FOREIGN_ANNOTATION",
+            "MANAGE_OWN_COMMENT",
+            "DELETE_FOREIGN_COMMENT",
+            "PUBLISH_WORKSPACE",
+            "SHARE_WORKSPACE",
+            "RENAME_WORKSPACE",
+            "DELETE_WORKSPACE",
+            "ARCHIVE_WORKSPACE",
+            "DUPLICATE_WORKSPACE",
+            "UPLOAD_DOCUMENT",
+            "RENAME_DOCUMENT",
+            "DELETE_DOCUMENT",
+            "COPY_DOCUMENT",
+            "DOWNLOAD_SOURCE_DOCUMENT",
+            "DOWNLOAD_ORIGINAL_DOCUMENT",
+            "DOWNLOAD_ANNOTATED_DOCUMENT",
+          ];
+        },
         getObjects: this.getObjects.bind(this),
         postObject: this.postObject.bind(this),
         putObject: this.putObject.bind(this),
