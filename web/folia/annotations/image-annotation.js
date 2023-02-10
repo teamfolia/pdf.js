@@ -29,25 +29,17 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     ];
 
     const rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
-    const {
-      id,
-      addedAt,
-      collaboratorEmail,
-      page,
-      filename,
-      content,
-      deleted = false,
-    } = this.annotationRawData;
+    const { id, addedAt, deletedAt, collaboratorEmail, page, filename, content } = this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.IMAGE,
       id,
       addedAt: this.isDirty || addedAt,
+      deletedAt,
       collaboratorEmail,
       page,
       rect,
       filename,
       content,
-      deleted,
     };
   }
   async render() {
@@ -65,9 +57,9 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     this.draw();
   }
   async draw() {
-    this.isDirty
-      ? this.annotationDIV.classList.add("changed")
-      : this.annotationDIV.classList.remove("changed");
+    // this.isDirty
+    //   ? this.annotationDIV.classList.add("changed")
+    //   : this.annotationDIV.classList.remove("changed");
   }
 }
 

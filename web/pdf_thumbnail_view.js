@@ -120,7 +120,7 @@ class PDFThumbnailView {
 
     const anchor = document.createElement("a");
     anchor.href = linkService.getAnchorUrl("#page=" + id);
-    this._thumbPageTitle.then(msg => {
+    this._thumbPageTitle.then((msg) => {
       anchor.title = msg;
     });
     anchor.onclick = function () {
@@ -222,9 +222,7 @@ class PDFThumbnailView {
     canvas.width = (upscaleFactor * this.canvasWidth * outputScale.sx) | 0;
     canvas.height = (upscaleFactor * this.canvasHeight * outputScale.sy) | 0;
 
-    const transform = outputScale.scaled
-      ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
-      : null;
+    const transform = outputScale.scaled ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0] : null;
 
     return { ctx, canvas, transform };
   }
@@ -240,7 +238,7 @@ class PDFThumbnailView {
 
     const image = document.createElement("img");
     image.className = "thumbnailImage";
-    this._thumbPageCanvas.then(msg => {
+    this._thumbPageCanvas.then((msg) => {
       image.setAttribute("aria-label", msg);
     });
     image.style.width = this.canvasWidth + "px";
@@ -296,12 +294,11 @@ class PDFThumbnailView {
     // the `draw` and `setImage` methods (fixes issue 8233).
     // NOTE: To primarily avoid increasing memory usage too much, but also to
     //   reduce downsizing overhead, we purposely limit the up-scaling factor.
-    const { ctx, canvas, transform } =
-      this._getPageDrawContext(DRAW_UPSCALE_FACTOR);
+    const { ctx, canvas, transform } = this._getPageDrawContext(DRAW_UPSCALE_FACTOR);
     const drawViewport = this.viewport.clone({
       scale: DRAW_UPSCALE_FACTOR * this.scale,
     });
-    const renderContinueCallback = cont => {
+    const renderContinueCallback = (cont) => {
       if (!this.renderingQueue.isHighestPriority(this)) {
         this.renderingState = RenderingStates.PAUSED;
         this.resume = () => {
@@ -374,42 +371,19 @@ class PDFThumbnailView {
     const { ctx, canvas } = this._getPageDrawContext();
 
     if (img.width <= 2 * canvas.width) {
-      ctx.drawImage(
-        img,
-        0,
-        0,
-        img.width,
-        img.height,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
+      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
       return canvas;
     }
     // drawImage does an awful job of rescaling the image, doing it gradually.
     let reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS;
     let reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
-    const [reducedImage, reducedImageCtx] = TempImageFactory.getCanvas(
-      reducedWidth,
-      reducedHeight
-    );
+    const [reducedImage, reducedImageCtx] = TempImageFactory.getCanvas(reducedWidth, reducedHeight);
 
     while (reducedWidth > img.width || reducedHeight > img.height) {
       reducedWidth >>= 1;
       reducedHeight >>= 1;
     }
-    reducedImageCtx.drawImage(
-      img,
-      0,
-      0,
-      img.width,
-      img.height,
-      0,
-      0,
-      reducedWidth,
-      reducedHeight
-    );
+    reducedImageCtx.drawImage(img, 0, 0, img.width, img.height, 0, 0, reducedWidth, reducedHeight);
     while (reducedWidth > 2 * canvas.width) {
       reducedImageCtx.drawImage(
         reducedImage,
@@ -425,27 +399,19 @@ class PDFThumbnailView {
       reducedWidth >>= 1;
       reducedHeight >>= 1;
     }
-    ctx.drawImage(
-      reducedImage,
-      0,
-      0,
-      reducedWidth,
-      reducedHeight,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
+    ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight, 0, 0, canvas.width, canvas.height);
     return canvas;
   }
 
   get _thumbPageTitle() {
+    return Promise.resolve("thumb_page_title");
     return this.l10n.get("thumb_page_title", {
       page: this.pageLabel ?? this.id,
     });
   }
 
   get _thumbPageCanvas() {
+    return Promise.resolve("thumb_page_canvas");
     return this.l10n.get("thumb_page_canvas", {
       page: this.pageLabel ?? this.id,
     });
@@ -457,7 +423,7 @@ class PDFThumbnailView {
   setPageLabel(label) {
     this.pageLabel = typeof label === "string" ? label : null;
 
-    this._thumbPageTitle.then(msg => {
+    this._thumbPageTitle.then((msg) => {
       this.anchor.title = msg;
     });
 
@@ -465,7 +431,7 @@ class PDFThumbnailView {
       return;
     }
 
-    this._thumbPageCanvas.then(msg => {
+    this._thumbPageCanvas.then((msg) => {
       this.image?.setAttribute("aria-label", msg);
     });
   }

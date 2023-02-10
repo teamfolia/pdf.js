@@ -33,25 +33,17 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       return toPdfPath(relativeViewPath, this.viewport.width, this.viewport.height);
     });
 
-    const {
-      id,
-      addedAt,
-      collaboratorEmail,
-      page,
-      color,
-      lineWidth,
-      deleted = false,
-    } = this.annotationRawData;
+    const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth } = this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.INK,
       id,
       addedAt: this.isDirty || addedAt,
+      deletedAt,
       collaboratorEmail,
       page,
       color,
       lineWidth,
       paths,
-      deleted,
     };
   }
 
@@ -102,9 +94,9 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
   }
 
   async draw() {
-    this.isDirty
-      ? this.annotationDIV.classList.add("changed")
-      : this.annotationDIV.classList.remove("changed");
+    // this.isDirty
+    //   ? this.annotationDIV.classList.add("changed")
+    //   : this.annotationDIV.classList.remove("changed");
 
     const canvas = document.createElement("canvas");
     canvas.width = this.annotationDIV.clientWidth;

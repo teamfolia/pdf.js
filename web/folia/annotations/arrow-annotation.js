@@ -25,29 +25,20 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
   }
 
   getRawData() {
-    const {
-      id,
-      addedAt,
-      collaboratorEmail,
-      page,
-      color,
-      lineWidth,
-      sourcePoint,
-      targetPoint,
-      deleted = false,
-    } = this.annotationRawData;
+    const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth, sourcePoint, targetPoint } =
+      this.annotationRawData;
 
     return {
       __typename: ANNOTATION_TYPES.ARROW,
       id,
       addedAt: this.isDirty || addedAt,
+      deletedAt,
       collaboratorEmail,
       page,
       color,
       lineWidth,
       sourcePoint: toPdfPoint(this.sourcePoint, this.viewport.width, this.viewport.height),
       targetPoint: toPdfPoint(this.targetPoint, this.viewport.width, this.viewport.height),
-      deleted,
     };
   }
 

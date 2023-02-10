@@ -30,8 +30,8 @@ class Viewer {
       fontWeight: "normal",
       textAlign: "left",
     },
-    [TOOLS.MARKER]: { color: "#CCCCCC" },
-    [TOOLS.UNDERLINE]: { color: "#999999" },
+    [TOOLS.MARKER]: { color: "#00FF00" },
+    [TOOLS.UNDERLINE]: { color: "#FF00EA" },
     [TOOLS.CROSSLINE]: { color: "#444444" },
   };
   drawingTool = {
@@ -103,6 +103,12 @@ class Viewer {
   }
 
   // api requests
+  async getPermissions() {
+    const workspaceId = this.#workspaceId;
+    const workspace = await this.$fetch.get(`/store/workspaces/${workspaceId}`);
+    console.log(workspace.permissions);
+    this.permissions = workspace.permissions;
+  }
   async getContent() {
     const workspaceId = this.#workspaceId;
     const documentId = this.#documentId;
@@ -142,11 +148,12 @@ class Viewer {
   postObject(objectData) {
     const workspaceId = this.#workspaceId;
     const documentId = this.#documentId;
-    console.log("postObject", objectData);
+    console.log("postObject", { workspaceId, documentId, objectData });
   }
-
-  objectsSelected(data) {
-    // console.log("objectsSelected", data);
+  deleteObject(objectId) {
+    const workspaceId = this.#workspaceId;
+    const documentId = this.#documentId;
+    console.log("deleteObject", { workspaceId, documentId, objectId });
   }
   // end of api requests
 
@@ -193,7 +200,9 @@ class Viewer {
       const ui = {
         container: document.getElementById("viewerContainer"),
         viewer: document.getElementById("viewer"),
+        thumbnailView: document.querySelector(".thumbnail-viewer"),
       };
+      const that = this;
       const dataProxy = {
         get userEmail() {
           return localStorage.getItem("email");
@@ -202,6 +211,7 @@ class Viewer {
           return documentId;
         },
         get permissions() {
+          return that.permissions;
           return [
             "MANAGE_ANNOTATION",
             "DELETE_FOREIGN_ANNOTATION",
@@ -224,8 +234,7 @@ class Viewer {
         },
         getObjects: this.getObjects.bind(this),
         postObject: this.postObject.bind(this),
-        putObject: this.putObject.bind(this),
-        objectsSelected: this.objectsSelected.bind(this),
+        deleteObject: this.deleteObject.bind(this),
         stopDrawing: () => this.stopDrawing(),
       };
 
@@ -233,12 +242,15 @@ class Viewer {
       window.foliaPdfViewer.eventBus.on("documentloaded", this.onDocumentLoaded.bind(this));
       window.foliaPdfViewer.eventBus.on("pagechanging", this.onPageChanging.bind(this));
       window.foliaPdfViewer.eventBus.on("scalechanging", this.onScaleChanging.bind(this));
+      window.foliaPdfViewer.eventBus.on("floatingbarhide", this.onFloatingBarHide.bind(this));
+      window.foliaPdfViewer.eventBus.on("floatingbarshow", this.onFloatingBarShow.bind(this));
     } else {
       await window.foliaPdfViewer.close();
     }
 
     this.#workspaceId = workspaceId;
     this.#documentId = documentId;
+    await this.getPermissions();
     const content = await this.getContent();
     await window.foliaPdfViewer.open(content);
   }
@@ -252,6 +264,12 @@ class Viewer {
   }
   onScaleChanging(e) {
     document.querySelector("#zoomValue").innerHTML = Math.round(e.scale * 100);
+  }
+  onFloatingBarHide() {
+    console.log("hide floating bar");
+  }
+  onFloatingBarShow(e) {
+    console.log("show floating bar", e);
   }
 
   stopDrawing() {

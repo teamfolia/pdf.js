@@ -111,7 +111,7 @@ class TextBoxBuilder extends BaseBuilder {
   }
 
   onMouseDown(e) {
-    console.log("onMouseDown canvas");
+    // console.log("onMouseDown canvas");
     e.preventDefault();
     e.stopPropagation();
 

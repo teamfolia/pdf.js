@@ -52,14 +52,7 @@ class PDFThumbnailViewer {
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
-  constructor({
-    container,
-    eventBus,
-    linkService,
-    renderingQueue,
-    l10n,
-    pageColors,
-  }) {
+  constructor({ container, eventBus, linkService, renderingQueue, l10n, pageColors }) {
     this.container = container;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
@@ -211,7 +204,7 @@ class PDFThumbnailViewer {
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
 
     firstPagePromise
-      .then(firstPdfPage => {
+      .then((firstPdfPage) => {
         const pagesCount = pdfDocument.numPages;
         const viewport = firstPdfPage.getViewport({ scale: 1 });
 
@@ -223,8 +216,8 @@ class PDFThumbnailViewer {
             optionalContentConfigPromise,
             linkService: this.linkService,
             renderingQueue: this.renderingQueue,
-            l10n: this.l10n,
-            pageColors: this.pageColors,
+            l10n: null,
+            pageColors: null,
           });
           this._thumbnails.push(thumbnail);
         }
@@ -237,7 +230,7 @@ class PDFThumbnailViewer {
         const thumbnailView = this._thumbnails[this._currentPageNumber - 1];
         thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
       })
-      .catch(reason => {
+      .catch((reason) => {
         console.error("Unable to initialize thumbnail viewer", reason);
       });
   }
@@ -260,9 +253,7 @@ class PDFThumbnailViewer {
     }
     if (!labels) {
       this._pageLabels = null;
-    } else if (
-      !(Array.isArray(labels) && this.pdfDocument.numPages === labels.length)
-    ) {
+    } else if (!(Array.isArray(labels) && this.pdfDocument.numPages === labels.length)) {
       this._pageLabels = null;
       console.error("PDFThumbnailViewer_setPageLabels: Invalid page labels.");
     } else {
@@ -306,11 +297,7 @@ class PDFThumbnailViewer {
   forceRendering() {
     const visibleThumbs = this._getVisibleThumbs();
     const scrollAhead = this.#getScrollAhead(visibleThumbs);
-    const thumbView = this.renderingQueue.getHighestPriority(
-      visibleThumbs,
-      this._thumbnails,
-      scrollAhead
-    );
+    const thumbView = this.renderingQueue.getHighestPriority(visibleThumbs, this._thumbnails, scrollAhead);
     if (thumbView) {
       this.#ensurePdfPageLoaded(thumbView).then(() => {
         this.renderingQueue.renderView(thumbView);

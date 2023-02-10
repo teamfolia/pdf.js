@@ -1,13 +1,7 @@
 import { fromPdfRect, hexColor2RGBA } from "../folia-util";
 import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import FoliaBaseAnnotation from "./base-annotation";
-import { ANNOTATION_TYPES } from "../constants";
-
-const HighlightKind = {
-  MARKER: "MARKER",
-  UNDERLINE: "UNDERLINE",
-  CROSSLINE: "CROSSLINE",
-};
+import { ANNOTATION_TYPES, HighlightKind } from "../constants";
 
 class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
   editablePropertiesList = ["color"];
@@ -18,28 +12,19 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
   }
 
   getRawData() {
-    const {
-      id,
-      addedAt,
-      collaboratorEmail,
-      page,
-      color,
-      rects,
-      kind,
-      text,
-      deleted = false,
-    } = this.annotationRawData;
+    const { id, addedAt, deletedAt, collaboratorEmail, page, color, rects, kind, text } =
+      this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.HIGHLIGHT,
       id,
       addedAt: this.isDirty || addedAt,
+      deletedAt,
       collaboratorEmail,
       page,
       kind,
       text,
       color,
       rects,
-      deleted,
     };
   }
 
@@ -69,9 +54,9 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
     // this.annotationDIV.style.color = pdfColor2rgba(this.annotationRawData.color)
   }
   async draw() {
-    this.isDirty
-      ? this.annotationDIV.classList.add("changed")
-      : this.annotationDIV.classList.remove("changed");
+    // this.isDirty
+    //   ? this.annotationDIV.classList.add("changed")
+    //   : this.annotationDIV.classList.remove("changed");
 
     try {
       const pdfCanvas = this.foliaLayer.parentNode.querySelector("div.canvasWrapper>canvas");

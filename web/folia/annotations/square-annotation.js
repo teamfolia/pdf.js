@@ -20,25 +20,17 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
     ];
 
     const rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
-    const {
-      id,
-      addedAt,
-      collaboratorEmail,
-      page,
-      color,
-      lineWidth,
-      deleted = false,
-    } = this.annotationRawData;
+    const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth } = this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.SQUARE,
       id,
       addedAt: this.isDirty || addedAt,
+      deletedAt,
       collaboratorEmail,
       page,
       color,
       lineWidth,
       rect,
-      deleted,
     };
   }
   async render() {
@@ -60,9 +52,9 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.style.backgroundSize = `${this.annotationDIV.clientWidth}px ${this.annotationDIV.clientHeight}px`;
     this.annotationDIV.style.backgroundRepeat = "no-repeat";
     this.annotationDIV.style.backgroundImage = `url("${this.drawSquare()}")`;
-    this.isDirty
-      ? this.annotationDIV.classList.add("changed")
-      : this.annotationDIV.classList.remove("changed");
+    // this.isDirty
+    //   ? this.annotationDIV.classList.add("changed")
+    //   : this.annotationDIV.classList.remove("changed");
   }
   drawSquare() {
     const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;

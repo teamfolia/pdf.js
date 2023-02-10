@@ -7,6 +7,7 @@ import { PDFHistory } from "../pdf_history";
 import { PDFLinkService } from "../pdf_link_service";
 import { PDFRenderingQueue } from "../pdf_rendering_queue";
 import { PDFViewer } from "../pdf_viewer";
+import { PDFThumbnailViewer } from "../pdf_thumbnail_viewer";
 import { ViewHistory } from "../view_history";
 import {
   animationStarted,
@@ -72,10 +73,6 @@ export class FoliaPDFViewer {
   pdfDocument;
   pdfLoadingTask;
 
-  // #workspaceId;
-  // #documentId;
-  #AnnotationBuilderClass;
-
   constructor() {
     window.PDFJSDev = new PDFJSDev();
     this.keyDownHandler = keyDownHandler.bind(this);
@@ -127,8 +124,17 @@ export class FoliaPDFViewer {
       dataProxy,
     });
 
-    this.pdfRenderingQueue.setViewer(this.pdfViewer);
+    this.pdfThumbnailViewer = new PDFThumbnailViewer({
+      container: this.uiConfig.thumbnailView,
+      eventBus: this.eventBus,
+      renderingQueue: this.pdfRenderingQueue,
+      linkService: this.pdfLinkService,
+      l10n: {},
+      pageColors: {},
+    });
     this.pdfLinkService.setViewer(this.pdfViewer);
+    this.pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
+    this.pdfRenderingQueue.setViewer(this.pdfViewer);
 
     // this.pdfHistory = new PDFHistory({
     //   linkService: this.pdfLinkService,
@@ -136,6 +142,8 @@ export class FoliaPDFViewer {
     // });
 
     this.eventBus.on("updateviewarea", this.webViewerUpdateViewarea.bind(this));
+    this.eventBus.on("pagerendered", this.webViewerPageRendered.bind(this));
+    this.eventBus.on("pagechanging", this.webViewerPageChanging.bind(this));
 
     window.addEventListener("keydown", this.keyDownHandler, true);
     window.addEventListener("click", this.onClickHandler, true);
@@ -164,10 +172,33 @@ export class FoliaPDFViewer {
         });
     }
   }
+  webViewerPageRendered({ pageNumber, error }) {
+    // Use the rendered page to set the corresponding thumbnail image.
+    if (this.uiConfig.thumbnailView) {
+      const pageView = this.pdfViewer.getPageView(/* index = */ pageNumber - 1);
+      const thumbnailView = this.pdfThumbnailViewer.getThumbnail(/* index = */ pageNumber - 1);
+      if (pageView && thumbnailView) {
+        thumbnailView.setImage(pageView);
+      }
+    }
+
+    if (error) {
+      console.error(error);
+      // PDFViewerApplication.l10n.get("rendering_error").then(msg => {
+      //   PDFViewerApplication._otherError(msg, error);
+      // });
+    }
+  }
+  webViewerPageChanging({ pageNumber, pageLabel }) {
+    if (this.uiConfig.thumbnailView) {
+      this.pdfThumbnailViewer.scrollThumbnailIntoView(pageNumber);
+    }
+  }
 
   _cleanup() {
     this.pdfViewer && this.pdfViewer.cleanup();
     this.pdfDocument && this.pdfDocument.cleanup();
+    this.pdfThumbnailViewer.cleanup();
   }
   _unblockDocumentLoadEvent() {
     document.blockUnblockOnload?.(false);
@@ -215,9 +246,7 @@ export class FoliaPDFViewer {
     const { pdfViewer, pdfThumbnailViewer, toolbar } = this;
 
     pdfViewer.setPageLabels(labels);
-
-    toolbar.setPagesCount(numLabels, true);
-    toolbar.setPageNumber(pdfViewer.currentPageNumber, pdfViewer.currentPageLabel);
+    pdfThumbnailViewer.setPageLabels(labels);
   }
   forceRendering() {
     this.pdfRenderingQueue.printing = false;
@@ -263,6 +292,7 @@ export class FoliaPDFViewer {
     this.pdfDocument = pdfDocument;
     this.pdfViewer.setDocument(pdfDocument);
     this.pdfLinkService.setDocument(pdfDocument);
+    this.pdfThumbnailViewer.setDocument(pdfDocument);
     const { length } = await pdfDocument.getDownloadInfo();
     this._contentLength = length; // Ensure that the correct length is used.
     this.downloadComplete = true;
@@ -288,6 +318,7 @@ export class FoliaPDFViewer {
       Promise.all([animationStarted, storedPromise])
         .then(async ([timeStamp, stored, pageLayout, pageMode, openAction]) => {
           const hash = `page=${stored.page}&zoom=${stored.zoom},${stored.scrollLeft},${stored.scrollTop}`;
+          console.log({ hash });
           this.setInitialView(hash, {
             rotation: 0,
             sidebarView: null,
@@ -326,6 +357,7 @@ export class FoliaPDFViewer {
 
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null);
+      this.pdfThumbnailViewer.setDocument(null);
       // this.pdfDocumentProperties.setDocument(null);
     }
     this.pdfLinkService.externalLinkEnabled = true;
@@ -358,8 +390,8 @@ export class FoliaPDFViewer {
     this.pdfViewer.update();
   }
   updateToolDrawingProperties(properties) {
-    if (!this.#AnnotationBuilderClass) return;
-    const data = Object.assign(this.#AnnotationBuilderClass.initialPreset, properties);
+    if (!this.pdfViewer.annotationBuilderClass) return;
+    const data = Object.assign(this.pdfViewer.annotationBuilderClass.initialPreset, properties);
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
       page.foliaPageLayer.updateToolDrawingProperties(data);
@@ -394,7 +426,6 @@ export class FoliaPDFViewer {
 
   startDrawing(toolType, preset) {
     // console.log('startDrawing 1', {annotationType, preset})
-    const promises = [];
     if (toolType === TOOLS.INK) {
       this.continueStartDrawing(InkBuilder, preset);
     } else if (toolType === TOOLS.ARROW) {
@@ -423,15 +454,16 @@ export class FoliaPDFViewer {
   continueStartDrawing(BuilderClass, preset, asset) {
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
-    this.#AnnotationBuilderClass = BuilderClass;
+    this.pdfViewer.annotationBuilderClass = BuilderClass;
+    this.pdfViewer.annotationBuilderClass = BuilderClass;
 
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
-      page.foliaPageLayer.startDrawing(this.#AnnotationBuilderClass);
+      page.foliaPageLayer.startDrawing(this.pdfViewer.annotationBuilderClass);
     });
   }
   stopDrawing() {
-    this.#AnnotationBuilderClass = null;
+    this.pdfViewer.annotationBuilderClass = null;
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
       page.foliaPageLayer.stopDrawing();
@@ -450,12 +482,6 @@ export class FoliaPDFViewer {
       page.foliaPageLayer.deleteSelectedAnnotations();
     });
   }
-  // changeEditableProperties(propName, propValue) {
-  //   this.pdfViewer._pages.map((_page) => {
-  //     if (!_page.foliaPageLayer) return;
-  //     _page.foliaPageLayer.changeEditableProperties(propName, propValue);
-  //   });
-  // }
   selectAnnotationObject(annoPageNumber, localId) {
     console.log(annoPageNumber, localId);
     const page = this.pdfViewer._pages[annoPageNumber];
@@ -483,6 +509,12 @@ export class FoliaPDFViewer {
 
     this.eventBus.on("foliapagelayerrendered", evenListener);
     this.pdfViewer.currentPageNumber = annoPageNumber + 1;
+  }
+  resetObjectsSeletion() {
+    this.pdfViewer._pages.map((page) => {
+      if (!page.foliaPageLayer) return;
+      page.foliaPageLayer.resetObjectsSeletion();
+    });
   }
 
   // get foliaDataStorageProxy() {

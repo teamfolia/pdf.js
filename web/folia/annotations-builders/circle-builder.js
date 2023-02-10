@@ -83,7 +83,7 @@ class CircleBuilder extends BaseBuilder {
     e.stopPropagation();
     this.mouseIsDown = false;
     this.mouseIsMove = false;
-    if (this.preset.singleCreating) this.stopCallback().catch(console.error);
+    window.requestAnimationFrame(() => this.draw());
   }
 
   draw() {

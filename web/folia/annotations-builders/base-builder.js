@@ -21,21 +21,6 @@ class BaseBuilder {
     this.resume();
   }
 
-  // resume() {
-  //   const onceCLickListener = (e) => {
-  //     if (this.annotationType === "typewriter") {
-  //       this.prepareTypewriter(e);
-  //     } else if (this.annotationType === "conversation") {
-  //       this.prepareConversation(e);
-  //     }
-  //   };
-
-  //   this.pageDiv.addEventListener("click", onceCLickListener, { once: true });
-  //   this.removeOnClickListener = () => {
-  //     this.pageDiv.removeEventListener("click", onceCLickListener);
-  //   };
-  // }
-
   prepareTypewriter(e) {
     const { color, fontFamily, fontSize, fontWeight, textAlign, singleCreating } = this.preset;
     const viewRect = [e.offsetX, e.offsetY, 200, 50];
@@ -94,7 +79,7 @@ class BaseBuilder {
       this.foliaPageLayer.dataProxy.postObject(annotation);
     }
 
-    console.log("stop builder on page", page);
+    // console.log("stop builder on page", page);
     this.foliaPageLayer.pageDiv
       .querySelectorAll(".annotation-builder-container")
       .forEach((el) => el.remove());

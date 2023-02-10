@@ -193,7 +193,7 @@ class PDFLinkService {
         // only occur during loading, before all pages have been resolved.
         this.pdfDocument
           .getPageIndex(destRef)
-          .then(pageIndex => {
+          .then((pageIndex) => {
             this.cachePageRef(pageIndex + 1, destRef);
             this.#goToDestinationHelper(rawDest, namedDest, explicitDest);
           })
@@ -272,16 +272,8 @@ class PDFLinkService {
     if (!this.pdfDocument) {
       return;
     }
-    const pageNumber =
-      (typeof val === "string" && this.pdfViewer.pageLabelToPageNumber(val)) ||
-      val | 0;
-    if (
-      !(
-        Number.isInteger(pageNumber) &&
-        pageNumber > 0 &&
-        pageNumber <= this.pagesCount
-      )
-    ) {
+    const pageNumber = (typeof val === "string" && this.pdfViewer.pageLabelToPageNumber(val)) || val | 0;
+    if (!(Number.isInteger(pageNumber) && pageNumber > 0 && pageNumber <= this.pagesCount)) {
       console.error(`PDFLinkService.goToPage: "${val}" is not a valid page.`);
       return;
     }
@@ -379,22 +371,11 @@ class PDFLinkService {
         } else {
           if (zoomArg === "Fit" || zoomArg === "FitB") {
             dest = [null, { name: zoomArg }];
-          } else if (
-            zoomArg === "FitH" ||
-            zoomArg === "FitBH" ||
-            zoomArg === "FitV" ||
-            zoomArg === "FitBV"
-          ) {
-            dest = [
-              null,
-              { name: zoomArg },
-              zoomArgs.length > 1 ? zoomArgs[1] | 0 : null,
-            ];
+          } else if (zoomArg === "FitH" || zoomArg === "FitBH" || zoomArg === "FitV" || zoomArg === "FitBV") {
+            dest = [null, { name: zoomArg }, zoomArgs.length > 1 ? zoomArgs[1] | 0 : null];
           } else if (zoomArg === "FitR") {
             if (zoomArgs.length !== 5) {
-              console.error(
-                'PDFLinkService.setHash: Not enough parameters for "FitR".'
-              );
+              console.error('PDFLinkService.setHash: Not enough parameters for "FitR".');
             } else {
               dest = [
                 null,
@@ -406,12 +387,11 @@ class PDFLinkService {
               ];
             }
           } else {
-            console.error(
-              `PDFLinkService.setHash: "${zoomArg}" is not a valid zoom value.`
-            );
+            console.error(`PDFLinkService.setHash: "${zoomArg}" is not a valid zoom value.`);
           }
         }
       }
+      console.log({ dest, pageNumber });
       if (dest) {
         this.pdfViewer.scrollPageIntoView({
           pageNumber: pageNumber || this.page,
@@ -445,18 +425,11 @@ class PDFLinkService {
         }
       } catch (ex) {}
 
-      if (
-        typeof dest === "string" ||
-        PDFLinkService.#isValidExplicitDestination(dest)
-      ) {
+      if (typeof dest === "string" || PDFLinkService.#isValidExplicitDestination(dest)) {
         this.goToDestination(dest);
         return;
       }
-      console.error(
-        `PDFLinkService.setHash: "${unescape(
-          hash
-        )}" is not a valid destination.`
-      );
+      console.error(`PDFLinkService.setHash: "${unescape(hash)}" is not a valid destination.`);
     }
   }
 
@@ -505,8 +478,7 @@ class PDFLinkService {
    */
   async executeSetOCGState(action) {
     const pdfDocument = this.pdfDocument;
-    const optionalContentConfig = await this.pdfViewer
-      .optionalContentConfigPromise;
+    const optionalContentConfig = await this.pdfViewer.optionalContentConfigPromise;
 
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the optional content resolved.
@@ -537,9 +509,7 @@ class PDFLinkService {
       }
     }
 
-    this.pdfViewer.optionalContentConfigPromise = Promise.resolve(
-      optionalContentConfig
-    );
+    this.pdfViewer.optionalContentConfigPromise = Promise.resolve(optionalContentConfig);
   }
 
   /**
@@ -550,8 +520,7 @@ class PDFLinkService {
     if (!pageRef) {
       return;
     }
-    const refStr =
-      pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
+    const refStr = pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
     this.#pagesRefCache.set(refStr, pageNum);
   }
 
@@ -562,8 +531,7 @@ class PDFLinkService {
     if (!pageRef) {
       return null;
     }
-    const refStr =
-      pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
+    const refStr = pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
     return this.#pagesRefCache.get(refStr) || null;
   }
 
@@ -591,11 +559,7 @@ class PDFLinkService {
     }
     const page = dest[0];
     if (
-      !(
-        typeof page === "object" &&
-        Number.isInteger(page.num) &&
-        Number.isInteger(page.gen)
-      ) &&
+      !(typeof page === "object" && Number.isInteger(page.num) && Number.isInteger(page.gen)) &&
       !(Number.isInteger(page) && page >= 0)
     ) {
       return false;
@@ -644,8 +608,7 @@ class PDFLinkService {
     return false;
   }
 
-  set externalLinkEnabled(value) {
-  }
+  set externalLinkEnabled(value) {}
 }
 
 /**

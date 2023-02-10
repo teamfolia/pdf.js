@@ -69,6 +69,7 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
     const {
       id,
       addedAt,
+      deletedAt,
       collaboratorEmail,
       page,
       color,
@@ -77,12 +78,12 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       fontSize,
       fontWeight,
       textAlignment,
-      deleted = false,
     } = this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.TEXT_BOX,
       id,
       addedAt: this.isDirty || addedAt,
+      deletedAt,
       collaboratorEmail,
       page,
       color,
@@ -92,7 +93,6 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       fontWeight,
       textAlignment,
       rect,
-      deleted,
     };
   }
   async render() {
@@ -116,9 +116,9 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
     this.textArea.style.fontWeight = FontWeight[this.annotationRawData.fontWeight];
     this.textArea.style.fontFamily = FontFamily[this.annotationRawData.fontFamily];
 
-    this.isDirty
-      ? this.annotationDIV.classList.add("changed")
-      : this.annotationDIV.classList.remove("changed");
+    // this.isDirty
+    //   ? this.annotationDIV.classList.add("changed")
+    //   : this.annotationDIV.classList.remove("changed");
   }
   markAsUnselected() {
     super.markAsUnselected();

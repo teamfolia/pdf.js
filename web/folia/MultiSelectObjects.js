@@ -2,9 +2,9 @@ class MultipleSelect {
   #objects = new Set();
   lastBounds;
 
-  constructor(viewport, dataProxy) {
+  constructor(viewport, eventBus) {
     this.viewport = viewport;
-    this.dataProxy = dataProxy;
+    this.eventBus = eventBus;
   }
   getObjects() {
     return Array.from(this.#objects);
@@ -75,18 +75,16 @@ class MultipleSelect {
   addObject(obj) {
     this.#objects.add(obj);
     obj.markAsSelected();
-
-    this.dataProxy.objectsSelected({
-      objects: Array.from(this.#objects),
-    });
   }
   deleteObject(obj) {
     this.#objects.delete(obj);
     obj.markAsUnselected();
 
-    this.dataProxy.objectsSelected({
-      objects: Array.from(this.#objects),
-    });
+    if (this.#objects.size === 0) {
+      this.hideFloatingBar();
+    } else {
+      this.showFloatingBar();
+    }
   }
   updateObjectsDrawingProperties(data) {
     const promises = [];
@@ -95,6 +93,12 @@ class MultipleSelect {
     }
 
     return promises;
+  }
+  hideFloatingBar() {
+    this.eventBus.dispatch("floatingbarhide");
+  }
+  showFloatingBar() {
+    this.eventBus.dispatch("floatingbarshow", { objects: this.getObjects() });
   }
   get bounds() {
     let left = this.viewport.width,

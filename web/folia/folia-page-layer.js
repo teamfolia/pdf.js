@@ -9,6 +9,7 @@ import FoliaArrowAnnotation from "./annotations/arrow-annotation";
 import FoliaHighlightAnnotation from "./annotations/highlight-annotation";
 import { ANNOTATION_TYPES } from "./constants";
 import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
+import { times } from "lodash";
 
 const ANNOTATIONS_CLASSES = {
   [ANNOTATION_TYPES.INK]: FoliaInkAnnotation,
@@ -73,18 +74,22 @@ class FoliaPageLayer {
 
   constructor(props) {
     // console.log("FoliaPageLayer.constructor", props);
-    this.viewport = props.viewport;
     this.pageDiv = props.pageDiv;
     this.pdfPage = props.pdfPage;
-    this.pageNumber = props.pdfPage.pageNumber - 1;
+    this.viewport = props.viewport;
     this.annotationStorage = props.annotationStorage;
     this.dataProxy = props.dataProxy;
+    this.eventBus = props.eventBus;
+    this.annotationBuilderClass = props.annotationBuilderClass;
     this.pdfViewerScale = props.pdfViewerScale;
-    this.multipleSelect = new MultipleSelect(this.viewport, props.dataProxy);
+
+    this.pageNumber = props.pdfPage.pageNumber - 1;
+    this.multipleSelect = new MultipleSelect(this.viewport, props.eventBus);
   }
 
   startDrawing = (BuilderClass) => {
     this.stopDrawing();
+    this.annotationBuilderClass = BuilderClass;
     this.annotationBuilder = new BuilderClass(this, BuilderClass);
   };
   updateToolDrawingProperties(preset) {
@@ -94,6 +99,7 @@ class FoliaPageLayer {
     if (!this.annotationBuilder) return;
     this.annotationBuilder.stop();
     this.annotationBuilder = null;
+    this.annotationBuilderClass = null;
   }
 
   updateObjectsDrawingProperties(preset) {
@@ -110,39 +116,14 @@ class FoliaPageLayer {
   }
 
   deleteSelectedAnnotations(obj) {
-    // this.multipleSelect.hideToolbar();
     const deletedObjects = obj ? [obj] : this.multipleSelect.getObjects();
     deletedObjects.map((obj) => {
+      if (!obj.canDelete) return;
+      // console.log("DELETE", { canDelete: obj.canDelete, canManage: obj.canManage });
       this.annotationObjects.delete(obj.id);
       this.multipleSelect.deleteObject(obj);
     });
   }
-  // changeEditableProperties(propName, propValue) {
-  //   const promises = [];
-  //   this.multipleSelect.getObjects().forEach(obj => {
-  //     promises.push(obj.editableProperties.set(propName, propValue));
-  //   });
-
-  //   Promise.allSettled(promises)
-  //     .then(() => this.commitChanges())
-  //     .catch(console.error);
-  // }
-  // commitChanges(obj) {
-  //   const committingObjectsData = [];
-  //   const objects = obj ? [obj] : this.multipleSelect.getObjects();
-  //   console.log("OBJECTS", objects);
-  //   objects
-  //     .filter(obj => obj.isDirty)
-  //     .forEach(obj => {
-  //       const rawData = obj.getRawData();
-  //       committingObjectsData.push(rawData);
-  //     });
-  // }
-  // confirmChanges(id, changesTimestamp, payload) {
-  //   const obj = this.annotationObjects.get(id);
-  //   if (!obj) return console.warn(`Can not confirm changes for "${id}"`);
-  //   obj.confirmChanges(changesTimestamp, payload);
-  // }
   refresh() {
     this.render(this.viewport).catch(console.error);
   }
@@ -190,8 +171,8 @@ class FoliaPageLayer {
 
     Promise.allSettled(promises)
       .then((resolves) => {
-        if (this.dataProxy.annotationBuilderClass && !this.annotationBuilder) {
-          this.startDrawing(this.dataProxy.annotationBuilderClass);
+        if (this.annotationBuilderClass && !this.annotationBuilder) {
+          this.startDrawing(this.annotationBuilderClass);
         }
       })
       .catch(console.error);
@@ -242,7 +223,12 @@ class FoliaPageLayer {
     this.startPoint = { x: e.clientX, y: e.clientY };
     this.multipleSelect.prepare2moving(this.startPoint);
 
-    const annoObject = this.annotationObjects.get(this.actionTarget.id);
+    if (!this.multipleSelect.isEmpty()) this.multipleSelect.hideFloatingBar();
+    // if (!this.multipleSelect.isEmpty()) {
+    //   // this.dataProxy.floatingBar.hide();
+    //   this.eventBus.dispatch("floating_bar_hide");
+    // }
+    // const annoObject = this.annotationObjects.get(this.actionTarget.id);
     // console.log('onFoliaLayerMouseDown', annoObject && annoObject.editable)
     e.preventDefault();
   }
@@ -254,7 +240,6 @@ class FoliaPageLayer {
     if (annoObject) {
       if (annoObject.editable && annoObject.isFocused) return;
       if (annoObject.permanentPosition) return;
-      if (!annoObject.canUpdate) return;
     }
     e.preventDefault();
 
@@ -294,6 +279,7 @@ class FoliaPageLayer {
 
     if (this.actionTarget.role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
       this.multipleSelect.clear();
+      // this.dataProxy.floatingBar.hide();
     } else if (!this.isMouseMoved && this.actionTarget.role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
       const annoObject = this.annotationObjects.get(this.actionTarget.id);
       if (annoObject && !annoObject.editable) {
@@ -303,8 +289,12 @@ class FoliaPageLayer {
           ? this.multipleSelect.startEditMode(annoObject, e.shiftKey)
           : this.multipleSelect.toggleObject(annoObject, e.shiftKey);
       }
+      this.multipleSelect.showFloatingBar();
+      // dataProxy.floatingBar.show(this.multipleSelect.getObjects());
     } else if (this.isMouseMoved) {
-      const annoObject = this.annotationObjects.get(this.actionTarget.id);
+      this.multipleSelect.showFloatingBar();
+      // dataProxy.floatingBar.show(this.multipleSelect.getObjects());
+      // const annoObject = this.annotationObjects.get(this.actionTarget.id);
       // this.multipleSelect.showToolbar(annoObject);
     }
 

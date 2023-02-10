@@ -1638,6 +1638,7 @@ class PDFViewer {
       viewport,
       annotationStorage,
       dataProxy: this.dataProxy,
+      eventBus: this.eventBus,
       annotationBuilderClass: this.annotationBuilderClass,
       pdfViewerScale: this._currentScale,
     });

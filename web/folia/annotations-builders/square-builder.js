@@ -33,7 +33,6 @@ class SquareBuilder extends BaseBuilder {
   prepareAnnotations2save() {
     return this.squares.map(({ color, lineWidth, rect }) => {
       const pdfRect = toPdfRect(rect, this.viewport.width, this.viewport.height);
-      console.log("STORING", lineWidth, this.foliaPageLayer.pdfViewerScale);
       return {
         __typename: ANNOTATION_TYPES.SQUARE,
         lineWidth,
@@ -78,6 +77,7 @@ class SquareBuilder extends BaseBuilder {
     e.stopPropagation();
     this.mouseIsDown = false;
     this.mouseIsMove = false;
+    window.requestAnimationFrame(() => this.draw());
   }
 
   draw() {

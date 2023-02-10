@@ -115,12 +115,12 @@ export const hexColor2RGBA = (hexColor) => {
 };
 
 export const fromPdfRect = (pdfRect, viewportWidth, viewporHeight, borderSize = 0) => {
-  // left, top, right, bottom
+  const [left, top, right, bottom] = pdfRect;
   return [
-    Math.round(pdfRect[0] * viewportWidth - borderSize / 2),
-    Math.round(pdfRect[1] * viewporHeight - borderSize / 2),
-    Math.round(pdfRect[2] * viewportWidth - pdfRect[0] * viewportWidth + borderSize),
-    Math.round(pdfRect[3] * viewporHeight - pdfRect[1] * viewporHeight + borderSize),
+    Math.round(left * viewportWidth - borderSize / 2),
+    Math.round(top * viewporHeight - borderSize / 2),
+    Math.round(right * viewportWidth - left * viewportWidth + borderSize),
+    Math.round(bottom * viewporHeight - top * viewporHeight + borderSize),
   ];
 };
 

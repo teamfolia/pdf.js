@@ -1,6 +1,7 @@
 import { cloneDeep } from "lodash";
 import { fromPdfRect, fromPdfPoint } from "../folia-util";
 import { RECT_MIN_SIZE, FOLIA_LAYER_ROLES } from "../folia-page-layer";
+import { PERMISSIONS } from "../constants";
 
 class FoliaBaseAnnotation {
   isSelected = false;
@@ -33,6 +34,7 @@ class FoliaBaseAnnotation {
     return {
       list: that.editablePropertiesList,
       set: (data) => {
+        if (!that.canManage) return;
         for (const [key, value] of Object.entries(data)) {
           if (that.editablePropertiesList.includes(key)) {
             this.annotationRawData[key] = value;
@@ -59,8 +61,8 @@ class FoliaBaseAnnotation {
             case "fontWeight":
               acc[propName] = that.annotationRawData.fontWeight;
               break;
-            case "textAlign":
-              acc[propName] = that.annotationRawData.textAlign;
+            case "textAlignment":
+              acc[propName] = that.annotationRawData.textAlignment;
               break;
             default:
               break;
@@ -108,7 +110,7 @@ class FoliaBaseAnnotation {
     this.setCornersVisibility(true);
     this.annotationDIV.classList.add("selected");
     this.isSelected = true;
-    this.annotationDIV.style.zIndex = "999";
+    this.annotationDIV.style.zIndex = "2";
     this.drawAnnotation().catch(console.error);
   }
   markAsUnselected() {
@@ -120,12 +122,15 @@ class FoliaBaseAnnotation {
     this.drawAnnotation().catch(console.error);
   }
   markAsDeleted() {
-    this.isDirty = new Date().toISOString();
-    this.annotationRawData.deleted = true;
+    this.annotationRawData.deletedAt = this.isDirty = new Date().toISOString();
   }
   commitObjectChanges() {
     if (!this.isDirty) return;
-    this.dataProxy.postObject(this.getRawData());
+    if (this.annotationRawData.deletedAt) {
+      this.dataProxy.deleteObject(this.id);
+    } else {
+      this.dataProxy.postObject(this.getRawData());
+    }
   }
   update(viewport, annotationRawData) {
     this.viewport = viewport;
@@ -169,6 +174,7 @@ class FoliaBaseAnnotation {
   }
 
   moveTo(point) {
+    if (!this.canManage) return;
     if (!point) return;
     const left = this._startMoving.offset.x + point.x;
     const top = this._startMoving.offset.y + point.y;
@@ -179,6 +185,7 @@ class FoliaBaseAnnotation {
   }
 
   resizeTo(point, corner, withAlt) {
+    if (!this.canManage) return;
     if (!point || !corner) return;
 
     let left = this._startMoving.offset.x + point.x;
@@ -272,6 +279,7 @@ class FoliaBaseAnnotation {
   }
 
   pointTo(point, corner, withAlt) {
+    if (!this.canManage) return;
     const deltaX = this._startMoving.startPoint.x - point.x;
     const deltaY = this._startMoving.startPoint.y - point.y;
     if (corner === FOLIA_LAYER_ROLES.ARROW_CORNERS.BEGIN) {
@@ -362,8 +370,16 @@ class FoliaBaseAnnotation {
   get containerElement() {
     return this.annotationDIV;
   }
-  get canUpdate() {
-    return this.annotationRawData.permissions.canUpdate;
+  get canManage() {
+    const { permissions } = this.foliaPageLayer.dataProxy;
+    return permissions.includes(PERMISSIONS.MANAGE_ANNOTATION);
+  }
+  get canDelete() {
+    const { userEmail, permissions } = this.foliaPageLayer.dataProxy;
+    const isAnnotationOwn = this.annotationRawData.collaboratorEmail === userEmail;
+    return isAnnotationOwn
+      ? permissions.includes(PERMISSIONS.MANAGE_ANNOTATION)
+      : permissions.includes(PERMISSIONS.DELETE_FOREIGN_ANNOTATION);
   }
 }
 
