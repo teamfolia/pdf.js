@@ -2,6 +2,7 @@ import { fromPdfRect, hexColor2RGBA } from "../folia-util";
 import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import FoliaBaseAnnotation from "./base-annotation";
 import { ANNOTATION_TYPES, HighlightKind } from "../constants";
+import { doc } from "prettier";
 
 class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
   editablePropertiesList = ["color"];
@@ -9,6 +10,10 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
+    this.image = document.createElement("img");
+    this.image.setAttribute("data-id", `${this.id}`);
+    this.image.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+    this.annotationDIV.appendChild(this.image);
   }
 
   getRawData() {
@@ -27,13 +32,8 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
       rects,
     };
   }
-
-  async render() {
-    // await super.render()
-    this.updateDimensions();
-    await this.draw();
-  }
-  updateDimensions() {
+  updateDimensions() {}
+  render() {
     const dimension = this.annotationRawData.rects.reduce(
       (acc, pdfRect) => {
         const rect = fromPdfRect(pdfRect, this.viewport.width, this.viewport.height);
@@ -51,56 +51,62 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.style.top = `${dimension.top}px`;
     this.annotationDIV.style.width = `${dimension.right - dimension.left}px`;
     this.annotationDIV.style.height = `${dimension.bottom - dimension.top}px`;
-    // this.annotationDIV.style.color = pdfColor2rgba(this.annotationRawData.color)
+
+    this.image.width = dimension.right - dimension.left;
+    this.image.height = dimension.bottom - dimension.top;
+
+    this.draw(dimension);
   }
-  async draw() {
-    // this.isDirty
-    //   ? this.annotationDIV.classList.add("changed")
-    //   : this.annotationDIV.classList.remove("changed");
 
+  draw(dimension) {
     try {
-      const pdfCanvas = this.foliaLayer.parentNode.querySelector("div.canvasWrapper>canvas");
-      const pdfCtx = pdfCanvas.getContext("2d");
-      this.annotationRawData.rects.forEach((pdfAreaRect, areaIndex) => {
-        // pay attention here ⬇︎
-        if (pdfAreaRect[0] === pdfAreaRect[2] || pdfAreaRect[1] === pdfAreaRect[3]) return;
+      if (this.image.src) return;
 
-        const areaRect = fromPdfRect(pdfAreaRect, this.viewport.width, this.viewport.height);
-        const pdfAreaImageData = pdfCtx.getImageData(...areaRect.map((i) => i * window.devicePixelRatio));
+      const pdfCanvas = this.foliaPageLayer.pageDiv.querySelector("div.canvasWrapper>canvas");
+      // const pdfCtx = pdfCanvas.getContext("2d", { willReadFrequently: true });
 
-        const selector = `[data-area-index="${areaIndex.toString()}"]`;
-        let areaCanvas = this.annotationDIV.querySelector(selector);
-        if (!areaCanvas) {
-          areaCanvas = document.createElement("canvas");
-          areaCanvas.setAttribute("data-id", `${this.annotationRawData.id}`);
-          areaCanvas.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
-          areaCanvas.setAttribute("data-area-index", areaIndex.toString());
-          this.annotationDIV.prepend(areaCanvas);
-        }
+      const tmpCanvas = document.createElement("canvas");
+      tmpCanvas.width = pdfCanvas.width;
+      tmpCanvas.height = pdfCanvas.height;
+      const tmpCtx = tmpCanvas.getContext("2d");
+      tmpCtx.fillStyle = hexColor2RGBA(this.annotationRawData.color);
 
-        areaCanvas.style.position = "absolute";
-        areaCanvas.style.left = areaRect[0] - this.annotationDIV.offsetLeft + "px";
-        areaCanvas.style.top = areaRect[1] - this.annotationDIV.offsetTop + "px";
-        areaCanvas.width = pdfAreaImageData.width;
-        areaCanvas.height = pdfAreaImageData.height;
-        areaCanvas.style.width = areaRect[2] + "px";
-        areaCanvas.style.height = areaRect[3] + "px";
-        const areaCtx = areaCanvas.getContext("2d");
-        areaCtx.fillStyle = hexColor2RGBA(this.annotationRawData.color);
+      this.annotationRawData.rects.forEach((areaPdfRect) => {
+        const areaRect = fromPdfRect(areaPdfRect, this.viewport.width, this.viewport.height).map(
+          (n) => n * window.devicePixelRatio
+        );
 
         const lineWidth = 4 * this.foliaPageLayer.pdfViewerScale;
         if (this.annotationRawData.kind === HighlightKind.CROSSLINE) {
-          areaCtx.fillRect(0, pdfAreaImageData.height / 2, pdfAreaImageData.width, lineWidth);
+          tmpCtx.fillRect(areaRect[0], areaRect[1] + areaRect[3] / 2, areaRect[2], lineWidth);
         } else if (this.annotationRawData.kind === HighlightKind.UNDERLINE) {
-          areaCtx.fillRect(0, pdfAreaImageData.height - lineWidth, pdfAreaImageData.width, lineWidth);
+          tmpCtx.fillRect(areaRect[0], areaRect[1] + areaRect[3] - lineWidth, areaRect[2], lineWidth);
         } else if (this.annotationRawData.kind === HighlightKind.MARKER) {
-          areaCtx.globalCompositeOperation = "darken";
-          areaCtx.putImageData(pdfAreaImageData, 0, 0);
-          areaCtx.fillRect(0, 0, pdfAreaImageData.width, pdfAreaImageData.height);
+          tmpCtx.globalCompositeOperation = "darken";
+          tmpCtx.drawImage(pdfCanvas, ...areaRect, ...areaRect);
+          tmpCtx.fillRect(...areaRect);
         }
       });
+
+      const annoCanvas = document.createElement("canvas");
+      annoCanvas.width = (dimension.right - dimension.left) * window.devicePixelRatio;
+      annoCanvas.height = (dimension.bottom - dimension.top) * window.devicePixelRatio;
+      const annCtx = annoCanvas.getContext("2d");
+      annCtx.drawImage(
+        tmpCanvas,
+        dimension.left * window.devicePixelRatio,
+        dimension.top * window.devicePixelRatio,
+        (dimension.right - dimension.left) * window.devicePixelRatio,
+        (dimension.bottom - dimension.top) * window.devicePixelRatio,
+        0,
+        0,
+        (dimension.right - dimension.left) * window.devicePixelRatio,
+        (dimension.bottom - dimension.top) * window.devicePixelRatio
+      );
+
+      this.image.src = annoCanvas.toDataURL();
     } catch (e) {
-      console.error(e.message);
+      console.error("error while draw highliht " + e.message);
     }
   }
 }

@@ -213,7 +213,6 @@ export class FoliaPDFViewer {
     if (isValidScrollMode(scrollMode)) this.pdfViewer.scrollMode = scrollMode;
     if (isValidSpreadMode(spreadMode)) this.pdfViewer.spreadMode = spreadMode;
     if (isValidRotation(rotation)) this.pdfViewer.pagesRotation = rotation;
-    // console.log({ storedHash });
     this.pdfLinkService.setHash(storedHash);
     if (!this.pdfViewer.currentScaleValue) {
       this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
@@ -298,6 +297,9 @@ export class FoliaPDFViewer {
     this.downloadComplete = true;
 
     const { firstPagePromise, onePageRendered, pagesPromise } = this.pdfViewer;
+    const pageLayoutPromise = pdfDocument.getPageLayout().catch(function () {});
+    const pageModePromise = pdfDocument.getPageMode().catch(function () {});
+    const openActionPromise = pdfDocument.getOpenAction().catch(function () {});
 
     firstPagePromise.then(() => {
       this.eventBus.dispatch("documentloaded", { source: this });
@@ -306,19 +308,24 @@ export class FoliaPDFViewer {
     this.store = new ViewHistory(this.dataProxy.documentId);
     const storedPromise = this.store
       .getMultiple({
-        page: 1,
+        page: null,
         zoom: DEFAULT_SCALE_VALUE,
-        scrollLeft: "-0",
+        scrollLeft: "0",
         scrollTop: "0",
-        rotation: 0,
+        rotation: null,
+        sidebarView: -1,
+        scrollMode: -1,
+        spreadMode: -1,
       })
       .catch(() => Object.create(null));
 
     firstPagePromise.then((pdfPage) => {
-      Promise.all([animationStarted, storedPromise])
-        .then(async ([timeStamp, stored, pageLayout, pageMode, openAction]) => {
-          const hash = `page=${stored.page}&zoom=${stored.zoom},${stored.scrollLeft},${stored.scrollTop}`;
-          console.log({ hash });
+      Promise.all([animationStarted, storedPromise, pageLayoutPromise, pageModePromise])
+        .then(async ([timeStamp, stored, pageLayout, pageMode, openAction, openActionPromise]) => {
+          let hash = `zoom=${stored.zoom}`;
+          if (stored.page) {
+            hash = `page=${stored.page}&zoom=${stored.zoom},${stored.scrollLeft},${stored.scrollTop}`;
+          }
           this.setInitialView(hash, {
             rotation: 0,
             sidebarView: null,
@@ -328,10 +335,10 @@ export class FoliaPDFViewer {
           this.eventBus.dispatch("documentinit", { source: this });
           this.pdfViewer.focus();
           await Promise.race([pagesPromise, promisedTimeout(FORCE_PAGES_LOADED_TIMEOUT)]);
-          if (this.pdfViewer.hasEqualPageSizes) return;
-          // eslint-disable-next-line no-self-assign
-          this.pdfViewer.currentScaleValue = this.pdfViewer.currentScaleValue;
-          this.setInitialView(hash);
+          // if (this.pdfViewer.hasEqualPageSizes) return;
+          // // eslint-disable-next-line no-self-assign
+          // this.pdfViewer.currentScaleValue = this.pdfViewer.currentScaleValue;
+          // this.setInitialView(hash);
         })
         .catch((err) => {
           console.error(err);
@@ -406,7 +413,6 @@ export class FoliaPDFViewer {
 
     return Promise.allSettled(promises);
   }
-
   refreshFoliaLayers() {
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
@@ -423,7 +429,6 @@ export class FoliaPDFViewer {
     };
     fileInput.click();
   }
-
   startDrawing(toolType, preset) {
     // console.log('startDrawing 1', {annotationType, preset})
     if (toolType === TOOLS.INK) {

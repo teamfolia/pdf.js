@@ -33,28 +33,26 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
       rect,
     };
   }
-  async render() {
+  render() {
+    const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
     const [left, top, width, height] = fromPdfRect(
       this.annotationRawData.rect,
       this.viewport.width,
       this.viewport.height,
       this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale
     );
-    // console.log("square render", [left, top, width, height], hexColor2RGBA(this.annotationRawData.color))
-    this.annotationDIV.style.left = `${left}px`;
-    this.annotationDIV.style.top = `${top}px`;
-    this.annotationDIV.style.width = `${width}px`;
-    this.annotationDIV.style.height = `${height}px`;
+
+    this.annotationDIV.style.left = `${left - lineWidth / 2}px`;
+    this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
+    this.annotationDIV.style.width = `${width + lineWidth}px`;
+    this.annotationDIV.style.height = `${height + lineWidth}px`;
     this.draw();
   }
-  async draw() {
+  draw() {
     this.annotationDIV.style.backgroundPosition = "center";
     this.annotationDIV.style.backgroundSize = `${this.annotationDIV.clientWidth}px ${this.annotationDIV.clientHeight}px`;
     this.annotationDIV.style.backgroundRepeat = "no-repeat";
     this.annotationDIV.style.backgroundImage = `url("${this.drawSquare()}")`;
-    // this.isDirty
-    //   ? this.annotationDIV.classList.add("changed")
-    //   : this.annotationDIV.classList.remove("changed");
   }
   drawSquare() {
     const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;

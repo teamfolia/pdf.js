@@ -11,7 +11,6 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.classList.add(this.annotationRawData.__typename);
     this.annotationDIV.style.overflow = "show";
     this.buildCorners();
-    // super.buildBaseCorners();
   }
 
   buildCorners() {
@@ -23,7 +22,6 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
       this.annotationDIV.appendChild(cornerDiv);
     });
   }
-
   getRawData() {
     const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth, sourcePoint, targetPoint } =
       this.annotationRawData;
@@ -41,8 +39,7 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
       targetPoint: toPdfPoint(this.targetPoint, this.viewport.width, this.viewport.height),
     };
   }
-
-  async render() {
+  render() {
     this.sourcePoint = fromPdfPoint(
       this.annotationRawData.sourcePoint,
       this.viewport.width,
@@ -54,39 +51,9 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
       this.viewport.height
     );
 
-    // console.log("ARROW ANNO", this.sourcePoint, this.targetPoint);
-    await this.draw();
+    this.draw();
   }
-
-  async draw() {
-    // let sourceDiv = this.foliaLayer.querySelector(`#sourceDiv_${this.id}`);
-    // if (!sourceDiv) {
-    //   sourceDiv = document.createElement("div");
-    //   sourceDiv.setAttribute("id", `sourceDiv_${this.id}`);
-    //   sourceDiv.style.position = "absolute";
-    //   sourceDiv.style.width = "4px";
-    //   sourceDiv.style.height = "4px";
-    //   sourceDiv.style.borderRadius = "2px";
-    //   sourceDiv.style.backgroundColor = "#FF0000";
-    //   this.foliaLayer.appendChild(sourceDiv);
-    // }
-    // sourceDiv.style.left = this.sourcePoint.x - 2 + "px";
-    // sourceDiv.style.top = this.sourcePoint.y - 2 + "px";
-
-    // let targetDiv = this.foliaLayer.querySelector(`#targetDiv_${this.id}`);
-    // if (!targetDiv) {
-    //   targetDiv = document.createElement("div");
-    //   targetDiv.setAttribute("id", `targetDiv_${this.id}`);
-    //   targetDiv.style.position = "absolute";
-    //   targetDiv.style.width = "4px";
-    //   targetDiv.style.height = "4px";
-    //   targetDiv.style.borderRadius = "2px";
-    //   targetDiv.style.backgroundColor = "#0000FF";
-    //   this.foliaLayer.appendChild(targetDiv);
-    // }
-    // targetDiv.style.left = this.targetPoint.x - 2 + "px";
-    // targetDiv.style.top = this.targetPoint.y - 2 + "px";
-
+  draw() {
     let width = Math.abs(this.sourcePoint.x - this.targetPoint.x);
     let height = Math.abs(this.sourcePoint.y - this.targetPoint.y);
     let hypotenuse = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
@@ -111,11 +78,9 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.style.height = arrowContainerHeight + "px";
     this.annotationDIV.style.transformOrigin = "left center";
     this.annotationDIV.style.transform = `rotate(${angle}deg)`;
-    // this.annotationDIV.style.backgroundColor = "#00000011";
 
     this.drawArrow();
   }
-
   drawArrow() {
     const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
     const canvas = document.createElement("canvas");

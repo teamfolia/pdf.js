@@ -41,6 +41,7 @@ class Viewer {
 
   #workspaceId;
   #documentId;
+  #annotations = [];
 
   constructor() {}
 
@@ -106,7 +107,7 @@ class Viewer {
   async getPermissions() {
     const workspaceId = this.#workspaceId;
     const workspace = await this.$fetch.get(`/store/workspaces/${workspaceId}`);
-    console.log(workspace.permissions);
+    // console.log(workspace.permissions);
     this.permissions = workspace.permissions;
   }
   async getContent() {
@@ -122,25 +123,13 @@ class Viewer {
 
     const path = `/store/workspaces/${workspaceId}/documents/${documentId}/objects`;
     const objects = await this.$fetch.get(path);
-    return objects
-      .filter((object) => object.page === pageNumber)
-      .map((object) => {
-        return {
-          ...object,
-          permissions: {
-            canCreate: true,
-            canUpdate: true,
-            canDelete: true,
-            canDeleteConversation: true,
-            canAddReply: true,
-          },
-        };
-      });
+    this.#annotations = objects;
   }
 
   async putObject(objectData) {
     const workspaceId = this.#workspaceId;
     const documentId = this.#documentId;
+    console.log("==>", { workspaceId, documentId, objectData });
   }
 
   updateObjectsDealy = null;
@@ -193,6 +182,7 @@ class Viewer {
     if (storedDocumentId) await this.openDocument(workspaceId, storedDocumentId);
   }
   async openDocument(workspaceId, documentId) {
+    // localStorage.removeItem("pdfjs.history");
     sessionStorage.setItem("documentId", documentId);
 
     if (!window.foliaPdfViewer) {
@@ -217,22 +207,9 @@ class Viewer {
             "DELETE_FOREIGN_ANNOTATION",
             "MANAGE_OWN_COMMENT",
             "DELETE_FOREIGN_COMMENT",
-            "PUBLISH_WORKSPACE",
-            "SHARE_WORKSPACE",
-            "RENAME_WORKSPACE",
-            "DELETE_WORKSPACE",
-            "ARCHIVE_WORKSPACE",
-            "DUPLICATE_WORKSPACE",
-            "UPLOAD_DOCUMENT",
-            "RENAME_DOCUMENT",
-            "DELETE_DOCUMENT",
-            "COPY_DOCUMENT",
-            "DOWNLOAD_SOURCE_DOCUMENT",
-            "DOWNLOAD_ORIGINAL_DOCUMENT",
-            "DOWNLOAD_ANNOTATED_DOCUMENT",
           ];
         },
-        getObjects: this.getObjects.bind(this),
+        getObjects: (pageNumber) => this.#annotations.filter((object) => object.page === pageNumber),
         postObject: this.postObject.bind(this),
         deleteObject: this.deleteObject.bind(this),
         stopDrawing: () => this.stopDrawing(),
@@ -252,6 +229,7 @@ class Viewer {
     this.#documentId = documentId;
     await this.getPermissions();
     const content = await this.getContent();
+    await this.getObjects();
     await window.foliaPdfViewer.open(content);
   }
   onDocumentLoaded(e) {
@@ -374,9 +352,17 @@ document.addEventListener(
     const viewer = new Viewer();
     await viewer.resume();
 
+    const refreshBtn = document.querySelector("#refresh");
+    refreshBtn.onclick = () => {
+      viewer
+        .getObjects()
+        .then(() => foliaPdfViewer.refreshFoliaLayers())
+        .catch(console.error);
+    };
+
     // ----- setup zoom buttons -----
-    const zoomInBtn = document.querySelector("#zoomInBtn");
-    const zoomOutBtn = document.querySelector("#zoomOutBtn");
+    const zoomInBtn = document.querySelector("#zoom-in");
+    const zoomOutBtn = document.querySelector("#zoom-out");
     zoomInBtn.onclick = () => window.foliaPdfViewer.zoomIn();
     zoomOutBtn.onclick = () => window.foliaPdfViewer.zoomOut();
 
@@ -388,6 +374,12 @@ document.addEventListener(
     // ------ setup tool properties elements -----
     document.querySelectorAll(".preset-button").forEach((el) => {
       el.onchange = (e) => viewer.presetBtnsOnClick(e);
+    });
+
+    document.querySelectorAll("#preset-width").forEach((el) => {
+      el.oninput = (e) => {
+        window.foliaPdfViewer.updateObjectsDrawingProperties({ lineWidth: parseInt(e.target.value, 10) });
+      };
     });
   },
   true

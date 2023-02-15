@@ -761,7 +761,6 @@ class PDFViewer {
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
         this.#onePageRenderedOrForceFetch().then(async () => {
-          console.log("onePageRenderedOrForceFetch");
           this.findController?.setDocument(pdfDocument); // Enable searching.
           this._scriptingManager?.setDocument(pdfDocument); // Enable scripting.
 
@@ -1038,6 +1037,7 @@ class PDFViewer {
         page = this._location.pageNumber;
         dest = [null, { name: "XYZ" }, this._location.left, this._location.top, null];
       }
+
       this.scrollPageIntoView({
         pageNumber: page,
         destArray: dest,

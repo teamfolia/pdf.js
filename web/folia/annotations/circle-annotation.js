@@ -33,27 +33,25 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
       rect,
     };
   }
-  async render() {
+  render() {
+    const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
     const [left, top, width, height] = fromPdfRect(
       this.annotationRawData.rect,
       this.viewport.width,
       this.viewport.height
     );
-    // console.log("circle render", [left, top, width, height], hexColor2RGBA(this.annotationRawData.color));
-    this.annotationDIV.style.left = `${left}px`;
-    this.annotationDIV.style.top = `${top}px`;
-    this.annotationDIV.style.width = `${width}px`;
-    this.annotationDIV.style.height = `${height}px`;
+
+    this.annotationDIV.style.left = `${left - lineWidth / 2}px`;
+    this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
+    this.annotationDIV.style.width = `${width + lineWidth}px`;
+    this.annotationDIV.style.height = `${height + lineWidth}px`;
     this.draw();
   }
-  async draw() {
+  draw() {
     this.annotationDIV.style.backgroundPosition = "center";
     this.annotationDIV.style.backgroundSize = `${this.annotationDIV.clientWidth}px ${this.annotationDIV.clientHeight}px`;
     this.annotationDIV.style.backgroundRepeat = "no-repeat";
     this.annotationDIV.style.backgroundImage = `url("${this.drawCircle()}")`;
-    // this.isDirty
-    //   ? this.annotationDIV.classList.add("changed")
-    //   : this.annotationDIV.classList.remove("changed");
   }
   drawCircle() {
     const canvas = document.createElement("canvas");

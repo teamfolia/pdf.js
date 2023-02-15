@@ -46,13 +46,9 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       this.annotationDIV.style.height = height;
       this.isDirty = new Date().getTime();
     };
-    textArea.onclick = (e) => {
-      // console.log('text area onclick')
-      e.stopPropagation();
-    };
+    textArea.onclick = (e) => e.stopPropagation();
     this.annotationDIV.appendChild(textArea);
     this.textArea = textArea;
-    // console.log(textArea)
     this.buildBaseCorners();
   }
   getRawData() {
@@ -95,37 +91,30 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       rect,
     };
   }
-  async render() {
-    await super.render();
+  render() {
+    super.render();
     this.textArea.value = this.annotationRawData.text;
 
     if (this.annotationRawData.newbie) {
       this.foliaPageLayer.multipleSelect.startEditMode(this);
     }
   }
-  async draw() {
-    // console.log("DRAW", this.annotationRawData);
+  draw() {
     this.textArea.style.left = "0px";
     this.textArea.style.top = "0px";
     this.textArea.style.width = `${this.annotationDIV.clientWidth}px`;
     this.textArea.style.height = `${this.annotationDIV.clientHeight}px`;
     this.textArea.style.color = hexColor2RGBA(this.annotationRawData.color);
-    const scale = this.annotationRawData.fontSize * this.foliaPageLayer.pdfViewerScale;
-    this.textArea.style.fontSize = `${scale}px`;
+    const fontSize = this.annotationRawData.fontSize * this.foliaPageLayer.pdfViewerScale;
+    this.textArea.style.fontSize = `${fontSize}px`;
     this.textArea.style.textAlign = TextAlignment[this.annotationRawData.textAlignment];
     this.textArea.style.fontWeight = FontWeight[this.annotationRawData.fontWeight];
     this.textArea.style.fontFamily = FontFamily[this.annotationRawData.fontFamily];
-
-    // this.isDirty
-    //   ? this.annotationDIV.classList.add("changed")
-    //   : this.annotationDIV.classList.remove("changed");
   }
   markAsUnselected() {
     super.markAsUnselected();
     this.stopEditMode();
     if (this.annotationRawData.newbie && this.textArea.value.length === 0) {
-      // console.trace()
-      // console.log('newbie --->', this.annotationRawData.newbie, this.textArea.value.length)
       this.foliaPageLayer.annotationObjects.delete(this.id);
     } else if (this.annotationRawData.newbie && this.textArea.value.length > 0) {
       this.foliaPageLayer.commitChanges();

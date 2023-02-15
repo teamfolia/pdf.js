@@ -78,7 +78,8 @@ class TextBoxBuilder extends BaseBuilder {
     if (!this.textArea) return;
     this.textArea.style.color = this.preset.color;
     this.textArea.style.fontFamily = this.preset.fontFamily;
-    this.textArea.style.fontSize = this.preset.fontSize + "px";
+    const fontSize = this.preset.fontSize * this.foliaPageLayer.pdfViewerScale;
+    this.textArea.style.fontSize = `${fontSize}px`;
     this.textArea.style.fontWeight = FONT_WEIGHT[this.preset.fontWeight];
     this.textArea.style.textAlign = TEXT_ALIGNMENT[this.preset.textAlignment];
     setTimeout(() => this.updateTextareaHeight(), 10);

@@ -1,4 +1,4 @@
-import FoliaConversationAnnotation from "./annotations/conversation-annotation";
+import FoliaConversationAnnotation from "./annotations/_conversation-annotation";
 import FoliaImageAnnotation from "./annotations/image-annotation";
 import FoliaTypewriterAnnotation from "./annotations/text-box-annotation";
 import MultipleSelect from "./MultiSelectObjects";
@@ -125,9 +125,61 @@ class FoliaPageLayer {
     });
   }
   refresh() {
-    this.render(this.viewport).catch(console.error);
+    // console.log("refreshFoliaLayers");
+    this.render(this.viewport);
   }
-  async render(viewport) {
+
+  render(viewport) {
+    // console.log("render", this.pageNumber);
+    this.viewport = viewport;
+    if (!this.foliaLayer) {
+      this.foliaLayer = document.createElement("div");
+      this.foliaLayer.setAttribute("data-role", FOLIA_LAYER_ROLES.FOLIA_LAYER);
+      this.foliaLayer.setAttribute("data-page-number", `${this.pageNumber}`);
+      this.foliaLayer.className = "folia-layer";
+      this.foliaLayer.onmousedown = this.onFoliaLayerMouseDown.bind(this);
+      this.foliaLayer.onclick = this.onFoliaLayerClick.bind(this);
+    }
+    this.foliaLayer.style.width = Math.floor(this.pageDiv.clientWidth) + "px";
+    this.foliaLayer.style.height = Math.floor(this.pageDiv.clientHeight) + "px";
+    if (!this.pageDiv.querySelector(`[data-page-number="${this.pageNumber}"]`)) {
+      this.pageDiv.appendChild(this.foliaLayer);
+    }
+
+    try {
+      const annotations = this.dataProxy.getObjects(this.pageNumber);
+      // delete
+      for (const [id, annotationObject] of this.annotationObjects) {
+        if (!annotations.find((a) => a.id === id)) {
+          this.annotationObjects.delete(annotationObject.id);
+        }
+      }
+
+      // create or update
+      for (const annotation of annotations) {
+        let annotationObject = this.annotationObjects.get(annotation.id);
+        if (!annotationObject) {
+          const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
+          annotationObject = new AnnoClass(this, annotation);
+          console.time("anno-create");
+          this.annotationObjects.set(annotation.id, annotationObject);
+          console.timeEnd("anno-create");
+        } else {
+          console.time("anno-update");
+          annotationObject.update(this.viewport, annotation);
+          console.timeEnd("anno-update");
+        }
+      }
+
+      if (this.annotationBuilderClass && !this.annotationBuilder) {
+        this.startDrawing(this.annotationBuilderClass);
+      }
+    } catch (err) {
+      console.error(`error in render on page ${this.pageNumber}`, err.message);
+    }
+  }
+
+  async render1(viewport) {
     // console.log(">>", this.pageNumber, viewport, this.foliaLayer);
     this.viewport = viewport;
     if (!this.foliaLayer) {
@@ -179,19 +231,28 @@ class FoliaPageLayer {
 
     return;
   }
-  renderSingle(annotationRawData, permissions) {
-    let annoObject = this.annotationObjects.get(annotationRawData.id);
-    if (!annoObject && !annotationRawData.deleted) {
-      const AnnoClass = ANNOTATIONS_CLASSES[annotationRawData.__typename];
-      if (AnnoClass) {
-        annoObject = new AnnoClass(this, { ...annotationRawData, permissions });
-        this.annotationObjects.set(annotationRawData.id, annoObject);
-      }
-    } else if (annoObject && !annotationRawData.deleted) {
-      annoObject.update(this.viewport, annotationRawData);
-    } else if (annoObject && annotationRawData.deleted) {
-      this.annotationObjects.delete(annotationRawData.id);
+  renderSingle(annotation) {
+    let annotationObject = this.annotationObjects.get(annotation.id);
+    if (!annotationObject) {
+      const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
+      annotationObject = new AnnoClass(this, annotation);
+      this.annotationObjects.set(annotation.id, annotationObject);
+    } else {
+      annotationObject.update(this.viewport, annotation);
     }
+
+    // let annoObject = this.annotationObjects.get(annotationRawData.id);
+    // if (!annoObject && !annotationRawData.deleted) {
+    //   const AnnoClass = ANNOTATIONS_CLASSES[annotationRawData.__typename];
+    //   if (AnnoClass) {
+    //     annoObject = new AnnoClass(this, { ...annotationRawData, permissions });
+    //     this.annotationObjects.set(annotationRawData.id, annoObject);
+    //   }
+    // } else if (annoObject && !annotationRawData.deleted) {
+    //   annoObject.update(this.viewport, annotationRawData);
+    // } else if (annoObject && annotationRawData.deleted) {
+    //   this.annotationObjects.delete(annotationRawData.id);
+    // }
   }
   clickByViewerContainer() {
     // this.commit Changes()

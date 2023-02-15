@@ -67,15 +67,8 @@ class BaseBuilder {
         deleted: false,
         ...data,
       };
-      const permissions = {
-        canCreate: true,
-        canUpdate: true,
-        canDelete: true,
-        canDeleteConversation: true,
-        canAddReply: true,
-      };
 
-      this.foliaPageLayer.renderSingle(annotation, permissions);
+      this.foliaPageLayer.renderSingle(annotation);
       this.foliaPageLayer.dataProxy.postObject(annotation);
     }
 

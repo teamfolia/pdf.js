@@ -30,13 +30,14 @@ body {
   top: 0;
   right: 0;
   bottom: 0;
+  /* border: solid 1px red; */
 }
 
 .folia-annotation {
   position: absolute;
   cursor: grabbing;
   background-repeat: no-repeat;
-  /* border: solid 2px transparent; */
+  /* border: solid 1px blue; */
   --annotation-border-color: silver;
 }
 

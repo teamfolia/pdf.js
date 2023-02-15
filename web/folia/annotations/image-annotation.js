@@ -19,7 +19,6 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.appendChild(image);
     this.buildBaseCorners();
   }
-
   getRawData() {
     const viewRect = [
       this.annotationDIV.offsetLeft,
@@ -42,7 +41,7 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
       content,
     };
   }
-  async render() {
+  render() {
     const { width: viewportWidth, height: viewportHeight } = this.viewport;
     const [left, top, width, height] = fromPdfRect(
       this.annotationRawData.rect,
@@ -56,11 +55,7 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     this.image.src = `data:image/png;base64,${this.annotationRawData.content}`;
     this.draw();
   }
-  async draw() {
-    // this.isDirty
-    //   ? this.annotationDIV.classList.add("changed")
-    //   : this.annotationDIV.classList.remove("changed");
-  }
+  draw() {}
 }
 
 export default FoliaImageAnnotation;

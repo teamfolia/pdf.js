@@ -15,7 +15,8 @@ class HighlightBuilder extends BaseBuilder {
 
   resume() {
     if (!this.canvas) {
-      this.pdfCanvas = this.foliaPageLayer.foliaLayer.parentNode.querySelector("div.canvasWrapper>canvas");
+      console.log("resume");
+      this.pdfCanvas = this.foliaPageLayer.pageDiv.querySelector("div.canvasWrapper>canvas");
       this.canvas = this.pdfCanvas.cloneNode();
       this.canvas.style.cursor = "text";
       this.canvas.className = "annotation-builder-container";

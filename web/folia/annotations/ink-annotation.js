@@ -11,7 +11,6 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.classList.add(this.annotationRawData.__typename);
     this.buildBaseCorners();
   }
-
   getRawData() {
     const annotationViewportOffset = {
       x: this.annotationDIV.offsetLeft,
@@ -46,9 +45,7 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       paths,
     };
   }
-
-  async render() {
-    // console.log("-----> render ink <-----");
+  render() {
     const { left, top, right, bottom } = [].concat.apply([], this.annotationRawData.paths).reduce(
       (acc, path, index, arr) => {
         if (index % 2 !== 0) {
@@ -69,12 +66,13 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
 
     // set absolute position and dimensions of annotattion div
     const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
-    this.annotationDIV.style.left = `${left - lineWidth}px`;
-    this.annotationDIV.style.top = `${top - lineWidth}px`;
+    //  * this.foliaPageLayer.pdfViewerScale;
+    this.annotationDIV.style.left = `${left - lineWidth / 2}px`;
+    this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
 
-    // TODO: need to investigate about 3 "
-    this.annotationDIV.style.width = `${right + lineWidth * 3 - left}px`;
-    this.annotationDIV.style.height = `${bottom + lineWidth * 3 - top}px`;
+    // TODO: need to investigate about 3  + lineWidth * 3"
+    this.annotationDIV.style.width = `${right - left + lineWidth}px`;
+    this.annotationDIV.style.height = `${bottom - top + lineWidth}px`;
 
     // convert absolute paths to relative for drawing
     this.relativePdfPaths = this.annotationRawData.paths.map((path) => {
@@ -89,15 +87,9 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       return relativePdfPath;
     });
 
-    // draw annotattion paths into div
-    await this.draw();
+    this.draw();
   }
-
-  async draw() {
-    // this.isDirty
-    //   ? this.annotationDIV.classList.add("changed")
-    //   : this.annotationDIV.classList.remove("changed");
-
+  draw() {
     const canvas = document.createElement("canvas");
     canvas.width = this.annotationDIV.clientWidth;
     canvas.height = this.annotationDIV.clientHeight;

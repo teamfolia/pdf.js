@@ -14,6 +14,7 @@ class FoliaBaseAnnotation {
     this.dataProxy = foliaPageLayer.dataProxy;
     this.annotationRawData = cloneDeep(annotationRawData);
     this.viewport = foliaPageLayer.viewport.clone({ dontFlip: true });
+    this.permissions = [];
 
     // console.log(this.annotationRawData)
     if (this.annotationRawData.newbie) {
@@ -41,7 +42,7 @@ class FoliaBaseAnnotation {
             this.isDirty = new Date().toISOString();
           }
         }
-        return this.drawAnnotation();
+        return this.render();
       },
       get: () =>
         that.editablePropertiesList.reduce((acc, propName) => {
@@ -71,8 +72,7 @@ class FoliaBaseAnnotation {
         }, {}),
     };
   }
-
-  async render() {
+  render() {
     const { width: viewportWidth, height: viewportHeight } = this.viewport;
     const [left, top, width, height] = fromPdfRect(
       this.annotationRawData.rect,
@@ -83,11 +83,11 @@ class FoliaBaseAnnotation {
     this.annotationDIV.style.top = `${top}px`;
     this.annotationDIV.style.width = `${width}px`;
     this.annotationDIV.style.height = `${height}px`;
-    await this.drawAnnotation().catch(console.error);
+    this.drawAnnotation();
   }
 
   drawAnnotation() {
-    return this.draw();
+    this.draw();
   }
   deleteFromCanvas() {
     this.annotationDIV.remove();
@@ -111,7 +111,7 @@ class FoliaBaseAnnotation {
     this.annotationDIV.classList.add("selected");
     this.isSelected = true;
     this.annotationDIV.style.zIndex = "2";
-    this.drawAnnotation().catch(console.error);
+    this.drawAnnotation();
   }
   markAsUnselected() {
     this.setCornersVisibility(false);
@@ -119,7 +119,7 @@ class FoliaBaseAnnotation {
     this.isSelected = false;
     this.annotationDIV.style.zIndex = "1";
     this.commitObjectChanges();
-    this.drawAnnotation().catch(console.error);
+    this.drawAnnotation();
   }
   markAsDeleted() {
     this.annotationRawData.deletedAt = this.isDirty = new Date().toISOString();
@@ -141,7 +141,7 @@ class FoliaBaseAnnotation {
     for (const [key, value] of Object.entries(annotationRawData)) {
       this.annotationRawData[key] = value;
     }
-    this.render().catch(console.error);
+    this.render();
   }
   memorizeMovingOffset(startPoint) {
     if (!startPoint) return;
@@ -181,7 +181,7 @@ class FoliaBaseAnnotation {
     this.annotationDIV.style.left = left + "px";
     this.annotationDIV.style.top = top + "px";
     this.isDirty = new Date().toISOString();
-    requestAnimationFrame(() => this.drawAnnotation().catch(console.error));
+    requestAnimationFrame(() => this.drawAnnotation());
   }
 
   resizeTo(point, corner, withAlt) {
@@ -275,7 +275,7 @@ class FoliaBaseAnnotation {
     }
 
     this.isDirty = new Date().toISOString();
-    requestAnimationFrame(() => this.drawAnnotation().catch(console.error));
+    requestAnimationFrame(() => this.drawAnnotation());
   }
 
   pointTo(point, corner, withAlt) {
@@ -289,7 +289,7 @@ class FoliaBaseAnnotation {
       this.targetPoint.x = this._startMoving.targetPoint.x - deltaX;
       this.targetPoint.y = this._startMoving.targetPoint.y - deltaY;
     }
-    requestAnimationFrame(() => this.drawAnnotation().catch(console.error));
+    requestAnimationFrame(() => this.drawAnnotation());
     this.isDirty = new Date().toISOString();
   }
 

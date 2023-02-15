@@ -391,7 +391,6 @@ class PDFLinkService {
           }
         }
       }
-      console.log({ dest, pageNumber });
       if (dest) {
         this.pdfViewer.scrollPageIntoView({
           pageNumber: pageNumber || this.page,
