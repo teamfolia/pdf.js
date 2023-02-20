@@ -56,7 +56,14 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
       this.image.height = dimension.bottom - dimension.top;
 
       // console.log(!!this.image.src && !this.needToReRender);
-      if (!!this.image.src && !this.needToReRender) return;
+      clearTimeout(this.reRenderTImer);
+      if (!!this.image.src && !this.needToReRender) {
+        this.reRenderTImer = setTimeout(() => {
+          this.needToReRender = true;
+          this.render();
+        }, 500);
+        return;
+      }
 
       const pdfCanvas = this.foliaPageLayer.pageDiv.querySelector("div.canvasWrapper>canvas");
       const tmpCanvas = document.createElement("canvas");
