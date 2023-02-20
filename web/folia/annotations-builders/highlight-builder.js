@@ -14,23 +14,26 @@ class HighlightBuilder extends BaseBuilder {
   }
 
   resume() {
-    if (!this.canvas) {
-      console.log("resume");
-      this.pdfCanvas = this.foliaPageLayer.pageDiv.querySelector("div.canvasWrapper>canvas");
-      this.canvas = this.pdfCanvas.cloneNode();
-      this.canvas.style.cursor = "text";
-      this.canvas.className = "annotation-builder-container";
-      this.canvas.onclick = this.onMouseClick.bind(this);
-      this.canvas.onmousedown = this.onMouseDown.bind(this);
-      this.canvas.onmousemove = this.onMouseMove.bind(this);
-      this.canvas.onmouseup = this.onMouseUp.bind(this);
-      this.canvas.onmouseout = this.onMouseUp.bind(this);
-    }
-    this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    // console.log("resume", this.foliaPageLayer.pageNumber);
     this.textBlocks = [];
     this.selectedBlocks = [];
     this.groups = [];
-    this.calcTextBlocks();
+
+    setTimeout(() => {
+      if (!this.canvas) {
+        this.pdfCanvas = this.foliaPageLayer.pageDiv.querySelector("div.canvasWrapper>canvas");
+        this.canvas = this.pdfCanvas.cloneNode();
+        this.canvas.style.cursor = "text";
+        this.canvas.className = "annotation-builder-container";
+        this.canvas.onclick = this.onMouseClick.bind(this);
+        this.canvas.onmousedown = this.onMouseDown.bind(this);
+        this.canvas.onmousemove = this.onMouseMove.bind(this);
+        this.canvas.onmouseup = this.onMouseUp.bind(this);
+        this.canvas.onmouseout = this.onMouseUp.bind(this);
+      }
+      this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+      this.calcTextBlocks();
+    }, 0);
   }
 
   prepareAnnotations2save() {

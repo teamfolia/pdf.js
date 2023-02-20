@@ -131,6 +131,7 @@ class FoliaPageLayer {
 
   render(viewport) {
     // console.log("render", this.pageNumber);
+    if (this._cancelled) return;
     this.viewport = viewport;
     if (!this.foliaLayer) {
       this.foliaLayer = document.createElement("div");
@@ -150,6 +151,7 @@ class FoliaPageLayer {
       const annotations = this.dataProxy.getObjects(this.pageNumber);
       // delete
       for (const [id, annotationObject] of this.annotationObjects) {
+        if (this._cancelled) return;
         if (!annotations.find((a) => a.id === id)) {
           this.annotationObjects.delete(annotationObject.id);
         }
@@ -157,6 +159,7 @@ class FoliaPageLayer {
 
       // create or update
       for (const annotation of annotations) {
+        if (this._cancelled) return;
         let annotationObject = this.annotationObjects.get(annotation.id);
         if (!annotationObject) {
           const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
@@ -172,6 +175,7 @@ class FoliaPageLayer {
       }
 
       if (this.annotationBuilderClass && !this.annotationBuilder) {
+        if (this._cancelled) return;
         this.startDrawing(this.annotationBuilderClass);
       }
     } catch (err) {
@@ -180,6 +184,7 @@ class FoliaPageLayer {
   }
 
   async render1(viewport) {
+    if (this._cancelled) return;
     // console.log(">>", this.pageNumber, viewport, this.foliaLayer);
     this.viewport = viewport;
     if (!this.foliaLayer) {
@@ -202,6 +207,7 @@ class FoliaPageLayer {
 
     const promises = [];
     for (const annoData of annotations) {
+      if (this._cancelled) return;
       let annoObject = this.annotationObjects.get(annoData.id);
       if (!annoObject && !annoData.deleted) {
         // console.log(`RENDER ADD ON PAGE ${this.pageNumber}`, annoData.__typename);
@@ -232,6 +238,7 @@ class FoliaPageLayer {
     return;
   }
   renderSingle(annotation) {
+    if (this._cancelled) return;
     let annotationObject = this.annotationObjects.get(annotation.id);
     if (!annotationObject) {
       const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
@@ -240,19 +247,6 @@ class FoliaPageLayer {
     } else {
       annotationObject.update(this.viewport, annotation);
     }
-
-    // let annoObject = this.annotationObjects.get(annotationRawData.id);
-    // if (!annoObject && !annotationRawData.deleted) {
-    //   const AnnoClass = ANNOTATIONS_CLASSES[annotationRawData.__typename];
-    //   if (AnnoClass) {
-    //     annoObject = new AnnoClass(this, { ...annotationRawData, permissions });
-    //     this.annotationObjects.set(annotationRawData.id, annoObject);
-    //   }
-    // } else if (annoObject && !annotationRawData.deleted) {
-    //   annoObject.update(this.viewport, annotationRawData);
-    // } else if (annoObject && annotationRawData.deleted) {
-    //   this.annotationObjects.delete(annotationRawData.id);
-    // }
   }
   clickByViewerContainer() {
     // this.commit Changes()
@@ -364,16 +358,17 @@ class FoliaPageLayer {
     this.isMouseDown = false;
     this.actionTarget = {};
   }
-  async cancel() {
-    console.log("FoliaPageLayer cancel");
+  cancel() {
+    // console.log("FoliaPageLayer cancel ==>", this.pageNumber);
     this._cancelled = true;
+    if (this.annotationBuilder) this.annotationBuilder.stop();
   }
   hide() {
-    console.log("FoliaPageLayer hide");
+    console.log("FoliaPageLayer hide ==>", this.pageNumber);
     this.foliaLayer.hidden = true;
   }
   show() {
-    console.log("FoliaPageLayer show");
+    console.log("FoliaPageLayer show ==>", this.pageNumber);
     this.foliaLayer.hidden = false;
   }
 }
