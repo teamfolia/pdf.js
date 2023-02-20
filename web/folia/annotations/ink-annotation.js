@@ -1,10 +1,11 @@
 import { ANNOTATION_TYPES } from "../constants";
+import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import { hexColor2RGBA, fromPdfPoint, toPdfPath, fromPdfPath } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";
 
 class FoliaInkAnnotation extends FoliaBaseAnnotation {
   relativePdfPaths = [];
-  editablePropertiesList = ["color", "lineWidth"];
+  editablePropertiesList = ["color", "lineWidth", "paths"];
 
   constructor(...props) {
     super(...props);
@@ -12,27 +13,29 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     this.buildBaseCorners();
   }
   getRawData() {
-    const annotationViewportOffset = {
-      x: this.annotationDIV.offsetLeft,
-      y: this.annotationDIV.offsetTop,
-    };
-    const annotationViewport = {
-      width: this.annotationDIV.clientWidth,
-      height: this.annotationDIV.clientHeight,
-    };
-    const paths = this.relativePdfPaths.map((path) => {
-      const relativeViewPath = fromPdfPath(
-        path,
-        this.annotationDIV.clientWidth,
-        this.annotationDIV.clientHeight,
-        this.annotationDIV.offsetLeft,
-        this.annotationDIV.offsetTop
-      );
+    // const annotationViewportOffset = {
+    //   x: this.annotationDIV.offsetLeft,
+    //   y: this.annotationDIV.offsetTop,
+    // };
+    // const annotationViewport = {
+    //   width: this.annotationDIV.clientWidth,
+    //   height: this.annotationDIV.clientHeight,
+    // };
 
-      return toPdfPath(relativeViewPath, this.viewport.width, this.viewport.height);
-    });
+    // const paths = this.relativePdfPaths.map((path) => {
+    //   const relativeViewPath = fromPdfPath(
+    //     path,
+    //     this.annotationDIV.clientWidth,
+    //     this.annotationDIV.clientHeight,
+    //     this.annotationDIV.offsetLeft,
+    //     this.annotationDIV.offsetTop
+    //   );
 
-    const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth } = this.annotationRawData;
+    //   return toPdfPath(relativeViewPath, this.viewport.width, this.viewport.height);
+    // });
+
+    const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth, paths } =
+      this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.INK,
       id,
@@ -45,7 +48,21 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       paths,
     };
   }
+  updateAnnotationRawData() {
+    this.annotationRawData.paths = this.relativePdfPaths.map((path) => {
+      const relativeViewPath = fromPdfPath(
+        path,
+        this.annotationDIV.clientWidth,
+        this.annotationDIV.clientHeight,
+        this.annotationDIV.offsetLeft,
+        this.annotationDIV.offsetTop
+      );
+
+      return toPdfPath(relativeViewPath, this.viewport.width, this.viewport.height);
+    });
+  }
   render() {
+    // console.log("INK RENDER");
     const { left, top, right, bottom } = [].concat.apply([], this.annotationRawData.paths).reduce(
       (acc, path, index, arr) => {
         if (index % 2 !== 0) {
@@ -64,13 +81,11 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
     );
 
-    // set absolute position and dimensions of annotattion div
-    const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
-    //  * this.foliaPageLayer.pdfViewerScale;
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
+
     this.annotationDIV.style.left = `${left - lineWidth / 2}px`;
     this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
 
-    // TODO: need to investigate about 3  + lineWidth * 3"
     this.annotationDIV.style.width = `${right - left + lineWidth}px`;
     this.annotationDIV.style.height = `${bottom - top + lineWidth}px`;
 
@@ -87,15 +102,12 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       return relativePdfPath;
     });
 
-    this.draw();
-  }
-  draw() {
     const canvas = document.createElement("canvas");
     canvas.width = this.annotationDIV.clientWidth;
     canvas.height = this.annotationDIV.clientHeight;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
+    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     this.relativePdfPaths.forEach((path) => {
       ctx.save();
       const viewportPath = fromPdfPath(path, this.annotationDIV.clientWidth, this.annotationDIV.clientHeight);
@@ -114,6 +126,7 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       ctx.lineTo(p1.x, p1.y);
       ctx.stroke();
     });
+
     this.annotationDIV.style.backgroundImage = `url("${canvas.toDataURL("png")}")`;
   }
 }

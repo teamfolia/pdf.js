@@ -114,7 +114,8 @@ export class FoliaPDFViewer {
       l10n: null,
       annotationEditorMode: 0,
       textLayerMode: 1,
-      annotationMode: AnnotationMode.DISABLE,
+      annotationMode: AnnotationMode.ENABLE,
+      annotationEditorMode: -1,
       imageResourcesPath: "./images/",
       enablePrintAutoRotate: true,
       useOnlyCssZoom: false,
@@ -385,10 +386,12 @@ export class FoliaPDFViewer {
     await Promise.all(promises);
   }
   zoomIn() {
+    if (this.zoom >= 500) return;
     this.pdfViewer.increaseScale();
     this.pdfViewer.update();
   }
   zoomOut() {
+    if (this.zoom <= 40) return;
     this.pdfViewer.decreaseScale();
     this.pdfViewer.update();
   }

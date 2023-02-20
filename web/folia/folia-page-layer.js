@@ -161,13 +161,13 @@ class FoliaPageLayer {
         if (!annotationObject) {
           const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
           annotationObject = new AnnoClass(this, annotation);
-          console.time("anno-create");
+          // console.time("anno-create " + annotation.__typename);
           this.annotationObjects.set(annotation.id, annotationObject);
-          console.timeEnd("anno-create");
+          // console.timeEnd("anno-create " + annotation.__typename);
         } else {
-          console.time("anno-update");
+          // console.time("anno-update " + annotation.__typename);
           annotationObject.update(this.viewport, annotation);
-          console.timeEnd("anno-update");
+          // console.timeEnd("anno-update " + annotation.__typename);
         }
       }
 

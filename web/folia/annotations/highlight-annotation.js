@@ -5,7 +5,7 @@ import { ANNOTATION_TYPES, HighlightKind } from "../constants";
 import { doc } from "prettier";
 
 class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
-  editablePropertiesList = ["color"];
+  editablePropertiesList = ["kind", "text", "color", "rects"];
   permanentPosition = true;
 
   constructor(...props) {
@@ -32,39 +32,33 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
       rects,
     };
   }
-  updateDimensions() {}
   render() {
-    const dimension = this.annotationRawData.rects.reduce(
-      (acc, pdfRect) => {
-        const rect = fromPdfRect(pdfRect, this.viewport.width, this.viewport.height);
-        return {
-          left: Math.min(acc.left, rect[0]),
-          top: Math.min(acc.top, rect[1]),
-          right: Math.max(acc.right, rect[0] + rect[2]),
-          bottom: Math.max(acc.bottom, rect[1] + rect[3]),
-        };
-      },
-      { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
-    );
-
-    this.annotationDIV.style.left = `${dimension.left}px`;
-    this.annotationDIV.style.top = `${dimension.top}px`;
-    this.annotationDIV.style.width = `${dimension.right - dimension.left}px`;
-    this.annotationDIV.style.height = `${dimension.bottom - dimension.top}px`;
-
-    this.image.width = dimension.right - dimension.left;
-    this.image.height = dimension.bottom - dimension.top;
-
-    this.draw(dimension);
-  }
-
-  draw(dimension) {
     try {
-      if (this.image.src) return;
+      const dimension = this.annotationRawData.rects.reduce(
+        (acc, pdfRect) => {
+          const rect = fromPdfRect(pdfRect, this.viewport.width, this.viewport.height);
+          return {
+            left: Math.min(acc.left, rect[0]),
+            top: Math.min(acc.top, rect[1]),
+            right: Math.max(acc.right, rect[0] + rect[2]),
+            bottom: Math.max(acc.bottom, rect[1] + rect[3]),
+          };
+        },
+        { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
+      );
+
+      this.annotationDIV.style.left = `${dimension.left}px`;
+      this.annotationDIV.style.top = `${dimension.top}px`;
+      this.annotationDIV.style.width = `${dimension.right - dimension.left}px`;
+      this.annotationDIV.style.height = `${dimension.bottom - dimension.top}px`;
+
+      this.image.width = dimension.right - dimension.left;
+      this.image.height = dimension.bottom - dimension.top;
+
+      // console.log(!!this.image.src && !this.needToReRender);
+      if (!!this.image.src && !this.needToReRender) return;
 
       const pdfCanvas = this.foliaPageLayer.pageDiv.querySelector("div.canvasWrapper>canvas");
-      // const pdfCtx = pdfCanvas.getContext("2d", { willReadFrequently: true });
-
       const tmpCanvas = document.createElement("canvas");
       tmpCanvas.width = pdfCanvas.width;
       tmpCanvas.height = pdfCanvas.height;
@@ -106,7 +100,7 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
 
       this.image.src = annoCanvas.toDataURL();
     } catch (e) {
-      console.error("error while draw highliht " + e.message);
+      console.error("error while render highliht " + e.message);
     }
   }
 }

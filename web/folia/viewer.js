@@ -39,7 +39,7 @@ class Viewer {
     preset: this.presets.default,
   };
 
-  #workspaceId;
+  #projectId;
   #documentId;
   #annotations = [];
 
@@ -105,71 +105,71 @@ class Viewer {
 
   // api requests
   async getPermissions() {
-    const workspaceId = this.#workspaceId;
-    const workspace = await this.$fetch.get(`/store/workspaces/${workspaceId}`);
-    // console.log(workspace.permissions);
-    this.permissions = workspace.permissions;
+    const projectId = this.#projectId;
+    const project = await this.$fetch.get(`/store/projects/${projectId}`);
+    // console.log(project.permissions);
+    this.permissions = project.permissions;
   }
   async getContent() {
-    const workspaceId = this.#workspaceId;
+    const projectId = this.#projectId;
     const documentId = this.#documentId;
-    const path = `/store/workspaces/${workspaceId}/documents/${documentId}/content`;
+    const path = `/store/projects/${projectId}/documents/${documentId}/content`;
     return await this.$fetch.get(path);
   }
 
   async getObjects(pageNumber) {
-    const workspaceId = this.#workspaceId;
+    const projectId = this.#projectId;
     const documentId = this.#documentId;
 
-    const path = `/store/workspaces/${workspaceId}/documents/${documentId}/objects`;
+    const path = `/store/projects/${projectId}/documents/${documentId}/objects`;
     const objects = await this.$fetch.get(path);
     this.#annotations = objects;
   }
 
   async putObject(objectData) {
-    const workspaceId = this.#workspaceId;
+    const projectId = this.#projectId;
     const documentId = this.#documentId;
-    console.log("==>", { workspaceId, documentId, objectData });
+    console.log("==>", { projectId, documentId, objectData });
   }
 
   updateObjectsDealy = null;
   updatedObjects = [];
   postObject(objectData) {
-    const workspaceId = this.#workspaceId;
+    const projectId = this.#projectId;
     const documentId = this.#documentId;
-    console.log("postObject", { workspaceId, documentId, objectData });
+    console.log("postObject", { projectId, documentId, objectData });
   }
   deleteObject(objectId) {
-    const workspaceId = this.#workspaceId;
+    const projectId = this.#projectId;
     const documentId = this.#documentId;
-    console.log("deleteObject", { workspaceId, documentId, objectId });
+    console.log("deleteObject", { projectId, documentId, objectId });
   }
   // end of api requests
 
   async resume() {
-    const storedWorkspaceId = sessionStorage.getItem("workspaceId");
-    const workspaces = await this.$fetch.get("/store/workspaces");
+    const storedProjectId = sessionStorage.getItem("projectId");
+    const projects = await this.$fetch.get("/store/projects");
 
-    const workspacesList = document.getElementById("workspaces-list");
-    workspacesList.onchange = () => this.openWorkspace(workspacesList.value);
-    workspaces.forEach((workspace) => {
-      if (workspace.deleted) return;
+    const projectsList = document.getElementById("projects-list");
+    projectsList.onchange = () => this.openProject(projectsList.value);
+    projects.forEach((project) => {
+      if (project.deleted) return;
       const option = document.createElement("option");
-      option.value = workspace.id;
-      option.label = workspace.name + ` (${workspace.totalDocuments})`;
-      option.selected = workspace.id === storedWorkspaceId;
-      workspacesList.appendChild(option);
+      option.value = project.id;
+      option.label = project.name + ` (${project.totalDocuments})`;
+      option.selected = project.id === storedProjectId;
+      projectsList.appendChild(option);
     });
-    if (storedWorkspaceId) await this.openWorkspace(storedWorkspaceId);
+    if (storedProjectId) await this.openProject(storedProjectId);
   }
-  async openWorkspace(workspaceId) {
-    sessionStorage.setItem("workspaceId", workspaceId);
+  async openProject(projectId) {
+    sessionStorage.setItem("projectId", projectId);
     const storedDocumentId = sessionStorage.getItem("documentId");
 
-    const documents = await this.$fetch.get(`/store/workspaces/${workspaceId}/documents`);
+    const documents = await this.$fetch.get(`/store/projects/${projectId}/documents`);
     const documentsList = document.getElementById("documents-list");
     documentsList.innerHTML = "<option>select document</option>";
-    documentsList.onchange = () => this.openDocument(workspaceId, documentsList.value);
+    documentsList.onchange = () => this.openDocument(projectId, documentsList.value);
     documents.forEach((doc) => {
       if (doc.deleted) return;
       const option = document.createElement("option");
@@ -179,9 +179,9 @@ class Viewer {
       documentsList.appendChild(option);
     });
 
-    if (storedDocumentId) await this.openDocument(workspaceId, storedDocumentId);
+    if (storedDocumentId) await this.openDocument(projectId, storedDocumentId);
   }
-  async openDocument(workspaceId, documentId) {
+  async openDocument(projectId, documentId) {
     // localStorage.removeItem("pdfjs.history");
     sessionStorage.setItem("documentId", documentId);
 
@@ -225,7 +225,7 @@ class Viewer {
       await window.foliaPdfViewer.close();
     }
 
-    this.#workspaceId = workspaceId;
+    this.#projectId = projectId;
     this.#documentId = documentId;
     await this.getPermissions();
     const content = await this.getContent();

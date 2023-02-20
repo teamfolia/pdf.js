@@ -15,6 +15,7 @@ class FoliaBaseAnnotation {
     this.annotationRawData = cloneDeep(annotationRawData);
     this.viewport = foliaPageLayer.viewport.clone({ dontFlip: true });
     this.permissions = [];
+    this.needToReRender = true;
 
     // console.log(this.annotationRawData)
     if (this.annotationRawData.newbie) {
@@ -73,6 +74,7 @@ class FoliaBaseAnnotation {
     };
   }
   render() {
+    console.log("BASE RENDER");
     const { width: viewportWidth, height: viewportHeight } = this.viewport;
     const [left, top, width, height] = fromPdfRect(
       this.annotationRawData.rect,
@@ -83,12 +85,8 @@ class FoliaBaseAnnotation {
     this.annotationDIV.style.top = `${top}px`;
     this.annotationDIV.style.width = `${width}px`;
     this.annotationDIV.style.height = `${height}px`;
-    this.drawAnnotation();
   }
 
-  drawAnnotation() {
-    this.draw();
-  }
   deleteFromCanvas() {
     this.annotationDIV.remove();
   }
@@ -111,7 +109,7 @@ class FoliaBaseAnnotation {
     this.annotationDIV.classList.add("selected");
     this.isSelected = true;
     this.annotationDIV.style.zIndex = "2";
-    this.drawAnnotation();
+    this.render();
   }
   markAsUnselected() {
     this.setCornersVisibility(false);
@@ -119,7 +117,7 @@ class FoliaBaseAnnotation {
     this.isSelected = false;
     this.annotationDIV.style.zIndex = "1";
     this.commitObjectChanges();
-    this.drawAnnotation();
+    this.render();
   }
   markAsDeleted() {
     this.annotationRawData.deletedAt = this.isDirty = new Date().toISOString();
@@ -135,12 +133,16 @@ class FoliaBaseAnnotation {
   update(viewport, annotationRawData) {
     this.viewport = viewport;
 
-    if (this.annotationRawData.syncStatus && this.isDirty === annotationRawData.addedAt) this.isDirty = null;
-    if (this.isDirty) return;
-
-    for (const [key, value] of Object.entries(annotationRawData)) {
-      this.annotationRawData[key] = value;
+    if (this.isDirty === annotationRawData.addedAt) this.isDirty = null;
+    if (!this.isDirty) {
+      for (const [key, value] of Object.entries(annotationRawData)) {
+        if (this.editablePropertiesList.includes(key)) {
+          this.needToReRender = JSON.stringify(this.annotationRawData[key]) !== JSON.stringify(value);
+          this.annotationRawData[key] = value;
+        }
+      }
     }
+
     this.render();
   }
   memorizeMovingOffset(startPoint) {
@@ -180,8 +182,12 @@ class FoliaBaseAnnotation {
     const top = this._startMoving.offset.y + point.y;
     this.annotationDIV.style.left = left + "px";
     this.annotationDIV.style.top = top + "px";
+
     this.isDirty = new Date().toISOString();
-    requestAnimationFrame(() => this.drawAnnotation());
+    if (typeof this.updateAnnotationRawData === "function") {
+      this.updateAnnotationRawData();
+    }
+    requestAnimationFrame(() => this.render());
   }
 
   resizeTo(point, corner, withAlt) {
@@ -275,7 +281,10 @@ class FoliaBaseAnnotation {
     }
 
     this.isDirty = new Date().toISOString();
-    requestAnimationFrame(() => this.drawAnnotation());
+    if (typeof this.updateAnnotationRawData === "function") {
+      this.updateAnnotationRawData();
+    }
+    requestAnimationFrame(() => this.render());
   }
 
   pointTo(point, corner, withAlt) {
@@ -289,7 +298,10 @@ class FoliaBaseAnnotation {
       this.targetPoint.x = this._startMoving.targetPoint.x - deltaX;
       this.targetPoint.y = this._startMoving.targetPoint.y - deltaY;
     }
-    requestAnimationFrame(() => this.drawAnnotation());
+    requestAnimationFrame(() => this.render());
+    if (typeof this.updateAnnotationRawData === "function") {
+      this.updateAnnotationRawData();
+    }
     this.isDirty = new Date().toISOString();
   }
 

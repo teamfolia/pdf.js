@@ -116,7 +116,8 @@ class InkBuilder extends BaseBuilder {
       if (path.length === 0) return;
       ctx.save();
       ctx.strokeStyle = hexColor2RGBA(color);
-      ctx.lineWidth = lineWidth * this.foliaPageLayer.pdfViewerScale;
+      // ctx.lineWidth = lineWidth * this.foliaPageLayer.pdfViewerScale;
+      ctx.lineWidth = lineWidth * this.viewport.scale;
       let p1 = path[0];
       let p2 = path[1];
       ctx.lineCap = "round";
