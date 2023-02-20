@@ -95,12 +95,28 @@ class HighlightBuilder extends BaseBuilder {
     }
     // console.log(`found ${this.textBlocks.length} areas`);
   }
-  findMouseOverSymbols(point) {
+
+  onMouseDown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.mouseIsDown = true;
+    this.startPoint = this.getRelativePoint(e);
+    this.selectedBlocks = [];
+    this.draw();
+  }
+
+  onMouseMove(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!this.mouseIsDown) return;
+    this.mouseIsMove = true;
+    const endPoint = this.getRelativePoint(e);
+
     const selectedRect = {
-      left: Math.min(this.startPoint.x, point.x),
-      top: Math.min(this.startPoint.y, point.y),
-      right: Math.max(this.startPoint.x, point.x),
-      bottom: Math.max(this.startPoint.y, point.y),
+      left: Math.min(this.startPoint.x, endPoint.x),
+      top: Math.min(this.startPoint.y, endPoint.y),
+      right: Math.max(this.startPoint.x, endPoint.x),
+      bottom: Math.max(this.startPoint.y, endPoint.y),
     };
 
     this.selectedBlocks = this.textBlocks.filter((symbolArea) => {
@@ -110,35 +126,39 @@ class HighlightBuilder extends BaseBuilder {
         ((top < selectedRect.bottom && left < selectedRect.right) || bottom < selectedRect.bottom)
       );
     });
-  }
-  onMouseDown(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.mouseIsDown = true;
-    this.startPoint = this.endPoint = this.getRelativePoint(e);
-    this.selectedBlocks = [];
+
     this.draw();
   }
-  onMouseMove(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!this.mouseIsDown) return;
-    this.mouseIsMove = true;
-    this.endPoint = this.getRelativePoint(e);
-    this.findMouseOverSymbols(this.endPoint);
-    if (this.selectedBlocksLength === this.selectedBlocks.length) return;
-    window.requestAnimationFrame(() => {
-      this.selectedBlocksLength = this.selectedBlocks.length;
-      this.draw();
-    });
-  }
+
   onMouseUp(e) {
     e.preventDefault();
     e.stopPropagation();
     this.mouseIsDown = false;
     this.mouseIsMove = false;
     if (this.selectedBlocks.length > 0) {
-      this.groups.push({ color: this.preset.color, blocks: this.selectedBlocks.slice() });
+      this.groups.push({
+        color: this.preset.color,
+        // blocks: this.selectedBlocks.slice(),
+        blocks: this.selectedBlocks
+          .sort((b1, b2) => {
+            return b1.left - b2.left;
+          })
+          .reduce((acc, block) => {
+            const theSameLineBlockIndex = acc.findIndex(
+              (b) => b.top === block.top && b.bottom === block.bottom
+            );
+            if (theSameLineBlockIndex === -1) {
+              return [...acc, block];
+            } else {
+              const theSameLineBlock = acc[theSameLineBlockIndex];
+              theSameLineBlock.left = Math.min(theSameLineBlock.left, block.left);
+              theSameLineBlock.right = Math.max(theSameLineBlock.right, block.right);
+              theSameLineBlock.width = theSameLineBlock.right - theSameLineBlock.left;
+              theSameLineBlock.letter += block.letter;
+              return acc;
+            }
+          }, []),
+      });
       this.selectedBlocks = [];
     }
     this.draw();
