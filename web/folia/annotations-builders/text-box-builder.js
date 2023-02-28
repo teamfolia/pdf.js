@@ -52,7 +52,6 @@ class TextBoxBuilder extends BaseBuilder {
   }
 
   stop() {
-    console.log("TEXT BOX STOP");
     if (this.textArea) {
       this.text = this.textArea.value;
     }
@@ -87,7 +86,7 @@ class TextBoxBuilder extends BaseBuilder {
     textArea.style.outline = "none";
     textArea.style.visibility = "hidden";
     textArea.style.fontFamily = FONT_FAMILY[this.preset.fontFamily];
-    textArea.style.fontSize = `${fontSize}px`;
+    textArea.style.fontSize = `${fontSize * 0.55}px`;
     textArea.style.fontWeight = FONT_WEIGHT[this.preset.fontWeight];
     textArea.style.height = "1em";
     this.builderContainer.appendChild(textArea);

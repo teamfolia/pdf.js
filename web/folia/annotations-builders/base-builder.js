@@ -37,7 +37,6 @@ class BaseBuilder {
   }
 
   stop() {
-    console.log("TEXT BOX BASE STOP");
     if (this.removeOnClickListener) this.removeOnClickListener();
     const collaboratorEmail = this.foliaPageLayer.dataProxy.userEmail;
     const addedAt = new Date().toISOString();

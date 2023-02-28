@@ -4,7 +4,7 @@ import FoliaBaseAnnotation from "./base-annotation";
 import { ANNOTATION_TYPES, FONT_FAMILY, FONT_WEIGHT, TEXT_ALIGNMENT } from "../constants";
 
 class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
-  editablePropertiesList = ["color", "rect", "fontSize", "fontFamily", "fontWeight", "textAlignment"];
+  editablePropertiesList = ["color", "rect", "text", "fontSize", "fontFamily", "fontWeight", "textAlignment"];
   editable = true;
   newbie = false;
   textArea;
