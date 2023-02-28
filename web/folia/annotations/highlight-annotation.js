@@ -77,7 +77,7 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
           (n) => n * window.devicePixelRatio
         );
 
-        const lineWidth = 4 * this.foliaPageLayer.pdfViewerScale;
+        const lineWidth = 4 * this.viewport.scale;
         if (this.annotationRawData.kind === HighlightKind.CROSSLINE) {
           tmpCtx.fillRect(areaRect[0], areaRect[1] + areaRect[3] / 2, areaRect[2], lineWidth);
         } else if (this.annotationRawData.kind === HighlightKind.UNDERLINE) {

@@ -37,7 +37,9 @@ body {
   position: absolute;
   cursor: grabbing;
   background-repeat: no-repeat;
-  /* border: solid 1px blue; */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
   --annotation-border-color: silver;
 }
 
@@ -55,8 +57,8 @@ body {
 }
 
 .folia-annotation.selected:not(.conversation)::before {
-  content: "";
   display: block;
+  content: "";
   border: dashed 2px var(--annotation-border-color);
   position: absolute;
   left: -3px;
@@ -75,7 +77,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: "#00000033";
+  background-color: transparent;
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
@@ -116,7 +118,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 8px;
-  /* background-color: rgba(255, 255, 255); */
+  background-color: rgba(255, 255, 255);
   border: solid 1px black;
   z-index: 2;
 }

@@ -273,6 +273,7 @@ class PDFViewer {
     this.#enablePermissions = options.enablePermissions || false;
     this.pageColors = options.pageColors || null;
     this.dataProxy = options.dataProxy || null;
+    this.undoRedoManager = options.undoRedoManager || null;
     this.annotationBuilderClass = options.annotationBuilderClass || null;
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
@@ -1638,6 +1639,7 @@ class PDFViewer {
       viewport,
       annotationStorage,
       dataProxy: this.dataProxy,
+      undoRedoManager: this.undoRedoManager,
       eventBus: this.eventBus,
       annotationBuilderClass: this.annotationBuilderClass,
       pdfViewerScale: this._currentScale,

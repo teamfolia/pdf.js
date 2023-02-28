@@ -79,6 +79,7 @@ class FoliaPageLayer {
     this.viewport = props.viewport;
     this.annotationStorage = props.annotationStorage;
     this.dataProxy = props.dataProxy;
+    this.undoRedoManager = props.undoRedoManager;
     this.eventBus = props.eventBus;
     this.annotationBuilderClass = props.annotationBuilderClass;
     this.pdfViewerScale = props.pdfViewerScale;
@@ -103,7 +104,10 @@ class FoliaPageLayer {
   }
 
   updateObjectsDrawingProperties(preset) {
-    return this.multipleSelect.updateObjectsDrawingProperties(preset);
+    for (const obj of this.multipleSelect.getObjects()) {
+      obj.editableProperties.set(preset);
+    }
+    // return this.multipleSelect.updateObjectsDrawingProperties(preset);
   }
   makeSelectedAnnotation(id) {
     const obj = this.annotationObjects.get(id);
@@ -115,14 +119,36 @@ class FoliaPageLayer {
     this.multipleSelect.clear();
   }
 
-  deleteSelectedAnnotations(obj) {
-    const deletedObjects = obj ? [obj] : this.multipleSelect.getObjects();
+  commitObjectChanges(objectData) {
+    if (objectData.deletedAt) {
+      this.eventBus.dispatch("delete-object", objectData.id);
+    } else {
+      this.eventBus.dispatch("commit-object", objectData);
+    }
+  }
+
+  deleteSelectedAnnotations(object) {
+    const deletedObjects = object ? [object] : this.multipleSelect.getObjects();
     deletedObjects.map((obj) => {
       if (!obj.canDelete) return;
-      // console.log("DELETE", { canDelete: obj.canDelete, canManage: obj.canManage });
-      this.annotationObjects.delete(obj.id);
-      this.multipleSelect.deleteObject(obj);
+      this.undoRedoManager.deletingObject(obj.getRawData());
+      this.deleteAnnotationObject(obj);
     });
+  }
+  deleteAnnotationObject(object) {
+    this.annotationObjects.delete(object.id);
+    this.multipleSelect.deleteObject(object);
+  }
+  addAnnotationObject(annotation) {
+    if (this._cancelled) return;
+    let annotationObject = this.annotationObjects.get(annotation.id);
+    if (!annotationObject) {
+      const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
+      annotationObject = new AnnoClass(this, annotation);
+      this.annotationObjects.set(annotation.id, annotationObject);
+    } else {
+      annotationObject.update(annotation, this.viewport);
+    }
   }
   refresh() {
     // console.log("refreshFoliaLayers");
@@ -130,6 +156,7 @@ class FoliaPageLayer {
   }
 
   render(viewport) {
+    // console.time("render");
     // console.log("render", this.pageNumber);
     if (this._cancelled) return;
     this.viewport = viewport;
@@ -152,7 +179,8 @@ class FoliaPageLayer {
       // delete
       for (const [id, annotationObject] of this.annotationObjects) {
         if (this._cancelled) return;
-        if (!annotations.find((a) => a.id === id)) {
+        if (annotations.findIndex((a) => a.id === id) === -1 && !annotationObject.isDirty) {
+          this.multipleSelect.deleteObject(annotationObject);
           this.annotationObjects.delete(annotationObject.id);
         }
       }
@@ -169,7 +197,7 @@ class FoliaPageLayer {
           // console.timeEnd("anno-create " + annotation.__typename);
         } else {
           // console.time("anno-update " + annotation.__typename);
-          annotationObject.update(this.viewport, annotation);
+          annotationObject.update(annotation, this.viewport);
           // console.timeEnd("anno-update " + annotation.__typename);
         }
       }
@@ -181,73 +209,22 @@ class FoliaPageLayer {
     } catch (err) {
       console.error(`error in render on page ${this.pageNumber}`, err.message);
     }
+    // console.timeEnd("render");
+  }
+  cancel() {
+    // console.log("FoliaPageLayer cancel ==>", this.pageNumber);
+    this._cancelled = true;
+    if (this.annotationBuilder) this.annotationBuilder.stop();
+  }
+  hide() {
+    console.log("FoliaPageLayer hide ==>", this.pageNumber);
+    this.foliaLayer.hidden = true;
+  }
+  show() {
+    console.log("FoliaPageLayer show ==>", this.pageNumber);
+    this.foliaLayer.hidden = false;
   }
 
-  async render1(viewport) {
-    if (this._cancelled) return;
-    // console.log(">>", this.pageNumber, viewport, this.foliaLayer);
-    this.viewport = viewport;
-    if (!this.foliaLayer) {
-      this.foliaLayer = document.createElement("div");
-      this.foliaLayer.setAttribute("data-role", FOLIA_LAYER_ROLES.FOLIA_LAYER);
-      this.foliaLayer.setAttribute("data-page-number", `${this.pageNumber}`);
-      this.foliaLayer.className = "folia-layer";
-      this.foliaLayer.onmousedown = this.onFoliaLayerMouseDown.bind(this);
-      this.foliaLayer.onclick = this.onFoliaLayerClick.bind(this);
-    }
-    this.foliaLayer.style.width = Math.floor(this.pageDiv.clientWidth) + "px";
-    this.foliaLayer.style.height = Math.floor(this.pageDiv.clientHeight) + "px";
-    if (!this.pageDiv.querySelector(`[data-page-number="${this.pageNumber}"]`)) {
-      this.pageDiv.appendChild(this.foliaLayer);
-    }
-
-    // TODO: make annotation.render method as syncronous
-    const annotations = await this.dataProxy.getObjects(this.pageNumber);
-    // console.log(`ANNOTATIONS LIST LENGTH FOR ${this.pageNumber} PAGE IS`, annotations);
-
-    const promises = [];
-    for (const annoData of annotations) {
-      if (this._cancelled) return;
-      let annoObject = this.annotationObjects.get(annoData.id);
-      if (!annoObject && !annoData.deleted) {
-        // console.log(`RENDER ADD ON PAGE ${this.pageNumber}`, annoData.__typename);
-        const AnnoClass = ANNOTATIONS_CLASSES[annoData.__typename];
-        if (AnnoClass) {
-          annoObject = new AnnoClass(this, annoData);
-          const promise = this.annotationObjects.set(annoData.id, annoObject);
-          promises.push(promise);
-        }
-      } else if (annoObject && !annoData.deleted) {
-        // console.log(`RENDER UPDATE ON PAGE ${this.pageNumber}`, annoData.id);
-        const promise = annoObject.update(this.viewport, annoData);
-        promises.push(promise);
-      } else if (annoObject && annoData.deleted) {
-        // console.log(`RENDER DELETE ON PAGE ${this.pageNumber}`, annoData.id);
-        this.annotationObjects.delete(annoData.id);
-      }
-    }
-
-    Promise.allSettled(promises)
-      .then((resolves) => {
-        if (this.annotationBuilderClass && !this.annotationBuilder) {
-          this.startDrawing(this.annotationBuilderClass);
-        }
-      })
-      .catch(console.error);
-
-    return;
-  }
-  renderSingle(annotation) {
-    if (this._cancelled) return;
-    let annotationObject = this.annotationObjects.get(annotation.id);
-    if (!annotationObject) {
-      const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
-      annotationObject = new AnnoClass(this, annotation);
-      this.annotationObjects.set(annotation.id, annotationObject);
-    } else {
-      annotationObject.update(this.viewport, annotation);
-    }
-  }
   clickByViewerContainer() {
     // this.commit Changes()
     this.multipleSelect.clear();
@@ -348,28 +325,17 @@ class FoliaPageLayer {
       // dataProxy.floatingBar.show(this.multipleSelect.getObjects());
     } else if (this.isMouseMoved) {
       this.multipleSelect.showFloatingBar();
-      // dataProxy.floatingBar.show(this.multipleSelect.getObjects());
-      // const annoObject = this.annotationObjects.get(this.actionTarget.id);
-      // this.multipleSelect.showToolbar(annoObject);
+
+      const annoObject = this.annotationObjects.get(this.actionTarget.id);
+      if (annoObject) {
+        this.undoRedoManager.updatingObject(annoObject._startMoving.prevState, annoObject.getRawData());
+      }
     }
 
     this.multipleSelect.checkForOutOfBounds(SAFE_MARGIN, this.actionTarget.role);
     this.isMouseMoved = false;
     this.isMouseDown = false;
     this.actionTarget = {};
-  }
-  cancel() {
-    // console.log("FoliaPageLayer cancel ==>", this.pageNumber);
-    this._cancelled = true;
-    if (this.annotationBuilder) this.annotationBuilder.stop();
-  }
-  hide() {
-    console.log("FoliaPageLayer hide ==>", this.pageNumber);
-    this.foliaLayer.hidden = true;
-  }
-  show() {
-    console.log("FoliaPageLayer show ==>", this.pageNumber);
-    this.foliaLayer.hidden = false;
   }
 }
 

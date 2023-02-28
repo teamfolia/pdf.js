@@ -1,12 +1,11 @@
 import { hexColor2pdf } from "../folia-util";
+import { v4 as uuid } from "uuid";
+import { UndoRedo } from "../undo-redo";
 
 class BaseBuilder {
   viewport;
   pageDiv;
   pageNumber;
-
-  annotationType;
-  annotationSubType;
 
   canvas;
   preset = {};
@@ -18,58 +17,47 @@ class BaseBuilder {
     this.viewport = foliaPageLayer.viewport.clone({ dontFlip: true });
     this.applyPreset(BuildingClass.initialPreset);
     this.asset = BuildingClass.asset;
+    this.undoRedoManager = BuildingClass.undoRedoManager;
     this.resume();
+    this.undoRedoManager.updateUI();
   }
 
-  prepareTypewriter(e) {
-    const { color, fontFamily, fontSize, fontWeight, textAlign, singleCreating } = this.preset;
-    const viewRect = [e.offsetX, e.offsetY, 200, 50];
-    const annoData = {
-      fontFamily,
-      fontSize,
-      fontWeight,
-      textAlign,
-      singleCreating,
-      color: hexColor2pdf(color),
-      contents: "",
-      rect: viewRect2pdfRect(viewRect, this.viewport),
-    };
-    this.newbieAnnotationsData = [annoData];
-  }
-
-  prepareConversation(e) {
-    const viewRect = [e.offsetX, e.offsetY, 50, 50];
-    const annoData = {
-      edited: false,
-      initial_comment: "",
-      rect: viewRect2pdfRect(viewRect, this.viewport),
-    };
-    this.newbieAnnotationsData = [annoData];
-  }
+  // prepareConversation(e) {
+  //   const viewRect = [e.offsetX, e.offsetY, 50, 50];
+  //   const annoData = {
+  //     edited: false,
+  //     initial_comment: "",
+  //     rect: viewRect2pdfRect(viewRect, this.viewport),
+  //   };
+  //   this.newbieAnnotationsData = [annoData];
+  // }
 
   prepareAnnotations2save() {
     return [];
   }
 
   stop() {
+    console.log("TEXT BOX BASE STOP");
     if (this.removeOnClickListener) this.removeOnClickListener();
     const collaboratorEmail = this.foliaPageLayer.dataProxy.userEmail;
     const addedAt = new Date().toISOString();
     const page = this.foliaPageLayer.pageNumber;
 
     for (const data of this.prepareAnnotations2save()) {
-      const id = crypto.randomUUID();
+      const id = uuid();
       const annotation = {
         id,
         page,
         collaboratorEmail,
         addedAt,
         deleted: false,
+        newbie: true,
         ...data,
       };
 
-      this.foliaPageLayer.renderSingle(annotation);
-      this.foliaPageLayer.dataProxy.postObject(annotation);
+      this.foliaPageLayer.addAnnotationObject(annotation);
+      this.foliaPageLayer.commitObjectChanges(annotation);
+      this.foliaPageLayer.undoRedoManager.creatingObject(annotation);
     }
 
     // console.log("stop builder on page", page);
@@ -80,9 +68,9 @@ class BaseBuilder {
     this.newbieAnnotationsData = [];
   }
 
-  undo() {}
-
-  redo() {}
+  applyUndoRedo() {
+    console.log("Base method of applyUndoRedo");
+  }
 
   applyPreset(preset) {
     for (const [key, value] of Object.entries(preset)) {

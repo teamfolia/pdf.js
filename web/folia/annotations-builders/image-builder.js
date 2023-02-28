@@ -78,7 +78,8 @@ class ImageBuilder extends BaseBuilder {
         content: base64content.split(",")[1],
         newbie: true,
       };
-      this.foliaPageLayer.dataProxy.stopDrawing();
+      this.foliaPageLayer.eventBus.dispatch("stop-drawing");
+      // this.foliaPageLayer.dataProxy.stopDrawing();
     });
   }
 

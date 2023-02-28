@@ -6,8 +6,8 @@ class SquareBuilder extends BaseBuilder {
   defaultPreset = { color: "#000000", lineWidth: 5, singleCreating: false };
   mouseIsDown = false;
   mouseIsMove = false;
-  minWidth = 30;
-  minHeight = 30;
+  minWidth = 20;
+  minHeight = 20;
   squares = [];
 
   static type = "square";
@@ -32,7 +32,17 @@ class SquareBuilder extends BaseBuilder {
 
   prepareAnnotations2save() {
     return this.squares.map(({ color, lineWidth, rect }) => {
-      const pdfRect = toPdfRect(rect, this.viewport.width, this.viewport.height);
+      const pdfRect = toPdfRect(
+        [
+          rect[0] - (lineWidth * this.viewport.scale) / 2,
+          rect[1] - (lineWidth * this.viewport.scale) / 2,
+          rect[2] + lineWidth * this.viewport.scale,
+          rect[3] + lineWidth * this.viewport.scale,
+        ],
+        this.viewport.width,
+        this.viewport.height
+      );
+
       return {
         __typename: ANNOTATION_TYPES.SQUARE,
         lineWidth,
@@ -77,19 +87,41 @@ class SquareBuilder extends BaseBuilder {
     e.stopPropagation();
     this.mouseIsDown = false;
     this.mouseIsMove = false;
+
+    const point = this.getRelativePoint(e);
+    this.squares.pop();
+    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.squares.slice() };
+    this.squares.push({
+      color: this.preset.color,
+      lineWidth: this.preset.lineWidth,
+      rect: [
+        Math.min(this.startPoint.x, point.x),
+        Math.min(this.startPoint.y, point.y),
+        Math.max(Math.abs(point.x - this.startPoint.x), this.minWidth),
+        Math.max(Math.abs(point.y - this.startPoint.y), this.minHeight),
+      ],
+    });
+    const newState = { page: this.foliaPageLayer.pageNumber, data: this.squares.slice() };
+    this.undoRedoManager.addToolStep(prevState, newState);
+
     window.requestAnimationFrame(() => this.draw());
+  }
+
+  applyUndoRedo(squares) {
+    this.squares = squares;
+    this.draw();
   }
 
   draw() {
     const ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.squares.forEach(({ color, lineWidth, rect }) => {
-      const _lineWidth = lineWidth * this.foliaPageLayer.pdfViewerScale;
+    this.squares.forEach((square) => {
+      const lineWidth = square.lineWidth * this.viewport.scale;
       ctx.save();
       ctx.beginPath();
-      ctx.strokeStyle = hexColor2RGBA(color);
-      ctx.lineWidth = _lineWidth;
-      ctx.strokeRect(...rect);
+      ctx.strokeStyle = hexColor2RGBA(square.color);
+      ctx.lineWidth = lineWidth;
+      ctx.strokeRect(...square.rect);
       ctx.closePath();
       ctx.restore();
     });

@@ -5,6 +5,7 @@ import FoliaBaseAnnotation from "./base-annotation";
 
 class FoliaInkAnnotation extends FoliaBaseAnnotation {
   relativePdfPaths = [];
+  fixedAspectRatio = true;
   editablePropertiesList = ["color", "lineWidth", "paths"];
 
   constructor(...props) {
@@ -13,28 +14,7 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     this.buildBaseCorners();
   }
   getRawData() {
-    // const annotationViewportOffset = {
-    //   x: this.annotationDIV.offsetLeft,
-    //   y: this.annotationDIV.offsetTop,
-    // };
-    // const annotationViewport = {
-    //   width: this.annotationDIV.clientWidth,
-    //   height: this.annotationDIV.clientHeight,
-    // };
-
-    // const paths = this.relativePdfPaths.map((path) => {
-    //   const relativeViewPath = fromPdfPath(
-    //     path,
-    //     this.annotationDIV.clientWidth,
-    //     this.annotationDIV.clientHeight,
-    //     this.annotationDIV.offsetLeft,
-    //     this.annotationDIV.offsetTop
-    //   );
-
-    //   return toPdfPath(relativeViewPath, this.viewport.width, this.viewport.height);
-    // });
-
-    const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth, paths } =
+    const { id, addedAt, deletedAt, collaboratorEmail, page, paths, color, lineWidth } =
       this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.INK,
@@ -48,21 +28,26 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       paths,
     };
   }
-  updateAnnotationRawData() {
-    this.annotationRawData.paths = this.relativePdfPaths.map((path) => {
-      const relativeViewPath = fromPdfPath(
-        path,
-        this.annotationDIV.clientWidth,
-        this.annotationDIV.clientHeight,
-        this.annotationDIV.offsetLeft,
-        this.annotationDIV.offsetTop
-      );
 
-      return toPdfPath(relativeViewPath, this.viewport.width, this.viewport.height);
+  updateRects() {
+    if (!this.relativePaths) return this.render();
+
+    const { offsetLeft, offsetTop } = this.annotationDIV;
+    const paths = this.relativePaths.map((path) => {
+      const viewportPath = path.map((point) => {
+        return { x: point.x + offsetLeft, y: point.y + offsetTop };
+      });
+      return toPdfPath(viewportPath, this.viewport.width, this.viewport.height);
     });
+
+    this.annotationRawData.paths = paths;
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.render(), 100);
+    super.updateRects();
   }
+
   render() {
-    // console.log("INK RENDER");
+    // calc bounding rect
     const { left, top, right, bottom } = [].concat.apply([], this.annotationRawData.paths).reduce(
       (acc, path, index, arr) => {
         if (index % 2 !== 0) {
@@ -82,24 +67,16 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     );
 
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
-
     this.annotationDIV.style.left = `${left - lineWidth / 2}px`;
     this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
-
     this.annotationDIV.style.width = `${right - left + lineWidth}px`;
     this.annotationDIV.style.height = `${bottom - top + lineWidth}px`;
 
-    // convert absolute paths to relative for drawing
-    this.relativePdfPaths = this.annotationRawData.paths.map((path) => {
-      const absoluteViewportPath = fromPdfPath(path, this.viewport.width, this.viewport.height);
-      const relativePdfPath = toPdfPath(
-        absoluteViewportPath,
-        this.annotationDIV.clientWidth,
-        this.annotationDIV.clientHeight,
-        this.annotationDIV.offsetLeft,
-        this.annotationDIV.offsetTop
-      );
-      return relativePdfPath;
+    const { offsetLeft, offsetTop } = this.annotationDIV;
+    this.relativePaths = this.annotationRawData.paths.map((path) => {
+      return fromPdfPath(path, this.viewport.width, this.viewport.height).map((point) => {
+        return { x: point.x - offsetLeft, y: point.y - offsetTop };
+      });
     });
 
     const canvas = document.createElement("canvas");
@@ -107,11 +84,10 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     canvas.height = this.annotationDIV.clientHeight;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
-    this.relativePdfPaths.forEach((path) => {
-      ctx.save();
-      const viewportPath = fromPdfPath(path, this.annotationDIV.clientWidth, this.annotationDIV.clientHeight);
+    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * 0.2;
 
+    this.relativePaths.forEach((viewportPath) => {
+      ctx.save();
       let p1 = viewportPath[0];
       let p2 = viewportPath[1];
       ctx.lineCap = "round";

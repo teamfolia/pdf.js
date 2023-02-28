@@ -8,8 +8,8 @@ class CircleBuilder extends BaseBuilder {
   defaultPreset = { color: "#000000", lineWidth: 5, singleCreating: false };
   mouseIsDown = false;
   mouseIsMove = false;
-  minWidth = 30;
-  minHeight = 30;
+  minWidth = 20;
+  minHeight = 20;
   circles = [];
 
   static type = "circle";
@@ -34,11 +34,16 @@ class CircleBuilder extends BaseBuilder {
 
   prepareAnnotations2save() {
     return this.circles.map(({ color, lineWidth, rect }) => {
-      rect[0] -= (lineWidth * this.foliaPageLayer.pdfViewerScale) / 2;
-      rect[1] -= (lineWidth * this.foliaPageLayer.pdfViewerScale) / 2;
-      rect[2] += lineWidth * this.foliaPageLayer.pdfViewerScale;
-      rect[3] += lineWidth * this.foliaPageLayer.pdfViewerScale;
-      const pdfRect = toPdfRect(rect, this.viewport.width, this.viewport.height);
+      const pdfRect = toPdfRect(
+        [
+          rect[0] - (lineWidth * this.viewport.scale) / 2,
+          rect[1] - (lineWidth * this.viewport.scale) / 2,
+          rect[2] + lineWidth * this.viewport.scale,
+          rect[3] + lineWidth * this.viewport.scale,
+        ],
+        this.viewport.width,
+        this.viewport.height
+      );
       return {
         __typename: ANNOTATION_TYPES.CIRCLE,
         lineWidth,
@@ -83,7 +88,30 @@ class CircleBuilder extends BaseBuilder {
     e.stopPropagation();
     this.mouseIsDown = false;
     this.mouseIsMove = false;
+
+    const point = this.getRelativePoint(e);
+    this.circles.pop();
+    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.circles.slice() };
+    this.circles.push({
+      color: this.preset.color,
+      lineWidth: this.preset.lineWidth,
+      rect: [
+        Math.min(this.startPoint.x, point.x),
+        Math.min(this.startPoint.y, point.y),
+        Math.max(Math.abs(point.x - this.startPoint.x), this.minWidth),
+        Math.max(Math.abs(point.y - this.startPoint.y), this.minWidth),
+      ],
+    });
+
+    const newState = { page: this.foliaPageLayer.pageNumber, data: this.circles.slice() };
+    this.undoRedoManager.addToolStep(prevState, newState);
+
     window.requestAnimationFrame(() => this.draw());
+  }
+
+  applyUndoRedo(circles) {
+    this.circles = circles;
+    this.draw();
   }
 
   draw() {
@@ -94,7 +122,7 @@ class CircleBuilder extends BaseBuilder {
       ctx.save();
       ctx.beginPath();
       ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth * this.foliaPageLayer.pdfViewerScale;
+      ctx.lineWidth = lineWidth * this.viewport.scale;
       const x = rect[0] + rect[2] / 2;
       const y = rect[1] + rect[3] / 2;
       const radiusX = rect[2] / 2;

@@ -26,6 +26,7 @@ import HighlightBuilder from "./annotations-builders/highlight-builder";
 import ImageBuilder from "./annotations-builders/image-builder";
 import TextBoxBuilder from "./annotations-builders/text-box-builder";
 import "./css/folia.css";
+import { UndoRedo } from "./undo-redo";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -101,6 +102,8 @@ export class FoliaPDFViewer {
       eventBus: this.eventBus,
     });
 
+    this.undoRedoManager = new UndoRedo(this);
+
     this.pdfViewer = new PDFViewer({
       container: this.uiConfig.container,
       viewer: this.uiConfig.viewer,
@@ -123,19 +126,23 @@ export class FoliaPDFViewer {
       enablePermissions: false,
       pageColors: null,
       dataProxy,
+      undoRedoManager: this.undoRedoManager,
     });
 
-    this.pdfThumbnailViewer = new PDFThumbnailViewer({
-      container: this.uiConfig.thumbnailView,
-      eventBus: this.eventBus,
-      renderingQueue: this.pdfRenderingQueue,
-      linkService: this.pdfLinkService,
-      l10n: {},
-      pageColors: {},
-    });
     this.pdfLinkService.setViewer(this.pdfViewer);
-    this.pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     this.pdfRenderingQueue.setViewer(this.pdfViewer);
+
+    if (this.uiConfig.thumbnailView) {
+      this.pdfThumbnailViewer = new PDFThumbnailViewer({
+        container: this.uiConfig.thumbnailView,
+        eventBus: this.eventBus,
+        renderingQueue: this.pdfRenderingQueue,
+        linkService: this.pdfLinkService,
+        l10n: {},
+        pageColors: {},
+      });
+      this.pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
+    }
 
     // this.pdfHistory = new PDFHistory({
     //   linkService: this.pdfLinkService,
@@ -385,6 +392,18 @@ export class FoliaPDFViewer {
 
     await Promise.all(promises);
   }
+  undo() {
+    if (this.pdfViewer.annotationBuilderClass) {
+      return this.pdfViewer.annotationBuilderClass.undoRedoManager.undo();
+    }
+    this.undoRedoManager.undo();
+  }
+  redo() {
+    if (this.pdfViewer.annotationBuilderClass) {
+      return this.pdfViewer.annotationBuilderClass.undoRedoManager.redo();
+    }
+    this.undoRedoManager.redo();
+  }
   zoomIn() {
     if (this.zoom >= 500) return;
     this.pdfViewer.increaseScale();
@@ -462,7 +481,7 @@ export class FoliaPDFViewer {
   continueStartDrawing(BuilderClass, preset, asset) {
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
-    this.pdfViewer.annotationBuilderClass = BuilderClass;
+    BuilderClass.undoRedoManager = new UndoRedo(this);
     this.pdfViewer.annotationBuilderClass = BuilderClass;
 
     this.pdfViewer._pages.map((page) => {
@@ -476,6 +495,7 @@ export class FoliaPDFViewer {
       if (!page.foliaPageLayer) return;
       page.foliaPageLayer.stopDrawing();
     });
+    this.undoRedoManager.updateUI();
   }
 
   resetObjectsSeletion() {
@@ -524,96 +544,4 @@ export class FoliaPDFViewer {
       page.foliaPageLayer.resetObjectsSeletion();
     });
   }
-
-  // get foliaDataStorageProxy() {
-  //   const that = this
-  //   return {
-  //     getObjects(pageNumber) {
-  //       return []
-  //     }
-  //   }
-  //   return {
-  //     get workspaceId() {
-  //       return that.#workspaceId
-  //     },
-  //     get cardId() {
-  //       return that.#cardId
-  //     },
-  //     getAnnotations: (...opt) => this.foliaDataStorage.getAnnotations(...opt),
-  //     getUser: email => this.foliaDataStorage.getUserInfo(email),
-  //     getActiveUser: () => this.foliaDataStorage.getActiveUserInfo(),
-  //     getImageFromServer: (media_id) => {
-  //       return this.foliaDataStorage.getImageFromServer(media_id)
-  //     },
-  //     get annotationBuilderClass() {
-  //       return that.#AnnotationBuilderClass
-  //     },
-
-  //     updateAnnotations: (objects) => {
-  //       this.foliaDataStorage.updateObjects(this.#workspaceId, this.#cardId, objects, (localId, timestamp, payload) => {
-  //         this.pdfViewer._pages.map(_page => {
-  //           if (!_page.foliaPageLayer) return
-  //           _page.foliaPageLayer.confirmChanges(localId, timestamp, payload)
-  //         })
-  //       })
-  //     },
-  //     createReply: (object) => this.foliaDataStorage.createReply(this.#workspaceId, this.#cardId, object, (localId, timestamp, payload) => {
-  //       that.confirmChangesTimestamp(localId, timestamp, payload)
-  //     }),
-  //     deleteReply: (object) => this.foliaDataStorage.deleteReply(this.#workspaceId, this.#cardId, object, (localId, timestamp, payload) => {
-  //       that.confirmChangesTimestamp(localId, timestamp, payload)
-  //     }),
-  //     markConversationAsUnread: (annotationId) => this.foliaDataStorage.markConversationAsUnread(this.#workspaceId, this.#cardId, annotationId),
-
-  //     get floatingBar() {
-  //       const bar = that.uiConfig.annotationsFloatingBar
-  //       function findOutPositionAndShow(barEl, targetEl) {
-  //         // console.log('findOutPositionAndShow', barEl, targetEl)
-  //         if (!targetEl) {
-  //           bar.style.visibility = 'hidden'
-  //           return
-  //         }
-  //         const padding = 10
-  //         const absoluteOffset = getAbsoluteOffset(targetEl, barEl.parentNode)
-
-  //         let left = (absoluteOffset.left + targetEl.offsetWidth / 2) - (barEl.offsetWidth / 2)
-  //         if (left < targetEl.parentNode.parentNode.offsetLeft + padding) {
-  //           left = targetEl.parentNode.parentNode.offsetLeft + padding
-  //         }
-
-  //         if (left + barEl.offsetWidth + padding > targetEl.parentNode.parentNode.offsetLeft + targetEl.parentNode.parentNode.offsetWidth) {
-  //           left = targetEl.parentNode.parentNode.offsetLeft + targetEl.parentNode.parentNode.offsetWidth - barEl.offsetWidth - padding
-  //         }
-  //         let top = absoluteOffset.top - barEl.offsetHeight - padding
-  //         if (top < padding) top = absoluteOffset.top + targetEl.offsetHeight + padding
-
-  //         barEl.style.left = left + 'px'
-  //         barEl.style.top = top + 'px'
-  //         bar.style.visibility = 'visible'
-  //       }
-  //       return {
-  //         setup_and_show: (targetEl, editableProperties = [], initialValues = {}) => {
-  //           if (!bar) return console.warn('toolbar element is not defined')
-  //           bar.setAttribute('data-props', editableProperties.join(','))
-  //           Object.entries(initialValues).forEach(([propName, propValue]) => {
-  //             bar.setAttribute(`data-${propName}`, propValue)
-  //           })
-
-  //           if (targetEl) findOutPositionAndShow(bar, targetEl)
-  //           return this.floatingBar
-  //         },
-  //         show: (targetEl) => {
-  //           if (!bar) return console.warn('toolbar element is not defined')
-  //           if (targetEl) findOutPositionAnsShow(bar, targetEl)
-  //           return this.floatingBar
-  //         },
-  //         hide: () => {
-  //           if (!bar) return console.warn('toolbar element is not defined')
-  //           bar.style.visibility = 'hidden'
-  //           return this.floatingBar
-  //         },
-  //       }
-  //     },
-  //   }
-  // }
 }

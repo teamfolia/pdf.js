@@ -4,7 +4,7 @@ import { ANNOTATION_TYPES } from "../constants";
 import { toPdfRect, fromPdfRect } from "../folia-util";
 
 class FoliaImageAnnotation extends FoliaBaseAnnotation {
-  editablePropertiesList = [];
+  editablePropertiesList = ["rect"];
   image;
   imageSrc;
   fixedAspectRatio = true;
@@ -16,19 +16,13 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     image.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
     image.classList.add("image-stamp");
     this.image = image;
+    this.image.src = `data:image/png;base64,${this.annotationRawData.content}`;
     this.annotationDIV.appendChild(image);
     this.buildBaseCorners();
   }
   getRawData() {
-    const viewRect = [
-      this.annotationDIV.offsetLeft,
-      this.annotationDIV.offsetTop,
-      this.annotationDIV.clientWidth,
-      this.annotationDIV.clientHeight,
-    ];
-
-    const rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
-    const { id, addedAt, deletedAt, collaboratorEmail, page, filename, content } = this.annotationRawData;
+    const { id, addedAt, deletedAt, collaboratorEmail, rect, page, filename, content } =
+      this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.IMAGE,
       id,
@@ -41,6 +35,20 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
       content,
     };
   }
+
+  updateRects() {
+    const viewRect = [
+      this.annotationDIV.offsetLeft,
+      this.annotationDIV.offsetTop,
+      this.annotationDIV.clientWidth,
+      this.annotationDIV.clientHeight,
+    ];
+
+    this.annotationRawData.rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
+    this.render();
+    super.updateRects();
+  }
+
   render() {
     const { width: viewportWidth, height: viewportHeight } = this.viewport;
     const [left, top, width, height] = fromPdfRect(
@@ -52,10 +60,7 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.style.top = `${top}px`;
     this.annotationDIV.style.width = `${width}px`;
     this.annotationDIV.style.height = `${height}px`;
-    this.image.src = `data:image/png;base64,${this.annotationRawData.content}`;
-    this.draw();
   }
-  draw() {}
 }
 
 export default FoliaImageAnnotation;

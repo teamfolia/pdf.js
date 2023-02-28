@@ -1,12 +1,12 @@
-import { hexColor2pdf, hexColor2RGBA, toPdfPath } from "../folia-util";
+import { hexColor2RGBA, toPdfPath } from "../folia-util";
 import BaseBuilder from "./base-builder";
 import * as turf from "@turf/turf";
-import { flatten } from "lodash";
 import { ANNOTATION_TYPES } from "../constants";
 
 class InkBuilder extends BaseBuilder {
   mouseIsDown = false;
   mouseIsMove = false;
+  path = [];
   parts = [];
   path = [];
 
@@ -98,15 +98,24 @@ class InkBuilder extends BaseBuilder {
     e.stopPropagation();
     this.mouseIsDown = false;
     this.mouseIsMove = false;
+    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.parts.slice() };
     this.parts.push({
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
       path: this.path,
     });
+    const newState = { page: this.foliaPageLayer.pageNumber, data: this.parts.slice() };
+    this.undoRedoManager.addToolStep(prevState, newState);
     window.requestAnimationFrame(() => {
       this.draw(this.parts);
       this.path = [];
     });
+  }
+
+  applyUndoRedo(parts) {
+    this.parts = parts;
+    this.draw(this.parts);
+    this.path = [];
   }
 
   draw(parts = []) {
@@ -117,7 +126,7 @@ class InkBuilder extends BaseBuilder {
       ctx.save();
       ctx.strokeStyle = hexColor2RGBA(color);
       // ctx.lineWidth = lineWidth * this.foliaPageLayer.pdfViewerScale;
-      ctx.lineWidth = lineWidth * this.viewport.scale;
+      ctx.lineWidth = lineWidth * this.viewport.scale * 0.2;
       let p1 = path[0];
       let p2 = path[1];
       ctx.lineCap = "round";

@@ -11,7 +11,7 @@ class MultipleSelect {
   }
   prepare2moving = (startPoint) => {
     this.#objects.forEach((obj) => {
-      obj.memorizeMovingOffset(startPoint);
+      obj.saveRectsState(startPoint);
     });
   };
   deleteFromCanvas() {
@@ -86,14 +86,15 @@ class MultipleSelect {
       this.showFloatingBar();
     }
   }
-  updateObjectsDrawingProperties(data) {
-    const promises = [];
-    for (const obj of this.#objects) {
-      promises.push(obj.editableProperties.set(data));
-    }
+  // updateObjectsDrawingProperties(data) {
+  //   // TODO: move this functionality into FoliaPageLayer
+  //   const promises = [];
+  //   for (const obj of this.#objects) {
+  //     promises.push(obj.editableProperties.set(data));
+  //   }
 
-    return promises;
-  }
+  //   return promises;
+  // }
   hideFloatingBar() {
     this.eventBus.dispatch("floatingbarhide");
   }

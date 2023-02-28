@@ -551,7 +551,7 @@ class PDFPageView {
     redrawAnnotationEditorLayer = false,
     redrawXfaLayer = false,
   }) {
-    console.log("pdfPageView.cssTransform", this.id);
+    // console.log("pdfPageView.cssTransform", this.id);
     // Scale target (canvas or svg), its wrapper and page container.
     const width = this.viewport.width;
     const height = this.viewport.height;

@@ -12,7 +12,7 @@ module.exports = {
     folia_pdf_viewer: "./web/folia/folia-pdf-viewer.js",
   },
   cache: true,
-  mode: "production",
+  mode: "development",
   performance: {
     hints: false,
   },

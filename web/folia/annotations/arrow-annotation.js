@@ -4,7 +4,7 @@ import { fromPdfPoint, hexColor2RGBA, toPdfPoint } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";
 
 class FoliaArrowAnnotation extends FoliaBaseAnnotation {
-  editablePropertiesList = ["color", "lineWidth"];
+  editablePropertiesList = ["color", "lineWidth", "sourcePoint", "targetPoint"];
 
   constructor(...props) {
     super(...props);
@@ -35,10 +35,26 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
       page,
       color,
       lineWidth,
-      sourcePoint: toPdfPoint(this.sourcePoint, this.viewport.width, this.viewport.height),
-      targetPoint: toPdfPoint(this.targetPoint, this.viewport.width, this.viewport.height),
+      sourcePoint,
+      targetPoint,
     };
   }
+
+  updateRects() {
+    this.annotationRawData.sourcePoint = toPdfPoint(
+      this.sourcePoint,
+      this.viewport.width,
+      this.viewport.height
+    );
+    this.annotationRawData.targetPoint = toPdfPoint(
+      this.targetPoint,
+      this.viewport.width,
+      this.viewport.height
+    );
+    this.render();
+    super.updateRects();
+  }
+
   render() {
     this.sourcePoint = fromPdfPoint(
       this.annotationRawData.sourcePoint,
@@ -51,9 +67,7 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
       this.viewport.height
     );
 
-    this.draw();
-  }
-  draw() {
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     let width = Math.abs(this.sourcePoint.x - this.targetPoint.x);
     let height = Math.abs(this.sourcePoint.y - this.targetPoint.y);
     let hypotenuse = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
@@ -69,7 +83,6 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
       angle = (Math.asin(height / hypotenuse) * 180) / Math.PI - 180;
     }
 
-    const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
     const arrowContainerHeight = lineWidth * 3.7;
 
     this.annotationDIV.style.left = this.sourcePoint.x + "px";
@@ -79,10 +92,6 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.style.transformOrigin = "left center";
     this.annotationDIV.style.transform = `rotate(${angle}deg)`;
 
-    this.drawArrow();
-  }
-  drawArrow() {
-    const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
     const canvas = document.createElement("canvas");
 
     canvas.width = this.annotationDIV.clientWidth + lineWidth;
@@ -108,7 +117,7 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
     const dlen = Math.sqrt(dx * dx + dy * dy);
     dx = dx / dlen;
     dy = dy / dlen;
-    const headLen = arrowheadFactor * ctx.lineWidth;
+    const headLen = arrowheadFactor * lineWidth;
     const hpx0 = targetPoint.x + headLen * dy - headLen * dx;
     const hpy0 = targetPoint.y - headLen * dx - headLen * dy;
     const hpx1 = targetPoint.x - headLen * dy - headLen * dx;

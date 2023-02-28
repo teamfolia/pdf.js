@@ -56,3 +56,22 @@ export const PERMISSIONS = {
   DOWNLOAD_ORIGINAL_DOCUMENT: "DOWNLOAD_ORIGINAL_DOCUMENT",
   DOWNLOAD_ANNOTATED_DOCUMENT: "DOWNLOAD_ANNOTATED_DOCUMENT",
 };
+
+export const FONT_FAMILY = {
+  SANS_SERIF: "Source Sans Pro",
+  SERIF: "Lora",
+  MONOSPACE: "Courier Prime",
+  SCRIPT: "Cookie",
+  FANTASY: "Eagle Lake",
+};
+
+export const TEXT_ALIGNMENT = {
+  START: "left",
+  CENTER: "center",
+  END: "right",
+};
+
+export const FONT_WEIGHT = {
+  W400: "normal",
+  W600: "bold",
+};

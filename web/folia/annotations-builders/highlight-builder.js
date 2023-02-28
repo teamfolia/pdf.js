@@ -136,9 +136,12 @@ class HighlightBuilder extends BaseBuilder {
     this.mouseIsDown = false;
     this.mouseIsMove = false;
     if (this.selectedBlocks.length > 0) {
+      const prevState = {
+        page: this.foliaPageLayer.pageNumber,
+        data: this.groups.slice(),
+      };
       this.groups.push({
         color: this.preset.color,
-        // blocks: this.selectedBlocks.slice(),
         blocks: this.selectedBlocks
           .sort((b1, b2) => {
             return b1.left - b2.left;
@@ -160,6 +163,11 @@ class HighlightBuilder extends BaseBuilder {
           }, []),
       });
       this.selectedBlocks = [];
+      const newState = {
+        page: this.foliaPageLayer.pageNumber,
+        data: this.groups.slice(),
+      };
+      this.undoRedoManager.addToolStep(prevState, newState);
     }
     this.draw();
   }
@@ -217,6 +225,12 @@ class HighlightBuilder extends BaseBuilder {
         }
       });
     }
+  }
+
+  applyUndoRedo(groups) {
+    this.groups = groups;
+    this.draw();
+    this.path = [];
   }
 }
 

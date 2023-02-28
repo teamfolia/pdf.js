@@ -3,7 +3,7 @@ import { fromPdfRect, toPdfRect, hexColor2RGBA } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";
 
 class FoliaSquareAnnotation extends FoliaBaseAnnotation {
-  editablePropertiesList = ["color", "lineWidth"];
+  editablePropertiesList = ["color", "lineWidth", "rect"];
 
   constructor(...props) {
     super(...props);
@@ -12,15 +12,8 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
   }
 
   getRawData() {
-    const viewRect = [
-      this.annotationDIV.offsetLeft,
-      this.annotationDIV.offsetTop,
-      this.annotationDIV.clientWidth,
-      this.annotationDIV.clientHeight,
-    ];
-
-    const rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
-    const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth } = this.annotationRawData;
+    const { id, addedAt, deletedAt, collaboratorEmail, page, rect, color, lineWidth } =
+      this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.SQUARE,
       id,
@@ -33,29 +26,43 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
       rect,
     };
   }
+
+  updateRects() {
+    const viewRect = [
+      this.annotationDIV.offsetLeft,
+      this.annotationDIV.offsetTop,
+      this.annotationDIV.clientWidth,
+      this.annotationDIV.clientHeight,
+    ];
+
+    this.annotationRawData.rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
+    this.render();
+    super.updateRects();
+  }
+
   render() {
-    const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
+    // console.time("render square");
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     const [left, top, width, height] = fromPdfRect(
       this.annotationRawData.rect,
       this.viewport.width,
-      this.viewport.height,
-      this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale
+      this.viewport.height
     );
 
-    this.annotationDIV.style.left = `${left - lineWidth / 2}px`;
-    this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
-    this.annotationDIV.style.width = `${width + lineWidth}px`;
-    this.annotationDIV.style.height = `${height + lineWidth}px`;
-    this.draw();
-  }
-  draw() {
+    this.annotationDIV.style.left = `${left}px`;
+    this.annotationDIV.style.top = `${top}px`;
+    this.annotationDIV.style.width = `${width}px`;
+    this.annotationDIV.style.height = `${height}px`;
+
     this.annotationDIV.style.backgroundPosition = "center";
-    this.annotationDIV.style.backgroundSize = `${this.annotationDIV.clientWidth}px ${this.annotationDIV.clientHeight}px`;
+    this.annotationDIV.style.backgroundSize = `${width}px ${height}px`;
     this.annotationDIV.style.backgroundRepeat = "no-repeat";
-    this.annotationDIV.style.backgroundImage = `url("${this.drawSquare()}")`;
+    this.annotationDIV.style.backgroundImage = `url("${this.generateSquareImage()}")`;
+    // console.timeEnd("render square");
   }
-  drawSquare() {
-    const lineWidth = this.annotationRawData.lineWidth * this.foliaPageLayer.pdfViewerScale;
+
+  generateSquareImage() {
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     const canvas = document.createElement("canvas");
     canvas.width = this.annotationDIV.clientWidth;
     canvas.height = this.annotationDIV.clientHeight;

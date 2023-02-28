@@ -40,8 +40,8 @@ class ArrowBuilder extends BaseBuilder {
       const hypotenuse = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
       const angleX = Math.asin(deltaX / hypotenuse);
       const angleY = Math.asin(deltaY / hypotenuse);
-      const sourceDeltaX = (lineWidth / 2) * Math.sin(angleX);
-      const sourceDeltaY = (lineWidth / 2) * Math.sin(angleY);
+      const sourceDeltaX = ((lineWidth * this.viewport.scale) / 2) * Math.sin(angleX);
+      const sourceDeltaY = ((lineWidth * this.viewport.scale) / 2) * Math.sin(angleY);
       const sp = {
         x: sourcePoint.x - sourceDeltaX,
         y: sourcePoint.y - sourceDeltaY,
@@ -91,7 +91,27 @@ class ArrowBuilder extends BaseBuilder {
     e.stopPropagation();
     this.mouseIsDown = false;
     this.mouseIsMove = false;
+
+    this.arrows.pop();
+    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
+    this.arrows.push({
+      color: this.preset.color,
+      lineWidth: this.preset.lineWidth,
+      sourcePoint: this.sourcePoint,
+      targetPoint: this.targetPoint,
+    });
+
+    const newState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
+    this.undoRedoManager.addToolStep(prevState, newState);
+
+    window.requestAnimationFrame(() => this.draw());
+
     this.sourcePoint = this.targetPoint = null;
+  }
+
+  applyUndoRedo(arrows) {
+    this.arrows = arrows;
+    this.draw();
   }
 
   draw() {
@@ -99,24 +119,25 @@ class ArrowBuilder extends BaseBuilder {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.arrows.forEach((arrow) => {
       const { color, lineWidth, sourcePoint, targetPoint } = arrow;
+      const _lineWidth = lineWidth * this.viewport.scale;
       ctx.save();
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth * this.foliaPageLayer.pdfViewerScale;
       const arrowheadFactor = 1.3;
       let dx = targetPoint.x - sourcePoint.x;
       let dy = targetPoint.y - sourcePoint.y;
       const dlen = Math.sqrt(dx * dx + dy * dy);
       dx = dx / dlen;
       dy = dy / dlen;
-      const headLen = arrowheadFactor * ctx.lineWidth;
+      const headLen = arrowheadFactor * _lineWidth;
       const hpx0 = targetPoint.x + headLen * dy - headLen * dx;
       const hpy0 = targetPoint.y - headLen * dx - headLen * dy;
       const hpx1 = targetPoint.x - headLen * dy - headLen * dx;
       const hpy1 = targetPoint.y + headLen * dx - headLen * dy;
 
       ctx.beginPath();
+      ctx.lineWidth = _lineWidth;
       ctx.moveTo(sourcePoint.x, sourcePoint.y);
       ctx.lineTo(targetPoint.x, targetPoint.y);
       ctx.moveTo(hpx0, hpy0);

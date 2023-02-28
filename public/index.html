@@ -399,11 +399,11 @@ See https://github.com/adobe-type-tools/cmap-resources
         <input type="color" id="preset-color" class="preset-button" />
         <input type="range" id="preset-width" min="1" max="20" aria-haspopup="true" class="preset-button" />
         <select id="preset-font_family" class="preset-button">
-          <option value="Source Sans Pro">Sans-serif</option>
-          <option value="Lora">Serif</option>
-          <option value="Courier Prime">Monospace</option>
-          <option value="Cookie">Script</option>
-          <option value="Eagle Lake">Fantasy</option>
+          <option value="SANS_SERIF">SANS_SERIF</option>
+          <option value="SERIF">SERIF</option>
+          <option value="MONOSPACE">MONOSPACE</option>
+          <option value="SCRIPT">SCRIPT</option>
+          <option value="FANTASY">FANTASY</option>
         </select>
         <select id="preset-font_size" class="preset-button">
           <option value="5">5 px</option>
@@ -421,8 +421,9 @@ See https://github.com/adobe-type-tools/cmap-resources
           <option value="31">31 px</option>
         </select>
 
-        <button id="zoom-out">-</button>
-        <button id="zoom-in">+</button>
+        <button id="zoom-out">-</button>&nbsp;<button id="zoom-in">+</button>
+        &nbsp;&nbsp;
+        <button id="undo" disabled>undo</button>&nbsp;<button id="redo" disabled>redo</button>
       </div>
       <!-- end of toolbar -->
 

@@ -24,11 +24,11 @@ class Viewer {
     [TOOLS.CIRCLE]: { color: "#FF0000", lineWidth: 9 },
     [TOOLS.ARROW]: { color: "#006eff", lineWidth: 12 },
     [TOOLS.TEXT_BOX]: {
-      color: "#FF00FF",
-      fontFamily: "Courier Prime",
-      fontSize: 17,
-      fontWeight: "normal",
-      textAlign: "left",
+      color: "#FF00FFFF",
+      fontFamily: "SERIF",
+      fontSize: 14,
+      fontWeight: "W400",
+      textAlignment: "CENTER",
     },
     [TOOLS.MARKER]: { color: "#00FF00" },
     [TOOLS.UNDERLINE]: { color: "#FF00EA" },
@@ -125,25 +125,6 @@ class Viewer {
     const objects = await this.$fetch.get(path);
     this.#annotations = objects;
   }
-
-  async putObject(objectData) {
-    const projectId = this.#projectId;
-    const documentId = this.#documentId;
-    console.log("==>", { projectId, documentId, objectData });
-  }
-
-  updateObjectsDealy = null;
-  updatedObjects = [];
-  postObject(objectData) {
-    const projectId = this.#projectId;
-    const documentId = this.#documentId;
-    console.log("postObject", { projectId, documentId, objectData });
-  }
-  deleteObject(objectId) {
-    const projectId = this.#projectId;
-    const documentId = this.#documentId;
-    console.log("deleteObject", { projectId, documentId, objectId });
-  }
   // end of api requests
 
   async resume() {
@@ -210,9 +191,9 @@ class Viewer {
           ];
         },
         getObjects: (pageNumber) => this.#annotations.filter((object) => object.page === pageNumber),
-        postObject: this.postObject.bind(this),
-        deleteObject: this.deleteObject.bind(this),
-        stopDrawing: () => this.stopDrawing(),
+        // postObject: this.postObject.bind(this),
+        // deleteObject: this.deleteObject.bind(this),
+        // stopDrawing: () => this.stopDrawing(),
       };
 
       await window.foliaPdfViewer.init(ui, dataProxy);
@@ -221,16 +202,39 @@ class Viewer {
       window.foliaPdfViewer.eventBus.on("scalechanging", this.onScaleChanging.bind(this));
       window.foliaPdfViewer.eventBus.on("floatingbarhide", this.onFloatingBarHide.bind(this));
       window.foliaPdfViewer.eventBus.on("floatingbarshow", this.onFloatingBarShow.bind(this));
+      window.foliaPdfViewer.eventBus.on("commit-object", this.onPostObject.bind(this));
+      window.foliaPdfViewer.eventBus.on("delete-object", this.onDeleteObject.bind(this));
+      window.foliaPdfViewer.eventBus.on("stop-drawing", this.onStopDrawing.bind(this));
+
+      window.foliaPdfViewer.eventBus.on("undo-redo-changed", this.onUdpateUndoRedoUI.bind(this));
     } else {
       await window.foliaPdfViewer.close();
     }
-
     this.#projectId = projectId;
     this.#documentId = documentId;
     await this.getPermissions();
     const content = await this.getContent();
     await this.getObjects();
     await window.foliaPdfViewer.open(content);
+  }
+
+  onUdpateUndoRedoUI({ canUndo, canRedo, stat }) {
+    document.querySelector("#undo").toggleAttribute("disabled", !canUndo);
+    document.querySelector("#redo").toggleAttribute("disabled", !canRedo);
+    // console.log(`UndoRedo ${stat}`);
+  }
+  onPostObject(objectData) {
+    const projectId = this.#projectId;
+    const documentId = this.#documentId;
+    console.log("postObject", { projectId, documentId, objectData });
+  }
+  onDeleteObject(objectId) {
+    const projectId = this.#projectId;
+    const documentId = this.#documentId;
+    console.log("deleteObject", { projectId, documentId, objectId });
+  }
+  onStopDrawing() {
+    this.stopDrawing();
   }
   onDocumentLoaded(e) {
     document.querySelector("#currentPage").innerHTML = e.source.page;
@@ -356,7 +360,7 @@ document.addEventListener(
     refreshBtn.onclick = () => {
       viewer
         .getObjects()
-        .then(() => foliaPdfViewer.refreshFoliaLayers())
+        .then(() => window.foliaPdfViewer.refreshFoliaLayers())
         .catch(console.error);
     };
 
@@ -381,6 +385,10 @@ document.addEventListener(
         window.foliaPdfViewer.updateObjectsDrawingProperties({ lineWidth: parseInt(e.target.value, 10) });
       };
     });
+
+    // ------- undo redo ---------
+    document.querySelector("#undo").addEventListener("click", () => window.foliaPdfViewer.undo());
+    document.querySelector("#redo").addEventListener("click", () => window.foliaPdfViewer.redo());
   },
   true
 );
