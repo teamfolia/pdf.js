@@ -11,13 +11,15 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
-    const image = document.createElement("img");
-    image.setAttribute("data-id", `${this.id}`);
-    image.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
-    image.classList.add("image-stamp");
-    this.image = image;
-    this.image.src = `data:image/png;base64,${this.annotationRawData.content}`;
-    this.annotationDIV.appendChild(image);
+    // const image = document.createElement("img");
+    // image.setAttribute("data-id", `${this.id}`);
+    // image.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+    // image.classList.add("image-stamp");
+    // this.image = image;
+    // this.image.src = `data:image/png;base64,${this.annotationRawData.content}`;
+    // this.annotationDIV.appendChild(image);
+
+    this.annotationDIV.style.backgroundImage = `url("data:image/png;base64,${this.annotationRawData.content}")`;
     this.buildBaseCorners();
   }
   getRawData() {
@@ -45,8 +47,8 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     ];
 
     this.annotationRawData.rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
-    this.render();
     super.updateRects();
+    this.render();
   }
 
   render() {

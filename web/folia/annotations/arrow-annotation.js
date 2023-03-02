@@ -14,6 +14,7 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
   }
 
   buildCorners() {
+    if (!this.canManage) return;
     Object.keys(FOLIA_LAYER_ROLES.ARROW_CORNERS).forEach((corner) => {
       const cornerDiv = document.createElement("div");
       cornerDiv.className = `corner-div ${FOLIA_LAYER_ROLES.ARROW_CORNERS[corner]}`;

@@ -275,6 +275,18 @@ export class FoliaPDFViewer {
   get eventBus() {
     return this.eventBus;
   }
+  async checkForNativeAnnotationsPresence() {
+    const promises = [];
+    this.pdfViewer._pages.map((page) => {
+      promises.push(page.pdfPage.getAnnotations());
+    });
+
+    return Promise.allSettled(promises).then((results) =>
+      results.reduce((acc, res) => {
+        return acc || res.value.length > 0;
+      }, false)
+    );
+  }
 
   async open(content) {
     if (this.pdfLoadingTask) await this.close();

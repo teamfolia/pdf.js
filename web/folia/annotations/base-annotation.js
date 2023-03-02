@@ -90,6 +90,7 @@ class FoliaBaseAnnotation {
     this.annotationDIV.remove();
   }
   buildBaseCorners() {
+    if (!this.canManage) return;
     Object.keys(FOLIA_LAYER_ROLES.RECT_CORNERS).forEach((corner) => {
       const cornerDiv = document.createElement("div");
       cornerDiv.className = `corner-div ${FOLIA_LAYER_ROLES.RECT_CORNERS[corner]}`;
@@ -115,7 +116,7 @@ class FoliaBaseAnnotation {
     this.annotationDIV.classList.remove("selected");
     this.isSelected = false;
     this.annotationDIV.style.zIndex = "1";
-    // this.commitObjectChanges();
+
     if (this.isDirty) {
       this.foliaPageLayer.commitObjectChanges(this.getRawData());
     }
@@ -372,6 +373,8 @@ class FoliaBaseAnnotation {
         break;
     }
   }
+  startEditMode() {}
+  stopEditMode() {}
 
   get rect() {
     return {
@@ -383,6 +386,12 @@ class FoliaBaseAnnotation {
   }
   get id() {
     return this.annotationRawData.id;
+  }
+  get author() {
+    return this.annotationRawData.collaboratorEmail;
+  }
+  get addedAt() {
+    return this.annotationRawData.addedAt;
   }
   get isDeleted() {
     return !!this.annotationRawData.deletedAt;

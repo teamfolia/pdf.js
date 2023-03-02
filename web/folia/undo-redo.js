@@ -3,7 +3,7 @@ import { v4 as uuid } from "uuid";
 class CreatingAnnotation {
   constructor(undoRedoManager, state) {
     this.manager = undoRedoManager;
-    this.state = { ...state };
+    this.state = Object.assign({}, state);
     this._location = this.manager.foliaPdfViewer.pdfViewer._location;
   }
 
@@ -97,7 +97,7 @@ class UpdatingAnnotation {
 class DeletingAnnotation {
   constructor(undoRedoManager, prevState) {
     this.manager = undoRedoManager;
-    this.prevState = { ...prevState };
+    this.prevState = Object.assign({}, prevState);
     this._location = this.manager.foliaPdfViewer.pdfViewer._location;
   }
 

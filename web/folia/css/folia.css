@@ -43,7 +43,7 @@ body {
   --annotation-border-color: silver;
 }
 
-.folia-annotation.changed::after {
+/* .folia-annotation.changed::after {
   content: "";
   position: absolute;
   display: inline-flex;
@@ -54,9 +54,9 @@ body {
   top: -15px;
   right: -15px;
   z-index: 1;
-}
+} */
 
-.folia-annotation.selected:not(.conversation)::before {
+.folia-annotation.selected:not(.conversation)::after {
   display: block;
   content: "";
   border: dashed 2px var(--annotation-border-color);
@@ -66,7 +66,7 @@ body {
   right: -3px;
   bottom: -3px;
 
-  z-index: 1;
+  z-index: -1;
 }
 
 /* .folia-annotation.arrow.selected {

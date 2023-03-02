@@ -10,7 +10,7 @@ class TextBoxBuilder extends BaseBuilder {
   text = "";
   rect = [];
 
-  static MIN_WIDTH = 150;
+  static MIN_WIDTH = 250;
   static MIN_HEIGHT = 150;
 
   constructor(...props) {
@@ -80,7 +80,7 @@ class TextBoxBuilder extends BaseBuilder {
     const fontSize = this.preset.fontSize * this.viewport.scale;
     const textArea = document.createElement("textarea");
     textArea.rows = 1;
-    textArea.style.border = "dashed 1px #999999";
+    textArea.style.border = " dashed 5px silver";
     textArea.style.overflow = "hidden";
     textArea.rows = 1;
     textArea.style.outline = "none";
@@ -103,12 +103,14 @@ class TextBoxBuilder extends BaseBuilder {
 
   addTextArea() {
     this.textArea = document.createElement("textarea");
+    this.textArea.placeholder = "Type something";
     if (this.text) this.textArea.value = this.text;
-    this.textArea.style.border = "dashed 1px #999999";
+    this.textArea.style.border = "dashed 2px silver";
     this.textArea.style.overflow = "hidden";
     this.textArea.rows = 1;
     this.textArea.style.outline = "none";
     this.textArea.style.background = "transparent";
+    this.textArea.style.resize = "none";
     this.textArea.oninput = () => this.adjustHeight();
     this.textArea.style.position = "absolute";
 

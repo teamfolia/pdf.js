@@ -120,6 +120,7 @@ class FoliaPageLayer {
   }
 
   commitObjectChanges(objectData) {
+    if (!objectData) return;
     if (objectData.deletedAt) {
       this.eventBus.dispatch("delete-object", objectData.id);
     } else {
@@ -166,7 +167,7 @@ class FoliaPageLayer {
       this.foliaLayer.setAttribute("data-page-number", `${this.pageNumber}`);
       this.foliaLayer.className = "folia-layer";
       this.foliaLayer.onmousedown = this.onFoliaLayerMouseDown.bind(this);
-      this.foliaLayer.onclick = this.onFoliaLayerClick.bind(this);
+      // this.foliaLayer.onclick = this.onFoliaLayerClick.bind(this);
     }
     this.foliaLayer.style.width = Math.floor(this.pageDiv.clientWidth) + "px";
     this.foliaLayer.style.height = Math.floor(this.pageDiv.clientHeight) + "px";
@@ -229,20 +230,11 @@ class FoliaPageLayer {
     // this.commit Changes()
     this.multipleSelect.clear();
   }
-  onFoliaLayerClick(e) {
-    // console.log("onFoliaLayerClick");
-    const { role, id } = e.target.dataset;
-    if (role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
-      return this.multipleSelect.clear();
-    }
-    e.stopPropagation();
-    e.preventDefault();
-  }
   onFoliaLayerMouseDown(e) {
+    // console.log("onFoliaLayerMouseDown", e.target);
     const { role, id } = e.target.dataset;
-    // console.log('onFoliaLayerMouseDown', e.target, {role, id})
     if (!role) return;
-    e.stopPropagation();
+    // e.stopPropagation();
     this.actionTarget = { role, id };
     if (role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
       return this.multipleSelect.clear();
@@ -256,24 +248,17 @@ class FoliaPageLayer {
     this.multipleSelect.prepare2moving(this.startPoint);
 
     if (!this.multipleSelect.isEmpty()) this.multipleSelect.hideFloatingBar();
-    // if (!this.multipleSelect.isEmpty()) {
-    //   // this.dataProxy.floatingBar.hide();
-    //   this.eventBus.dispatch("floating_bar_hide");
-    // }
-    // const annoObject = this.annotationObjects.get(this.actionTarget.id);
-    // console.log('onFoliaLayerMouseDown', annoObject && annoObject.editable)
-    e.preventDefault();
+    // e.preventDefault();
   }
   onFoliaLayerMouseMove(e) {
-    e.stopPropagation();
+    // e.stopPropagation();
     if (!this.isMouseDown) return;
-    // this.foliaDataStorage.floatingBar.hide()
     const annoObject = this.annotationObjects.get(this.actionTarget.id);
     if (annoObject) {
       if (annoObject.editable && annoObject.isFocused) return;
       if (annoObject.permanentPosition) return;
     }
-    e.preventDefault();
+    // e.preventDefault();
 
     if (annoObject && this.actionTarget.role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
       if (this.multipleSelect.isEmpty() && !this.multipleSelect.includes(annoObject)) {
@@ -304,14 +289,18 @@ class FoliaPageLayer {
     this.isMouseMoved = true;
   }
   onFoliaLayerMouseUp(e) {
-    e.stopPropagation();
-    e.preventDefault();
+    // console.log("onFoliaLayerMouseUp", e.target);
+    // e.stopPropagation();
+    // e.preventDefault();
     this.foliaLayer.onmouseup = null;
     this.foliaLayer.onmousemove = null;
 
+    if (e.target.dataset.role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
+      return this.multipleSelect.clear();
+    }
+
     if (this.actionTarget.role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
       this.multipleSelect.clear();
-      // this.dataProxy.floatingBar.hide();
     } else if (!this.isMouseMoved && this.actionTarget.role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
       const annoObject = this.annotationObjects.get(this.actionTarget.id);
       if (annoObject && !annoObject.editable) {
@@ -322,7 +311,6 @@ class FoliaPageLayer {
           : this.multipleSelect.toggleObject(annoObject, e.shiftKey);
       }
       this.multipleSelect.showFloatingBar();
-      // dataProxy.floatingBar.show(this.multipleSelect.getObjects());
     } else if (this.isMouseMoved) {
       this.multipleSelect.showFloatingBar();
 

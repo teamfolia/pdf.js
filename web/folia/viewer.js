@@ -15,7 +15,7 @@ class Viewer {
       color: "#000000",
       lineWidth: 1,
       fontFamily: "Source Sans Pro",
-      fontSize: 13,
+      fontSize: 25,
       fontWeight: "normal",
       textAlign: "left",
     },
@@ -26,7 +26,7 @@ class Viewer {
     [TOOLS.TEXT_BOX]: {
       color: "#FF00FFFF",
       fontFamily: "SERIF",
-      fontSize: 14,
+      fontSize: 25,
       fontWeight: "W400",
       textAlignment: "CENTER",
     },
@@ -202,6 +202,7 @@ class Viewer {
       window.foliaPdfViewer.eventBus.on("scalechanging", this.onScaleChanging.bind(this));
       window.foliaPdfViewer.eventBus.on("floatingbarhide", this.onFloatingBarHide.bind(this));
       window.foliaPdfViewer.eventBus.on("floatingbarshow", this.onFloatingBarShow.bind(this));
+      window.foliaPdfViewer.eventBus.on("pagesloaded", this.onPagesLoaded.bind(this));
       window.foliaPdfViewer.eventBus.on("commit-object", this.onPostObject.bind(this));
       window.foliaPdfViewer.eventBus.on("delete-object", this.onDeleteObject.bind(this));
       window.foliaPdfViewer.eventBus.on("stop-drawing", this.onStopDrawing.bind(this));
@@ -216,6 +217,12 @@ class Viewer {
     const content = await this.getContent();
     await this.getObjects();
     await window.foliaPdfViewer.open(content);
+  }
+
+  onPagesLoaded(e) {
+    foliaPdfViewer
+      .checkForNativeAnnotationsPresence()
+      .then((r) => console.log("PDF Document has annotations:", r));
   }
 
   onUdpateUndoRedoUI({ canUndo, canRedo, stat }) {

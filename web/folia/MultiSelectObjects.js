@@ -47,6 +47,7 @@ class MultipleSelect {
   };
   clear = () => {
     this.#objects.forEach((obj) => {
+      obj.stopEditMode();
       this.deleteObject(obj);
     });
     this.lastBounds = this.bounds;
@@ -54,6 +55,10 @@ class MultipleSelect {
   startEditMode = (annoObject) => {
     if (!this.includes(annoObject)) this.addObject(annoObject);
     annoObject.startEditMode();
+  };
+  stopEditMode = (annoObject) => {
+    // if (!this.includes(annoObject)) this.addObject(annoObject);
+    annoObject.stopEditMode();
   };
   toggleObject = (obj, withShift) => {
     if (withShift) {
