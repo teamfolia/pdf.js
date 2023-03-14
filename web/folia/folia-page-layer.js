@@ -1,6 +1,6 @@
 import FoliaConversationAnnotation from "./annotations/_conversation-annotation";
 import FoliaImageAnnotation from "./annotations/image-annotation";
-import FoliaTypewriterAnnotation from "./annotations/text-box-annotation";
+import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
 import MultipleSelect from "./MultiSelectObjects";
 import FoliaInkAnnotation from "./annotations/ink-annotation";
 import FoliaSquareAnnotation from "./annotations/square-annotation";
@@ -8,8 +8,6 @@ import FoliaCircleAnnotation from "./annotations/circle-annotation";
 import FoliaArrowAnnotation from "./annotations/arrow-annotation";
 import FoliaHighlightAnnotation from "./annotations/highlight-annotation";
 import { ANNOTATION_TYPES } from "./constants";
-import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
-import { times } from "lodash";
 
 const ANNOTATIONS_CLASSES = {
   [ANNOTATION_TYPES.INK]: FoliaInkAnnotation,
@@ -188,18 +186,23 @@ class FoliaPageLayer {
 
       // create or update
       for (const annotation of annotations) {
-        if (this._cancelled) return;
-        let annotationObject = this.annotationObjects.get(annotation.id);
-        if (!annotationObject) {
-          const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
-          annotationObject = new AnnoClass(this, annotation);
-          // console.time("anno-create " + annotation.__typename);
-          this.annotationObjects.set(annotation.id, annotationObject);
-          // console.timeEnd("anno-create " + annotation.__typename);
-        } else {
-          // console.time("anno-update " + annotation.__typename);
-          annotationObject.update(annotation, this.viewport);
-          // console.timeEnd("anno-update " + annotation.__typename);
+        // console.log("annotation", annotation);
+        try {
+          if (this._cancelled) return;
+          let annotationObject = this.annotationObjects.get(annotation.id);
+          if (!annotationObject) {
+            const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
+            annotationObject = new AnnoClass(this, annotation);
+            // console.time("anno-create " + annotation.__typename);
+            this.annotationObjects.set(annotation.id, annotationObject);
+            // console.timeEnd("anno-create " + annotation.__typename);
+          } else {
+            // console.time("anno-update " + annotation.__typename);
+            annotationObject.update(annotation, this.viewport);
+            // console.timeEnd("anno-update " + annotation.__typename);
+          }
+        } catch (e) {
+          console.error("error rendering anno", annotation);
         }
       }
 
@@ -231,7 +234,9 @@ class FoliaPageLayer {
     this.multipleSelect.clear();
   }
   onFoliaLayerMouseDown(e) {
-    // console.log("onFoliaLayerMouseDown", e.target);
+    // console.log("onFoliaLayerMouseDown", e.target, e.currentTarget);
+    if (e.target.tagName === "TEXTAREA") return;
+
     const { role, id } = e.target.dataset;
     if (!role) return;
     // e.stopPropagation();
@@ -253,9 +258,12 @@ class FoliaPageLayer {
   onFoliaLayerMouseMove(e) {
     // e.stopPropagation();
     if (!this.isMouseDown) return;
+    // console.log("onFoliaLayerMouseMove", e.target.tagName, e.currentTarget.tagName);
+    if (e.target.tagName === "TEXTAREA") return;
+
     const annoObject = this.annotationObjects.get(this.actionTarget.id);
     if (annoObject) {
-      if (annoObject.editable && annoObject.isFocused) return;
+      // if (annoObject.editable && annoObject.isFocused) return;
       if (annoObject.permanentPosition) return;
     }
     // e.preventDefault();
@@ -289,11 +297,12 @@ class FoliaPageLayer {
     this.isMouseMoved = true;
   }
   onFoliaLayerMouseUp(e) {
-    // console.log("onFoliaLayerMouseUp", e.target);
     // e.stopPropagation();
     // e.preventDefault();
     this.foliaLayer.onmouseup = null;
     this.foliaLayer.onmousemove = null;
+    // console.log("onFoliaLayerMouseUp", e.target.tagName, e.currentTarget.tagName);
+    if (e.target.tagName === "TEXTAREA") return;
 
     if (e.target.dataset.role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
       return this.multipleSelect.clear();

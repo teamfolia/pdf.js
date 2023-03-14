@@ -334,7 +334,7 @@ class PDFPageView {
       keepAnnotationEditorLayer,
       keepXfaLayer,
     });
-    // console.log("pdfPageView.reset", this.id);
+    // console.log("pdfPageView.reset", this.id, this.foliaPageLayer);
     this.renderingState = RenderingStates.INITIAL;
 
     const div = this.div;
@@ -342,6 +342,7 @@ class PDFPageView {
     div.style.height = Math.floor(this.viewport.height) + "px";
 
     const childNodes = div.childNodes,
+      foliaLayer = this.foliaPageLayer?.foliaLayer,
       zoomLayerNode = (keepZoomLayer && this.zoomLayer) || null,
       annotationLayerNode = (keepAnnotationLayer && this.annotationLayer?.div) || null,
       annotationEditorLayerNode = (keepAnnotationEditorLayer && this.annotationEditorLayer?.div) || null,
@@ -349,7 +350,7 @@ class PDFPageView {
     for (let i = childNodes.length - 1; i >= 0; i--) {
       const node = childNodes[i];
       switch (node) {
-        // case foliaLayer:
+        case foliaLayer:
         case zoomLayerNode:
         case annotationLayerNode:
         case annotationEditorLayerNode:
@@ -360,9 +361,9 @@ class PDFPageView {
     }
     div.removeAttribute("data-loaded");
 
-    // if (foliaLayer) {
-    //   this.foliaPageLayer.hide()
-    // }
+    if (foliaLayer) {
+      this.foliaPageLayer.hide();
+    }
     if (annotationLayerNode) {
       // Hide the annotation layer until all elements are resized
       // so they are not displayed on the already resized page.
@@ -719,6 +720,7 @@ class PDFPageView {
       pdfPage,
       viewport: this.viewport,
     });
+    // console.log("====>", this.foliaPageLayer);
 
     if (this.xfaLayer?.div) {
       // The xfa layer needs to stay on top.

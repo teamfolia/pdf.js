@@ -10,7 +10,6 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
-    this.annotationDIV.classList.add(this.annotationRawData.__typename);
     this.buildBaseCorners();
   }
   getRawData() {

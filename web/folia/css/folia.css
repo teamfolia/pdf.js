@@ -56,7 +56,7 @@ body {
   z-index: 1;
 } */
 
-.folia-annotation.selected:not(.conversation)::after {
+.folia-annotation.selected:not(.TextBoxAnnotation)::before {
   display: block;
   content: "";
   border: dashed 2px var(--annotation-border-color);
@@ -65,8 +65,14 @@ body {
   top: -3px;
   right: -3px;
   bottom: -3px;
+  /* background-color: rgba(255, 0, 0, 0.5); */
+}
 
-  z-index: -1;
+.folia-annotation.TextBoxAnnotation {
+  border: dashed 2px transparent;
+}
+.folia-annotation.selected.TextBoxAnnotation {
+  border: dashed 2px var(--annotation-border-color);
 }
 
 /* .folia-annotation.arrow.selected {
@@ -83,7 +89,7 @@ body {
   background-size: contain;
 }
 
-.folia-annotation .typewriter {
+.typewriter {
   resize: none;
   background-color: transparent;
   cursor: move;

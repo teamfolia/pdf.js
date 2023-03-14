@@ -22,7 +22,7 @@ class Viewer {
     [TOOLS.INK]: { color: "#0000FF", lineWidth: 3 },
     [TOOLS.SQUARE]: { color: "#00FF00", lineWidth: 6 },
     [TOOLS.CIRCLE]: { color: "#FF0000", lineWidth: 9 },
-    [TOOLS.ARROW]: { color: "#006eff", lineWidth: 12 },
+    [TOOLS.ARROW]: { color: "#006eff", lineWidth: 4 },
     [TOOLS.TEXT_BOX]: {
       color: "#FF00FFFF",
       fontFamily: "SERIF",
@@ -355,6 +355,35 @@ class Viewer {
       });
     };
   }
+  onWheelListener(e) {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      // e.stopPropagation();
+      // e.stopImmediatePropagation();
+      const viewerDiv = window.foliaPdfViewer.pdfViewer.container;
+      clearTimeout(this.zoomTimerId);
+      // const zoomFactor = 0.015;
+      const zoomFactor = 0.025;
+      let zoomDirection = 0;
+      this.zoom = this.zoom || 1;
+      if (e.deltaY < 0) {
+        zoomDirection = 1;
+      } else if (e.deltaY > 0) {
+        zoomDirection = -1;
+      }
+      this.zoom = parseFloat((this.zoom + zoomFactor * zoomDirection).toFixed(2));
+      viewerDiv.style.zoom = this.zoom;
+      console.log("onWheelListener", this.zoom);
+
+      this.zoomTimerId = setTimeout(() => {
+        window.foliaPdfViewer.pdfViewer.currentScaleValue =
+          window.foliaPdfViewer.pdfViewer.currentScale * this.zoom;
+        window.foliaPdfViewer.forceRendering();
+        this.zoom = 1;
+        viewerDiv.style.zoom = this.zoom;
+      }, 250);
+    }
+  }
 }
 
 document.addEventListener(
@@ -396,6 +425,9 @@ document.addEventListener(
     // ------- undo redo ---------
     document.querySelector("#undo").addEventListener("click", () => window.foliaPdfViewer.undo());
     document.querySelector("#redo").addEventListener("click", () => window.foliaPdfViewer.redo());
+
+    // -------- pinch zoom -----------
+    document.addEventListener("wheel", viewer.onWheelListener, { passive: false });
   },
   true
 );

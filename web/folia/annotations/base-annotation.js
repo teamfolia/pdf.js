@@ -19,7 +19,7 @@ class FoliaBaseAnnotation {
     const annotationDIV = document.createElement("div");
     annotationDIV.setAttribute("data-id", `${this.id}`);
     annotationDIV.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
-    annotationDIV.className = "folia-annotation";
+    annotationDIV.className = `folia-annotation ${this.annotationRawData.__typename}`;
     this.annotationDIV = annotationDIV;
     this.foliaLayer.appendChild(annotationDIV);
   }
@@ -105,17 +105,14 @@ class FoliaBaseAnnotation {
     });
   }
   markAsSelected() {
-    this.setCornersVisibility(true);
+    this.setCornersVisibility(this.canManage);
     this.annotationDIV.classList.add("selected");
     this.isSelected = true;
-    this.annotationDIV.style.zIndex = "2";
-    // this.render();
   }
   markAsUnselected() {
     this.setCornersVisibility(false);
     this.annotationDIV.classList.remove("selected");
     this.isSelected = false;
-    this.annotationDIV.style.zIndex = "1";
 
     if (this.isDirty) {
       this.foliaPageLayer.commitObjectChanges(this.getRawData());

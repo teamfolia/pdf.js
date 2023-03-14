@@ -2,36 +2,46 @@ import { toPdfRect, hexColor2RGBA } from "../folia-util";
 import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import FoliaBaseAnnotation from "./base-annotation";
 import { ANNOTATION_TYPES, FONT_FAMILY, FONT_WEIGHT, TEXT_ALIGNMENT } from "../constants";
+import { doc } from "prettier";
 
 class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
   editablePropertiesList = ["color", "rect", "text", "fontSize", "fontFamily", "fontWeight", "textAlignment"];
   editable = true;
-  newbie = false;
+  inEditMode = false;
   textArea;
 
   constructor(...props) {
     super(...props);
-    if (!this.annotationRawData.newbie && !this.annotationRawData.text) {
-      this.deleteFromCanvas();
-    }
     if (this.annotationRawData.newbie) {
       delete this.annotationRawData.newbie;
     }
-    // console.log(this.id, this.annotationRawData);
-    const textArea = document.createElement("textarea");
-    textArea.placeholder = "Type something";
-    textArea.className = "typewriter";
-    textArea.setAttribute("disabled", "disabled");
-    textArea.setAttribute("data-id", `${this.id}`);
-    textArea.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
-    textArea.oninput = (e) => {
+    this.textArea = document.createElement("textarea");
+    this.textArea.placeholder = "Type something";
+    this.textArea.className = "typewriter";
+    this.textArea.setAttribute("disabled", "disabled");
+    this.textArea.oninput = (e) => {
       this.annotationRawData.text = e.target.value;
       this.adjustHeight();
       this.markAsChanged();
     };
-    textArea.onclick = (e) => e.stopPropagation();
-    this.annotationDIV.appendChild(textArea);
-    this.textArea = textArea;
+    this.textArea.onclick = (e) => e.stopPropagation();
+    this.textArea.onmousedown = (e) => e.stopPropagation();
+    this.textArea.onmousemove = (e) => e.stopPropagation();
+    this.textArea.onmouseup = (e) => e.stopPropagation();
+
+    this.lid = document.createElement("div");
+    this.lid.style.position = "absolute";
+    this.lid.style.left = 0;
+    this.lid.style.top = 0;
+    this.lid.style.right = 0;
+    this.lid.style.bottom = 0;
+    // this.lid.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
+    this.lid.setAttribute("role", "lid");
+    this.lid.setAttribute("data-id", `${this.id}`);
+    this.lid.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+
+    this.annotationDIV.appendChild(this.textArea);
+    this.annotationDIV.appendChild(this.lid);
     this.buildBaseCorners();
   }
 
@@ -101,8 +111,8 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       this.annotationDIV.clientWidth,
       this.annotationDIV.clientHeight,
     ];
-    this.textArea.style.width = `${this.annotationDIV.clientWidth - 4}px`;
-    this.textArea.style.height = `${this.annotationDIV.clientHeight - 4}px`;
+    this.textArea.style.width = `${this.annotationDIV.clientWidth - 2}px`;
+    this.textArea.style.height = `${this.annotationDIV.clientHeight - 2}px`;
 
     this.annotationRawData.rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
   }
@@ -127,14 +137,21 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
 
   startEditMode() {
     if (!this.canManage) return;
+    this.inEditMode = true;
     this.textArea.removeAttribute("disabled");
     this.textArea.focus();
     this.prevState = this.getRawData();
+    this.lid.style.display = "none";
+    // this.lid.remove();
   }
   stopEditMode() {
+    // this.annotationDIV.appendChild(this.lid);
+    this.lid.style.display = "block";
+    this.inEditMode = false;
     this.textArea.blur();
     this.textArea.setAttribute("disabled", "disabled");
     if (!this.prevState) return;
+    if (!this.canManage) return;
     this.newState = this.getRawData();
     this.foliaPageLayer.undoRedoManager.updatingObject(this.prevState, this.newState);
     this.prevState = null;

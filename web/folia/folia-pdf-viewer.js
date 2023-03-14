@@ -281,11 +281,12 @@ export class FoliaPDFViewer {
       promises.push(page.pdfPage.getAnnotations());
     });
 
-    return Promise.allSettled(promises).then((results) =>
+    return Promise.allSettled(promises).then((results) => {
       results.reduce((acc, res) => {
+        if (res.value.length > 0) console.log(`found annotations`, res.value);
         return acc || res.value.length > 0;
-      }, false)
-    );
+      }, false);
+    });
   }
 
   async open(content) {

@@ -120,7 +120,7 @@ class SquareBuilder extends BaseBuilder {
       ctx.save();
       ctx.beginPath();
       ctx.strokeStyle = hexColor2RGBA(square.color);
-      ctx.lineWidth = lineWidth;
+      ctx.lineWidth = lineWidth * 0.4;
       ctx.strokeRect(...square.rect);
       ctx.closePath();
       ctx.restore();

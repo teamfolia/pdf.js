@@ -1,8 +1,5 @@
-import * as foliaAsyncRequest from "../folia-async-request";
-import { hexColor2RGBA, toPdfPoint } from "../folia-util";
+import { toPdfPoint } from "../folia-util";
 import BaseBuilder from "./base-builder";
-import { cloneDeep } from "lodash";
-import * as turf from "@turf/turf";
 import { ANNOTATION_TYPES } from "../constants";
 
 class ArrowBuilder extends BaseBuilder {
@@ -11,8 +8,6 @@ class ArrowBuilder extends BaseBuilder {
   sourcePoint;
   targetPoint;
   arrows = [];
-
-  static type = "arrow";
 
   constructor(...props) {
     super(...props);
@@ -59,7 +54,24 @@ class ArrowBuilder extends BaseBuilder {
       };
     });
   }
+  checkMinLength(sourcePoint, targetPoint) {
+    const LENGTH_FACTOR = 5;
+    const minArrowLength = Math.max(this.preset.lineWidth * LENGTH_FACTOR, 20);
+    const cat1 = Math.abs(sourcePoint.x - targetPoint.x) || 10;
+    const cat2 = Math.abs(sourcePoint.y - targetPoint.y) || 10;
+    const arrowLength = Math.sqrt(Math.pow(cat1, 2) + Math.pow(cat2, 2));
 
+    if (arrowLength < minArrowLength) {
+      const angle1 = Math.asin(cat1 / arrowLength);
+      const angle2 = Math.asin(cat2 / arrowLength);
+      const cat1new = minArrowLength * Math.sin(angle1) * (sourcePoint.x >= targetPoint.x ? -1 : 1);
+      const cat2new = minArrowLength * Math.sin(angle2) * (sourcePoint.y >= targetPoint.y ? -1 : 1);
+      const _targetPoint = { x: sourcePoint.x + cat1new, y: sourcePoint.y + cat2new };
+      return { sourcePoint, targetPoint: _targetPoint };
+    } else {
+      return { sourcePoint, targetPoint };
+    }
+  }
   onMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -94,11 +106,13 @@ class ArrowBuilder extends BaseBuilder {
 
     this.arrows.pop();
     const prevState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
+    const { sourcePoint, targetPoint } = this.checkMinLength(this.sourcePoint, this.targetPoint);
+
     this.arrows.push({
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
-      sourcePoint: this.sourcePoint,
-      targetPoint: this.targetPoint,
+      sourcePoint,
+      targetPoint,
     });
 
     const newState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
@@ -137,7 +151,7 @@ class ArrowBuilder extends BaseBuilder {
       const hpy1 = targetPoint.y + headLen * dx - headLen * dy;
 
       ctx.beginPath();
-      ctx.lineWidth = _lineWidth;
+      ctx.lineWidth = _lineWidth * 0.4;
       ctx.moveTo(sourcePoint.x, sourcePoint.y);
       ctx.lineTo(targetPoint.x, targetPoint.y);
       ctx.moveTo(hpx0, hpy0);

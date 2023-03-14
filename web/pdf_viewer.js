@@ -2071,6 +2071,7 @@ class PDFViewer {
       newScale = Math.ceil(newScale * 10) / 10;
       newScale = Math.min(MAX_SCALE, newScale);
     } while (--steps > 0 && newScale < MAX_SCALE);
+    // console.log("increaseScale", newScale);
     this.currentScaleValue = newScale;
   }
 
@@ -2085,6 +2086,7 @@ class PDFViewer {
       newScale = Math.floor(newScale * 10) / 10;
       newScale = Math.max(MIN_SCALE, newScale);
     } while (--steps > 0 && newScale > MIN_SCALE);
+    // console.log("decreaseScale", newScale);
     this.currentScaleValue = newScale;
   }
 

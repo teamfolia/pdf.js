@@ -15,9 +15,9 @@
 
 const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
-const DEFAULT_SCALE_DELTA = 1.1;
+const DEFAULT_SCALE_DELTA = 1.01;
 const MIN_SCALE = 0.1;
-const MAX_SCALE = 10.0;
+const MAX_SCALE = 5.0;
 const UNKNOWN_SCALE = 0;
 const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
@@ -124,11 +124,9 @@ function scrollIntoView(element, spot, scrollMatches = false) {
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
   while (
-    (parent.clientHeight === parent.scrollHeight &&
-      parent.clientWidth === parent.scrollWidth) ||
+    (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) ||
     (scrollMatches &&
-      (parent.classList.contains("markedContent") ||
-        getComputedStyle(parent).overflow === "hidden"))
+      (parent.classList.contains("markedContent") || getComputedStyle(parent).overflow === "hidden"))
   ) {
     offsetY += parent.offsetTop;
     offsetX += parent.offsetLeft;
@@ -464,13 +462,7 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  * @param {GetVisibleElementsParameters}
  * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
-function getVisibleElements({
-  scrollEl,
-  views,
-  sortByVisibility = false,
-  horizontal = false,
-  rtl = false,
-}) {
+function getVisibleElements({ scrollEl, views, sortByVisibility = false, horizontal = false, rtl = false }) {
   const top = scrollEl.scrollTop,
     bottom = top + scrollEl.clientHeight;
   const left = scrollEl.scrollLeft,
@@ -488,8 +480,7 @@ function getVisibleElements({
   // the padding edge.
   function isElementBottomAfterViewTop(view) {
     const element = view.div;
-    const elementBottom =
-      element.offsetTop + element.clientTop + element.clientHeight;
+    const elementBottom = element.offsetTop + element.clientTop + element.clientHeight;
     return elementBottom > top;
   }
   function isElementNextAfterViewHorizontally(view) {
@@ -504,28 +495,18 @@ function getVisibleElements({
     numViews = views.length;
   let firstVisibleElementInd = binarySearchFirstItem(
     views,
-    horizontal
-      ? isElementNextAfterViewHorizontally
-      : isElementBottomAfterViewTop
+    horizontal ? isElementNextAfterViewHorizontally : isElementBottomAfterViewTop
   );
 
   // Please note the return value of the `binarySearchFirstItem` function when
   // no valid element is found (hence the `firstVisibleElementInd` check below).
-  if (
-    firstVisibleElementInd > 0 &&
-    firstVisibleElementInd < numViews &&
-    !horizontal
-  ) {
+  if (firstVisibleElementInd > 0 && firstVisibleElementInd < numViews && !horizontal) {
     // In wrapped scrolling (or vertical scrolling with spreads), with some page
     // sizes, isElementBottomAfterViewTop doesn't satisfy the binary search
     // condition: there can be pages with bottoms above the view top between
     // pages with bottoms below. This function detects and corrects that error;
     // see it for more comments.
-    firstVisibleElementInd = backtrackBeforeAllVisibleElements(
-      firstVisibleElementInd,
-      views,
-      top
-    );
+    firstVisibleElementInd = backtrackBeforeAllVisibleElements(firstVisibleElementInd, views, top);
   }
 
   // lastEdge acts as a cutoff for us to stop looping, because we know all
@@ -560,19 +541,12 @@ function getVisibleElements({
       break;
     }
 
-    if (
-      viewBottom <= top ||
-      currentHeight >= bottom ||
-      viewRight <= left ||
-      currentWidth >= right
-    ) {
+    if (viewBottom <= top || currentHeight >= bottom || viewRight <= left || currentWidth >= right) {
       continue;
     }
 
-    const hiddenHeight =
-      Math.max(0, top - currentHeight) + Math.max(0, viewBottom - bottom);
-    const hiddenWidth =
-      Math.max(0, left - currentWidth) + Math.max(0, viewRight - right);
+    const hiddenHeight = Math.max(0, top - currentHeight) + Math.max(0, viewBottom - bottom);
+    const hiddenWidth = Math.max(0, left - currentWidth) + Math.max(0, viewRight - right);
 
     const fractionHeight = (viewHeight - hiddenHeight) / viewHeight,
       fractionWidth = (viewWidth - hiddenWidth) / viewWidth;
@@ -643,19 +617,11 @@ function isValidRotation(angle) {
 }
 
 function isValidScrollMode(mode) {
-  return (
-    Number.isInteger(mode) &&
-    Object.values(ScrollMode).includes(mode) &&
-    mode !== ScrollMode.UNKNOWN
-  );
+  return Number.isInteger(mode) && Object.values(ScrollMode).includes(mode) && mode !== ScrollMode.UNKNOWN;
 }
 
 function isValidSpreadMode(mode) {
-  return (
-    Number.isInteger(mode) &&
-    Object.values(SpreadMode).includes(mode) &&
-    mode !== SpreadMode.UNKNOWN
-  );
+  return Number.isInteger(mode) && Object.values(SpreadMode).includes(mode) && mode !== SpreadMode.UNKNOWN;
 }
 
 function isPortraitOrientation(size) {
@@ -666,11 +632,7 @@ function isPortraitOrientation(size) {
  * Promise that is resolved when DOM window becomes visible.
  */
 const animationStarted = new Promise(function (resolve) {
-  if (
-    typeof PDFJSDev !== "undefined" &&
-    PDFJSDev.test("LIB") &&
-    typeof window === "undefined"
-  ) {
+  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB") && typeof window === "undefined") {
     // Prevent "ReferenceError: window is not defined" errors when running the
     // unit-tests in Node.js environments.
     setTimeout(resolve, 20);
@@ -680,9 +642,7 @@ const animationStarted = new Promise(function (resolve) {
 });
 
 const docStyle =
-  typeof PDFJSDev !== "undefined" &&
-  PDFJSDev.test("LIB") &&
-  typeof document === "undefined"
+  typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB") && typeof document === "undefined"
     ? null
     : document.documentElement.style;
 
@@ -756,13 +716,11 @@ class ProgressBar {
  */
 function getActiveOrFocusedElement() {
   let curRoot = document;
-  let curActiveOrFocused =
-    curRoot.activeElement || curRoot.querySelector(":focus");
+  let curActiveOrFocused = curRoot.activeElement || curRoot.querySelector(":focus");
 
   while (curActiveOrFocused?.shadowRoot) {
     curRoot = curActiveOrFocused.shadowRoot;
-    curActiveOrFocused =
-      curRoot.activeElement || curRoot.querySelector(":focus");
+    curActiveOrFocused = curRoot.activeElement || curRoot.querySelector(":focus");
   }
 
   return curActiveOrFocused;
