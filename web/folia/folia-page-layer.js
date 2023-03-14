@@ -7,7 +7,7 @@ import FoliaSquareAnnotation from "./annotations/square-annotation";
 import FoliaCircleAnnotation from "./annotations/circle-annotation";
 import FoliaArrowAnnotation from "./annotations/arrow-annotation";
 import FoliaHighlightAnnotation from "./annotations/highlight-annotation";
-import { ANNOTATION_TYPES } from "./constants";
+import { ANNOTATION_TYPES, ANNOTATION_WEIGHT } from "./constants";
 
 const ANNOTATIONS_CLASSES = {
   [ANNOTATION_TYPES.INK]: FoliaInkAnnotation,
@@ -174,7 +174,13 @@ class FoliaPageLayer {
     }
 
     try {
-      const annotations = this.dataProxy.getObjects(this.pageNumber);
+      const annotations = this.dataProxy.getObjects(this.pageNumber).sort((a, b) => {
+        const weightA = ANNOTATION_WEIGHT[a.__typename];
+        const weightB = ANNOTATION_WEIGHT[b.__typename];
+        const createdA = new Date(a.createdAt);
+        const createdB = new Date(b.createdAt);
+        return weightA === weightB ? createdA - createdB : weightA - weightB;
+      });
       // delete
       for (const [id, annotationObject] of this.annotationObjects) {
         if (this._cancelled) return;
