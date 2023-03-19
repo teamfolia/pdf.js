@@ -38,31 +38,44 @@ class HighlightBuilder extends BaseBuilder {
 
   prepareAnnotations2save() {
     let annotations = [];
-    for (const group of this.groups) {
-      if (annotations[0]?.color === group.color) {
-        annotations[0].blocks.push(...group.blocks);
-        annotations[0].text += group.blocks.reduce((acc, block) => (acc += block.letter), "");
-      } else {
-        annotations.unshift({
-          color: group.color,
-          blocks: [...group.blocks],
-          text: group.blocks.reduce((acc, block) => (acc += block.letter), ""),
-        });
-      }
-    }
 
-    return annotations.map((anno) => {
-      return {
-        __typename: ANNOTATION_TYPES.HIGHLIGHT,
-        kind: this.kind,
-        color: anno.color,
-        rects: anno.blocks.map((block) => {
-          const { left, top, width, height } = block;
-          return toPdfRect([left, top, width, height], this.viewport.width, this.viewport.height);
-        }),
-        text: anno.text,
-      };
-    });
+    for (const group of this.groups) {
+      for (const block of group.blocks)
+        annotations.push({
+          color: group.color,
+          blocks: [block],
+          text: block.letter,
+        });
+    }
+    // for (const group of this.groups) {
+    //   if (annotations[0]?.color === group.color) {
+    //     annotations[0].blocks.push(...group.blocks);
+    //     annotations[0].text += group.blocks.reduce((acc, block) => (acc += block.letter), "");
+    //   } else {
+    //     annotations.unshift({
+    //       color: group.color,
+    //       blocks: [...group.blocks],
+    //       text: group.blocks.reduce((acc, block) => (acc += block.letter), ""),
+    //     });
+    //   }
+    // }
+
+    return annotations
+      .sort((a, b) => {
+        return b.blocks[0].top - a.blocks[0].top;
+      })
+      .map((anno) => {
+        return {
+          __typename: ANNOTATION_TYPES.HIGHLIGHT,
+          kind: this.kind,
+          color: anno.color,
+          rects: anno.blocks.map((block) => {
+            const { left, top, width, height } = block;
+            return toPdfRect([left, top, width, height], this.viewport.width, this.viewport.height);
+          }),
+          text: anno.text,
+        };
+      });
   }
 
   calcTextBlocks() {

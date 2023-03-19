@@ -59,10 +59,9 @@ const DIACRITICS_EXCEPTION = new Set([
   0x3099, 0x309a,
   // UNICODE_COMBINING_CLASS_VIRAMA (under 0xFFFF)
   // https://www.compart.com/fr/unicode/combining/9
-  0x094d, 0x09cd, 0x0a4d, 0x0acd, 0x0b4d, 0x0bcd, 0x0c4d, 0x0ccd, 0x0d3b,
-  0x0d3c, 0x0d4d, 0x0dca, 0x0e3a, 0x0eba, 0x0f84, 0x1039, 0x103a, 0x1714,
-  0x1734, 0x17d2, 0x1a60, 0x1b44, 0x1baa, 0x1bab, 0x1bf2, 0x1bf3, 0x2d7f,
-  0xa806, 0xa82c, 0xa8c4, 0xa953, 0xa9c0, 0xaaf6, 0xabed,
+  0x094d, 0x09cd, 0x0a4d, 0x0acd, 0x0b4d, 0x0bcd, 0x0c4d, 0x0ccd, 0x0d3b, 0x0d3c, 0x0d4d, 0x0dca, 0x0e3a,
+  0x0eba, 0x0f84, 0x1039, 0x103a, 0x1714, 0x1734, 0x17d2, 0x1a60, 0x1b44, 0x1baa, 0x1bab, 0x1bf2, 0x1bf3,
+  0x2d7f, 0xa806, 0xa82c, 0xa8c4, 0xa953, 0xa9c0, 0xaaf6, 0xabed,
   // 91
   // https://www.compart.com/fr/unicode/combining/91
   0x0c56,
@@ -77,12 +76,11 @@ const DIACRITICS_EXCEPTION = new Set([
   0x0f74,
 ]);
 const DIACRITICS_EXCEPTION_STR = [...DIACRITICS_EXCEPTION.values()]
-  .map(x => String.fromCharCode(x))
+  .map((x) => String.fromCharCode(x))
   .join("");
 
 const DIACRITICS_REG_EXP = /\p{M}+/gu;
-const SPECIAL_CHARS_REG_EXP =
-  /([.*+?^${}()|[\]\\])|(\p{P})|(\s+)|(\p{M})|(\p{L})/gu;
+const SPECIAL_CHARS_REG_EXP = /([.*+?^${}()|[\]\\])|(\p{P})|(\s+)|(\p{M})|(\p{L})/gu;
 const NOT_DIACRITIC_FROM_END_REG_EXP = /([^\p{M}])\p{M}*$/u;
 const NOT_DIACRITIC_FROM_START_REG_EXP = /^\p{M}*([^\p{M}])/u;
 
@@ -132,10 +130,7 @@ function normalize(text) {
       // Most of the syllables belong to Hangul so there are no need
       // to search for them in a non-Hangul document.
       // We use the \0 in order to have the same number of groups.
-      normalizationRegex = noSyllablesRegExp = new RegExp(
-        regexp + "|(\\u0000)",
-        "gum"
-      );
+      normalizationRegex = noSyllablesRegExp = new RegExp(regexp + "|(\\u0000)", "gum");
     } else {
       normalizationRegex = withSyllablesRegExp = new RegExp(
         regexp + `|(${FIRST_CHAR_SYLLABLES_REG_EXP})`,
@@ -186,101 +181,98 @@ function normalize(text) {
   let eol = 0;
   let hasDiacritics = false;
 
-  normalized = normalized.replace(
-    normalizationRegex,
-    (match, p1, p2, p3, p4, p5, p6, i) => {
-      i -= shiftOrigin;
-      if (p1) {
-        // Maybe fractions or quotations mark...
-        const replacement = CHARACTERS_TO_NORMALIZE[match];
-        const jj = replacement.length;
-        for (let j = 1; j < jj; j++) {
-          positions.push([i - shift + j, shift - j]);
-        }
-        shift -= jj - 1;
-        return replacement;
+  normalized = normalized.replace(normalizationRegex, (match, p1, p2, p3, p4, p5, p6, i) => {
+    i -= shiftOrigin;
+    if (p1) {
+      // Maybe fractions or quotations mark...
+      const replacement = CHARACTERS_TO_NORMALIZE[match];
+      const jj = replacement.length;
+      for (let j = 1; j < jj; j++) {
+        positions.push([i - shift + j, shift - j]);
+      }
+      shift -= jj - 1;
+      return replacement;
+    }
+
+    if (p2) {
+      const hasTrailingDashEOL = p2.endsWith("\n");
+      const len = hasTrailingDashEOL ? p2.length - 2 : p2.length;
+
+      // Diacritics.
+      hasDiacritics = true;
+      let jj = len;
+      if (i + eol === rawDiacriticsPositions[rawDiacriticsIndex]?.[1]) {
+        jj -= rawDiacriticsPositions[rawDiacriticsIndex][0];
+        ++rawDiacriticsIndex;
       }
 
-      if (p2) {
-        const hasTrailingDashEOL = p2.endsWith("\n");
-        const len = hasTrailingDashEOL ? p2.length - 2 : p2.length;
-
-        // Diacritics.
-        hasDiacritics = true;
-        let jj = len;
-        if (i + eol === rawDiacriticsPositions[rawDiacriticsIndex]?.[1]) {
-          jj -= rawDiacriticsPositions[rawDiacriticsIndex][0];
-          ++rawDiacriticsIndex;
-        }
-
-        for (let j = 1; j <= jj; j++) {
-          // i is the position of the first diacritic
-          // so (i - 1) is the position for the letter before.
-          positions.push([i - 1 - shift + j, shift - j]);
-        }
-        shift -= jj;
-        shiftOrigin += jj;
-
-        if (hasTrailingDashEOL) {
-          // Diacritics are followed by a -\n.
-          // See comments in `if (p3)` block.
-          i += len - 1;
-          positions.push([i - shift + 1, 1 + shift]);
-          shift += 1;
-          shiftOrigin += 1;
-          eol += 1;
-          return p2.slice(0, len);
-        }
-
-        return p2;
+      for (let j = 1; j <= jj; j++) {
+        // i is the position of the first diacritic
+        // so (i - 1) is the position for the letter before.
+        positions.push([i - 1 - shift + j, shift - j]);
       }
+      shift -= jj;
+      shiftOrigin += jj;
 
-      if (p3) {
-        // "X-\n" is removed because an hyphen at the end of a line
-        // with not a space before is likely here to mark a break
-        // in a word.
-        // The \n isn't in the original text so here y = i, n = 1 and o = 2.
+      if (hasTrailingDashEOL) {
+        // Diacritics are followed by a -\n.
+        // See comments in `if (p3)` block.
+        i += len - 1;
         positions.push([i - shift + 1, 1 + shift]);
         shift += 1;
         shiftOrigin += 1;
         eol += 1;
-        return p3.charAt(0);
+        return p2.slice(0, len);
       }
 
-      if (p4) {
-        // An ideographic at the end of a line doesn't imply adding an extra
-        // white space.
-        positions.push([i - shift + 1, shift]);
-        shiftOrigin += 1;
-        eol += 1;
-        return p4.charAt(0);
-      }
-
-      if (p5) {
-        // eol is replaced by space: "foo\nbar" is likely equivalent to
-        // "foo bar".
-        positions.push([i - shift + 1, shift - 1]);
-        shift -= 1;
-        shiftOrigin += 1;
-        eol += 1;
-        return " ";
-      }
-
-      // p6
-      if (i + eol === syllablePositions[syllableIndex]?.[1]) {
-        // A syllable (1 char) is replaced with several chars (n) so
-        // newCharsLen = n - 1.
-        const newCharLen = syllablePositions[syllableIndex][0] - 1;
-        ++syllableIndex;
-        for (let j = 1; j <= newCharLen; j++) {
-          positions.push([i - (shift - j), shift - j]);
-        }
-        shift -= newCharLen;
-        shiftOrigin += newCharLen;
-      }
-      return p6;
+      return p2;
     }
-  );
+
+    if (p3) {
+      // "X-\n" is removed because an hyphen at the end of a line
+      // with not a space before is likely here to mark a break
+      // in a word.
+      // The \n isn't in the original text so here y = i, n = 1 and o = 2.
+      positions.push([i - shift + 1, 1 + shift]);
+      shift += 1;
+      shiftOrigin += 1;
+      eol += 1;
+      return p3.charAt(0);
+    }
+
+    if (p4) {
+      // An ideographic at the end of a line doesn't imply adding an extra
+      // white space.
+      positions.push([i - shift + 1, shift]);
+      shiftOrigin += 1;
+      eol += 1;
+      return p4.charAt(0);
+    }
+
+    if (p5) {
+      // eol is replaced by space: "foo\nbar" is likely equivalent to
+      // "foo bar".
+      positions.push([i - shift + 1, shift - 1]);
+      shift -= 1;
+      shiftOrigin += 1;
+      eol += 1;
+      return " ";
+    }
+
+    // p6
+    if (i + eol === syllablePositions[syllableIndex]?.[1]) {
+      // A syllable (1 char) is replaced with several chars (n) so
+      // newCharsLen = n - 1.
+      const newCharLen = syllablePositions[syllableIndex][0] - 1;
+      ++syllableIndex;
+      for (let j = 1; j <= newCharLen; j++) {
+        positions.push([i - (shift - j), shift - j]);
+      }
+      shift -= newCharLen;
+      shiftOrigin += newCharLen;
+    }
+    return p6;
+  });
 
   positions.push([normalized.length, shift]);
 
@@ -297,12 +289,12 @@ function getOriginalIndex(diffs, pos, len) {
 
   const start = pos;
   const end = pos + len;
-  let i = binarySearchFirstItem(diffs, x => x[0] >= start);
+  let i = binarySearchFirstItem(diffs, (x) => x[0] >= start);
   if (diffs[i][0] > start) {
     --i;
   }
 
-  let j = binarySearchFirstItem(diffs, x => x[0] >= end, i);
+  let j = binarySearchFirstItem(diffs, (x) => x[0] >= end, i);
   if (diffs[j][0] > end) {
     --j;
   }
@@ -323,9 +315,10 @@ class PDFFindController {
   /**
    * @param {PDFFindControllerOptions} options
    */
-  constructor({ linkService, eventBus }) {
+  constructor({ linkService, eventBus, dataProxy }) {
     this._linkService = linkService;
     this._eventBus = eventBus;
+    this._dataProxy = dataProxy;
 
     this.#reset();
     eventBus._on("find", this.#onFind.bind(this));
@@ -387,10 +380,7 @@ class PDFFindController {
     this._firstPageCapability.promise.then(() => {
       // If the document was closed before searching began, or if the search
       // operation was relevant for a previously opened document, do nothing.
-      if (
-        !this._pdfDocument ||
-        (pdfDocument && this._pdfDocument !== pdfDocument)
-      ) {
+      if (!this._pdfDocument || (pdfDocument && this._pdfDocument !== pdfDocument)) {
         return;
       }
       this.#extractText();
@@ -436,26 +426,24 @@ class PDFFindController {
     });
   }
 
-  scrollMatchIntoView({
-    element = null,
-    selectedLeft = 0,
-    pageIndex = -1,
-    matchIndex = -1,
-  }) {
-    if (!this._scrollMatches || !element) {
-      return;
-    } else if (matchIndex === -1 || matchIndex !== this._selected.matchIdx) {
-      return;
-    } else if (pageIndex === -1 || pageIndex !== this._selected.pageIdx) {
-      return;
-    }
-    this._scrollMatches = false; // Ensure that scrolling only happens once.
+  scrollMatchIntoView({ element = null, selectedLeft = 0, pageIndex = -1, matchIndex = -1 }) {
+    // console.log("scrollMatchIntoView", { element, selectedLeft, pageIndex, matchIndex });
+    // if (!this._scrollMatches || !element) {
+    //   return;
+    // } else if (matchIndex === -1 || matchIndex !== this._selected.matchIdx) {
+    //   return;
+    // } else if (pageIndex === -1 || pageIndex !== this._selected.pageIdx) {
+    //   return;
+    // }
+    // this._scrollMatches = false; // Ensure that scrolling only happens once.
 
-    const spot = {
-      top: MATCH_SCROLL_OFFSET_TOP,
-      left: selectedLeft + MATCH_SCROLL_OFFSET_LEFT,
-    };
-    scrollIntoView(element, spot, /* scrollMatches = */ true);
+    // const spot = {
+    //   top: MATCH_SCROLL_OFFSET_TOP,
+    //   left: selectedLeft + MATCH_SCROLL_OFFSET_LEFT,
+    // };
+    // // scrollIntoView(element, spot, /* scrollMatches = */ true);
+    console.trace();
+    element.scrollIntoView({ block: "center", inline: "nearest" });
   }
 
   #reset() {
@@ -540,9 +528,7 @@ class PDFFindController {
    * first/last character type with the preceding/following character type.
    */
   #isEntireWord(content, startIdx, length) {
-    let match = content
-      .slice(0, startIdx)
-      .match(NOT_DIACRITIC_FROM_END_REG_EXP);
+    let match = content.slice(0, startIdx).match(NOT_DIACRITIC_FROM_END_REG_EXP);
     if (match) {
       const first = content.charCodeAt(startIdx);
       const limit = match[1].charCodeAt(0);
@@ -551,9 +537,7 @@ class PDFFindController {
       }
     }
 
-    match = content
-      .slice(startIdx + length)
-      .match(NOT_DIACRITIC_FROM_START_REG_EXP);
+    match = content.slice(startIdx + length).match(NOT_DIACRITIC_FROM_START_REG_EXP);
     if (match) {
       const last = content.charCodeAt(startIdx + length - 1);
       const limit = match[1].charCodeAt(0);
@@ -572,24 +556,18 @@ class PDFFindController {
     const diffs = this._pageDiffs[pageIndex];
     let match;
     while ((match = query.exec(pageContent)) !== null) {
-      if (
-        entireWord &&
-        !this.#isEntireWord(pageContent, match.index, match[0].length)
-      ) {
+      if (entireWord && !this.#isEntireWord(pageContent, match.index, match[0].length)) {
         continue;
       }
 
-      const [matchPos, matchLen] = getOriginalIndex(
-        diffs,
-        match.index,
-        match[0].length
-      );
+      const [matchPos, matchLen] = getOriginalIndex(diffs, match.index, match[0].length);
 
       if (matchLen) {
         matches.push(matchPos);
         matchesLength.push(matchLen);
       }
     }
+    console.log("calculateRegExpMatch", matches, matchesLength);
     this._pageMatches[pageIndex] = matches;
     this._pageMatchesLength[pageIndex] = matchesLength;
   }
@@ -682,11 +660,8 @@ class PDFFindController {
         query = match
           .sort()
           .reverse()
-          .map(q => {
-            const [isUnicodePart, queryPart] = this.#convertToRegExpString(
-              q,
-              hasDiacritics
-            );
+          .map((q) => {
+            const [isUnicodePart, queryPart] = this.#convertToRegExpString(q, hasDiacritics);
             isUnicode ||= isUnicodePart;
             return `(${queryPart})`;
           })
@@ -731,11 +706,14 @@ class PDFFindController {
       promise = promise.then(() => {
         return this._pdfDocument
           .getPage(i + 1)
-          .then(pdfPage => {
-            return pdfPage.getTextContent();
+          .then((pdfPage) => {
+            return Promise.all([
+              pdfPage.getTextContent(),
+              Promise.resolve(this._dataProxy.getObjects(pdfPage.pageNumber - 1)),
+            ]);
           })
           .then(
-            textContent => {
+            ([textContent, annotationsContent]) => {
               const strBuf = [];
 
               for (const textItem of textContent.items) {
@@ -746,18 +724,19 @@ class PDFFindController {
               }
 
               // Store the normalized page content (text items) as one string.
-              [
-                this._pageContents[i],
-                this._pageDiffs[i],
-                this._hasDiacritics[i],
-              ] = normalize(strBuf.join(""));
+              [this._pageContents[i], this._pageDiffs[i], this._hasDiacritics[i]] = normalize(
+                strBuf.join("")
+              );
+              console.log("extractText", {
+                textContent,
+                annotationsContent,
+                i,
+                x: [this._pageContents[i], this._pageDiffs[i], this._hasDiacritics[i]],
+              });
               extractTextCapability.resolve();
             },
-            reason => {
-              console.error(
-                `Unable to get text content for page ${i + 1}`,
-                reason
-              );
+            (reason) => {
+              console.error(`Unable to get text content for page ${i + 1}`, reason);
               // Page error -- assuming no text content.
               this._pageContents[i] = "";
               this._pageDiffs[i] = null;
@@ -841,10 +820,7 @@ class PDFFindController {
     // page's matches.
     if (offset.matchIdx !== null) {
       const numPageMatches = this._pageMatches[offset.pageIdx].length;
-      if (
-        (!previous && offset.matchIdx + 1 < numPageMatches) ||
-        (previous && offset.matchIdx > 0)
-      ) {
+      if ((!previous && offset.matchIdx + 1 < numPageMatches) || (previous && offset.matchIdx > 0)) {
         // The simple case; we just have advance the matchIdx to select
         // the next match on the page.
         offset.matchIdx = previous ? offset.matchIdx - 1 : offset.matchIdx + 1;
@@ -951,10 +927,7 @@ class PDFFindController {
     // events will always be dispatched in the expected order.
     this._firstPageCapability.promise.then(() => {
       // Only update the UI if the document is open, and is the current one.
-      if (
-        !this._pdfDocument ||
-        (pdfDocument && this._pdfDocument !== pdfDocument)
-      ) {
+      if (!this._pdfDocument || (pdfDocument && this._pdfDocument !== pdfDocument)) {
         return;
       }
       // Ensure that a pending, not yet started, search operation is aborted.

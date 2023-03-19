@@ -46,6 +46,12 @@ class Viewer {
   constructor() {}
 
   async #fetchWrapper(method, path, data) {
+    const isAuthenticated = await authClient.isAuthenticated();
+    if (!isAuthenticated) throw new Error("requires auth");
+
+    const { email } = await authClient.getUser();
+    const accessToken = await authClient.getTokenSilently();
+
     const contentType = data instanceof Blob ? APPLICATION_STREAM : APPLICATION_JSON;
     const body = data instanceof Blob ? data : JSON.stringify(data);
     const init = {
@@ -53,8 +59,8 @@ class Viewer {
       headers: {
         "content-type": contentType,
         "graphql-server": VITE_GRAPHQL_SERVER,
-        "graphql-access-token": localStorage.getItem("access_token"),
-        "user-email": localStorage.getItem("email"),
+        "graphql-access-token": accessToken,
+        "user-email": email,
       },
     };
     if (method === POST || method === PUT) {
@@ -208,6 +214,8 @@ class Viewer {
       window.foliaPdfViewer.eventBus.on("stop-drawing", this.onStopDrawing.bind(this));
 
       window.foliaPdfViewer.eventBus.on("undo-redo-changed", this.onUdpateUndoRedoUI.bind(this));
+      window.foliaPdfViewer.eventBus.on("updatefindmatchescount", this.updateFindMatchesCount.bind(this));
+      window.foliaPdfViewer.eventBus.on("updatefindcontrolstate", this.updateFindMatchesCount.bind(this));
     } else {
       await window.foliaPdfViewer.close();
     }
@@ -217,6 +225,11 @@ class Viewer {
     const content = await this.getContent();
     await this.getObjects();
     await window.foliaPdfViewer.open(content);
+  }
+
+  updateFindMatchesCount({ matchesCount }) {
+    document.getElementById("search-current").innerHTML = matchesCount.current;
+    document.getElementById("search-total").innerHTML = matchesCount.total;
   }
 
   onPagesLoaded(e) {
@@ -389,6 +402,17 @@ class Viewer {
 document.addEventListener(
   "DOMContentLoaded",
   async function () {
+    window.authClient = await auth0.createAuth0Client({
+      domain: "auth-dev.folia.com",
+      clientId: "sus45pOyOO39C67Xkk0ap4jkJO9Ty4MH",
+      useRefreshTokens: true,
+      useRefreshTokensFallback: true,
+      authorizationParams: {
+        scope: "read:workspaces write:workspaces offline_access email",
+        audience: "https://folia.com/graphql",
+        redirect_uri: window.location.origin,
+      },
+    });
     const viewer = new Viewer();
     await viewer.resume();
 
@@ -428,6 +452,20 @@ document.addEventListener(
 
     // -------- pinch zoom -----------
     document.addEventListener("wheel", viewer.onWheelListener, { passive: false });
+
+    // -------- search -----------
+    document.getElementById("search-start").addEventListener("click", () => {
+      const query = document.getElementById("search-input")?.value;
+      window.foliaPdfViewer.search(query);
+    });
+
+    document
+      .getElementById("search-next")
+      .addEventListener("click", () => window.foliaPdfViewer.searchNext());
+    document
+      .getElementById("search-prev")
+      .addEventListener("click", () => window.foliaPdfViewer.searchPrev());
   },
+
   true
 );

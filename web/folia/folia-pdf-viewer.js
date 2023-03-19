@@ -47,14 +47,40 @@ function onClickHandler(e) {
 }
 function keyDownHandler(e) {
   const { key, keyCode, altKey, ctrlKey, metaKey, shiftKey, target, currentTarget } = e;
-  // console.log('keyDownHandler', target.nodeName)
+  console.log("keyDownHandler", target.nodeName);
   if (target.nodeName === "TEXTAREA") return;
+  if (target.nodeName === "INPUT") return;
   if (target.nodeName === "DIV" && target.hasAttribute("contenteditable")) return;
+
   switch (key) {
     case "Backspace": {
       e.preventDefault();
       e.stopPropagation();
       this.deleteSelectedAnnotations();
+      break;
+    }
+    case "-": {
+      if (ctrlKey || metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.zoomOut();
+      }
+      break;
+    }
+    case "=": {
+      if (ctrlKey || metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.zoomIn();
+      }
+      break;
+    }
+    case "0": {
+      if (ctrlKey || metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.zoomReset();
+      }
       break;
     }
     default:
@@ -100,6 +126,7 @@ export class FoliaPDFViewer {
     this.findController = new PDFFindController({
       linkService: this.pdfLinkService,
       eventBus: this.eventBus,
+      dataProxy,
     });
 
     this.undoRedoManager = new UndoRedo(this);
@@ -282,7 +309,7 @@ export class FoliaPDFViewer {
     });
 
     return Promise.allSettled(promises).then((results) => {
-      results.reduce((acc, res) => {
+      return results.reduce((acc, res) => {
         if (res.value.length > 0) console.log(`found annotations`, res.value);
         return acc || res.value.length > 0;
       }, false);
@@ -523,38 +550,75 @@ export class FoliaPDFViewer {
       page.foliaPageLayer.deleteSelectedAnnotations();
     });
   }
-  selectAnnotationObject(annoPageNumber, localId) {
-    console.log(annoPageNumber, localId);
-    const page = this.pdfViewer._pages[annoPageNumber];
-    if (page.foliaPageLayer) {
-      this.pdfViewer.currentPageNumber = annoPageNumber + 1;
-      setTimeout(() => page.foliaPageLayer.selectAnnotationById(localId), 100);
+  selectAnnotationObject(_page, objectId) {
+    const page = parseInt(_page, 10);
+
+    const pdfPage = this.pdfViewer._pages[page - 1];
+    if (pdfPage.foliaPageLayer) {
+      this.pdfViewer.currentPageNumber = page;
+      setTimeout(() => pdfPage.foliaPageLayer.makeSelectedAnnotation(objectId, true), 100);
       return;
     }
 
     const timeout = setTimeout(() => {
       this.eventBus.off("foliapagelayerrendered", evenListener);
-      console.warn(`the page ${annoPageNumber} cannot be rendered`);
+      console.warn(`the page ${page} cannot be rendered`);
     }, 3000);
 
     const evenListener = (event) => {
       const { error, pageNumber, source } = event;
-      if (pageNumber === annoPageNumber + 1) {
-        // console.log("event", annoPageNumber + 1, pageNumber, source);
+      if (pageNumber === page) {
         clearTimeout(timeout);
         if (error) return console.warn("error", error);
         this.eventBus.off("foliapagelayerrendered", evenListener);
-        setTimeout(() => source.foliaPageLayer.selectAnnotationById(localId), 100);
+        setTimeout(() => source.foliaPageLayer.makeSelectedAnnotation(objectId, true), 100);
       }
     };
 
     this.eventBus.on("foliapagelayerrendered", evenListener);
-    this.pdfViewer.currentPageNumber = annoPageNumber + 1;
+    this.pdfViewer.currentPageNumber = page;
   }
   resetObjectsSeletion() {
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
       page.foliaPageLayer.resetObjectsSeletion();
+    });
+  }
+
+  search(query) {
+    console.log("SEARCH", query);
+    this.searchQuery = query;
+    this.eventBus.dispatch("find", {
+      query: this.searchQuery,
+      phraseSearch: true,
+      caseSensitive: false,
+      entireWord: false,
+      highlightAll: false,
+      findPrevious: false,
+    });
+  }
+  searchNext() {
+    console.log("SEARCH NEXT");
+    this.eventBus.dispatch("find", {
+      type: "again",
+      query: this.searchQuery,
+      phraseSearch: true,
+      caseSensitive: false,
+      entireWord: false,
+      highlightAll: false,
+      findPrevious: false,
+    });
+  }
+  searchPrev() {
+    console.log("SEARCH PREV");
+    this.eventBus.dispatch("find", {
+      type: "again",
+      query: this.searchQuery,
+      phraseSearch: true,
+      caseSensitive: false,
+      entireWord: false,
+      highlightAll: false,
+      findPrevious: true,
     });
   }
 }

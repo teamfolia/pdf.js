@@ -33,6 +33,7 @@ See https://github.com/adobe-type-tools/cmap-resources
       href="https://fonts.googleapis.com/css2?family=Cookie&family=Courier+Prime:wght@400;700&family=Eagle+Lake&family=Lora:wght@400;700&family=Source+Sans+Pro:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
     <style>
       body {
         margin: 0;
@@ -421,14 +422,27 @@ See https://github.com/adobe-type-tools/cmap-resources
           <option value="31">31 px</option>
         </select>
 
-        <button id="zoom-out">-</button>&nbsp;<button id="zoom-in">+</button>
+        <!-- <button id="zoom-out">-</button>&nbsp;<button id="zoom-in">+</button> -->
         &nbsp;&nbsp;
-        <button id="undo" disabled>undo</button>&nbsp;<button id="redo" disabled>redo</button>
+        <button id="undo" disabled>↩︎</button>&nbsp;<button id="redo" disabled>↪︎</button>
+        &nbsp;&nbsp;
+        <div style="position: relative">
+          <input id="search-input" type="text" style="width: 100px" />
+          <div style="position: absolute; right: 5px; top: 3px; color: gray; font-size: 12px">
+            <span id="search-current">0</span>/<span id="search-total">0</span>
+          </div>
+        </div>
+        &nbsp;
+        <button id="search-start">🔍</button>
+        &nbsp;
+        <button id="search-prev">⇧</button>
+        &nbsp;
+        <button id="search-next">⇩</button>
       </div>
       <!-- end of toolbar -->
 
       <!-- thumbnail view -->
-      <div class="thumbnail-viewer">thumbnail</div>
+      <div class="thumbnail-viewer" style="display: none">thumbnail</div>
       <!-- end of thumbnail view -->
 
       <!-- pdf viewer -->
@@ -438,13 +452,13 @@ See https://github.com/adobe-type-tools/cmap-resources
       <!-- end of pdf viewer-->
 
       <div class="zoom-control">
-        <div id="zoomOutBtn">
+        <div id="zoom-out" style="cursor: pointer">
           <svg style="width: 24px; height: 24px" viewBox="0 0 24 24">
             <path fill="currentColor" d="M19,13H5V11H19V13Z" />
           </svg>
         </div>
         <span id="zoomValue">250</span>
-        <div id="zoomInBtn">
+        <div id="zoom-in" style="cursor: pointer">
           <svg style="width: 24px; height: 24px" viewBox="0 0 24 24">
             <path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
           </svg>

@@ -107,11 +107,14 @@ class FoliaPageLayer {
     }
     // return this.multipleSelect.updateObjectsDrawingProperties(preset);
   }
-  makeSelectedAnnotation(id) {
+  makeSelectedAnnotation(id, scrollIntoView = false) {
     const obj = this.annotationObjects.get(id);
     if (!obj) return console.warn(`annotation ${id} not found`, this.annotationObjects);
     this.multipleSelect.clear();
     this.multipleSelect.addObject(obj);
+    if (scrollIntoView) {
+      obj.annotationDIV.scrollIntoView({ block: "center", inline: "nearest" });
+    }
   }
   resetObjectsSeletion() {
     this.multipleSelect.clear();
