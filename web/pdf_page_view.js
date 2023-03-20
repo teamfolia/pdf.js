@@ -139,6 +139,7 @@ class PDFPageView {
     this.textHighlighter = options.textHighlighterFactory?.createTextHighlighter({
       pageIndex: this.id - 1,
       eventBus: this.eventBus,
+      getTextLayerDiv: () => this.textLayer?.textLayerDiv,
     });
     this.structTreeLayerFactory = options.structTreeLayerFactory;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")) {

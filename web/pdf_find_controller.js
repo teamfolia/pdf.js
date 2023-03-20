@@ -442,7 +442,7 @@ class PDFFindController {
     //   left: selectedLeft + MATCH_SCROLL_OFFSET_LEFT,
     // };
     // // scrollIntoView(element, spot, /* scrollMatches = */ true);
-    console.trace();
+    // console.trace();
     element.scrollIntoView({ block: "center", inline: "nearest" });
   }
 
@@ -467,6 +467,7 @@ class PDFFindController {
     this._extractTextPromises = [];
     this._pageContents = []; // Stores the normalized text for each page.
     this._pageDiffs = [];
+    this._pageAnnots = [];
     this._hasDiacritics = [];
     this._matchesCountTotal = 0;
     this._pagesToSearch = null;
@@ -554,6 +555,7 @@ class PDFFindController {
       matchesLength = [];
 
     const diffs = this._pageDiffs[pageIndex];
+    const annots = this._pageAnnots[pageIndex];
     let match;
     while ((match = query.exec(pageContent)) !== null) {
       if (entireWord && !this.#isEntireWord(pageContent, match.index, match[0].length)) {
@@ -567,9 +569,19 @@ class PDFFindController {
         matchesLength.push(matchLen);
       }
     }
-    console.log("calculateRegExpMatch", matches, matchesLength);
+
+    for (const { text, id, rect, ...annot } of annots) {
+      const annotText = text || "";
+      if (query.test(annotText)) {
+        matches.push({ id, text, rect });
+        matchesLength.push(777);
+      }
+    }
+
     this._pageMatches[pageIndex] = matches;
     this._pageMatchesLength[pageIndex] = matchesLength;
+
+    console.log("calculateRegExpMatch", matches.slice(), matchesLength.slice());
   }
 
   #convertToRegExpString(query, hasDiacritics) {
@@ -727,12 +739,10 @@ class PDFFindController {
               [this._pageContents[i], this._pageDiffs[i], this._hasDiacritics[i]] = normalize(
                 strBuf.join("")
               );
-              console.log("extractText", {
-                textContent,
-                annotationsContent,
-                i,
-                x: [this._pageContents[i], this._pageDiffs[i], this._hasDiacritics[i]],
+              this._pageAnnots[i] = annotationsContent.filter((anno) => {
+                return anno.rect && anno.text;
               });
+              // console.log("extractText", { i, annotationsContent: this._pageAnnots[i] });
               extractTextCapability.resolve();
             },
             (reason) => {
@@ -740,6 +750,7 @@ class PDFFindController {
               // Page error -- assuming no text content.
               this._pageContents[i] = "";
               this._pageDiffs[i] = null;
+              this._pageAnnots[i] = null;
               this._hasDiacritics[i] = false;
               extractTextCapability.resolve();
             }
@@ -948,6 +959,9 @@ class PDFFindController {
 
       this._highlightMatches = false;
       this.#updateAllPages(); // Wipe out any previously highlighted matches.
+
+      const annoDivs = document.querySelectorAll('div[data-info="searchable_annotation"]');
+      annoDivs.forEach((el) => el.remove());
     });
   }
 

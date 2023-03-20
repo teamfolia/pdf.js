@@ -171,11 +171,6 @@ export class FoliaPDFViewer {
       this.pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
 
-    // this.pdfHistory = new PDFHistory({
-    //   linkService: this.pdfLinkService,
-    //   eventBus: this.eventBus,
-    // });
-
     this.eventBus.on("updateviewarea", this.webViewerUpdateViewarea.bind(this));
     this.eventBus.on("pagerendered", this.webViewerPageRendered.bind(this));
     this.eventBus.on("pagechanging", this.webViewerPageChanging.bind(this));
@@ -309,8 +304,9 @@ export class FoliaPDFViewer {
     });
 
     return Promise.allSettled(promises).then((results) => {
-      return results.reduce((acc, res) => {
-        if (res.value.length > 0) console.log(`found annotations`, res.value);
+      return results.reduce((acc, res, index) => {
+        // if (res.value.length > 0)
+        // console.log(`page #${index} annotations`, res.value);
         return acc || res.value.length > 0;
       }, false);
     });

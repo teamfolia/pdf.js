@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { fromPdfRect } from "./folia/folia-util";
+
 /** @typedef {import("./event_utils").EventBus} EventBus */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_find_controller").PDFFindController} PDFFindController */
@@ -32,7 +34,7 @@ class TextHighlighter {
   /**
    * @param {TextHighlighterOptions} options
    */
-  constructor({ findController, eventBus, pageIndex }) {
+  constructor({ findController, eventBus, pageIndex, getTextLayerDiv }) {
     this.findController = findController;
     this.matches = [];
     this.eventBus = eventBus;
@@ -41,6 +43,7 @@ class TextHighlighter {
     this.textDivs = null;
     this.textContentItemsStr = null;
     this.enabled = false;
+    this.getTextLayerDiv = getTextLayerDiv;
   }
 
   /**
@@ -70,15 +73,12 @@ class TextHighlighter {
     }
     this.enabled = true;
     if (!this._onUpdateTextLayerMatches) {
-      this._onUpdateTextLayerMatches = evt => {
+      this._onUpdateTextLayerMatches = (evt) => {
         if (evt.pageIndex === this.pageIdx || evt.pageIndex === -1) {
           this._updateMatches();
         }
       };
-      this.eventBus._on(
-        "updatetextlayermatches",
-        this._onUpdateTextLayerMatches
-      );
+      this.eventBus._on("updatetextlayermatches", this._onUpdateTextLayerMatches);
     }
     this._updateMatches();
   }
@@ -89,10 +89,7 @@ class TextHighlighter {
     }
     this.enabled = false;
     if (this._onUpdateTextLayerMatches) {
-      this.eventBus._off(
-        "updatetextlayermatches",
-        this._onUpdateTextLayerMatches
-      );
+      this.eventBus._off("updatetextlayermatches", this._onUpdateTextLayerMatches);
       this._onUpdateTextLayerMatches = null;
     }
   }
@@ -109,9 +106,36 @@ class TextHighlighter {
     const end = textContentItemsStr.length - 1;
     const result = [];
 
+    const textLayerDiv = this.getTextLayerDiv();
+    // console.log("_convertMatches", textLayerDiv);
+    if (textLayerDiv) {
+      const annoDivs = textLayerDiv.querySelectorAll('div[data-info="searchable_annotation"]');
+      annoDivs.forEach((el) => el.remove());
+    }
+
     for (let m = 0, mm = matches.length; m < mm; m++) {
       // Calculate the start position.
       let matchIdx = matches[m];
+
+      if (!Number.isInteger(matchIdx)) {
+        if (textLayerDiv) {
+          const rect = fromPdfRect(matchIdx.rect, textLayerDiv.clientWidth, textLayerDiv.clientHeight);
+          // console.log("_convertMatches", matchIdx, rect);
+          const annoDiv = document.createElement("div");
+          annoDiv.style.left = rect[0] + "px";
+          annoDiv.style.top = rect[1] + "px";
+          annoDiv.style.width = rect[2] + "px";
+          annoDiv.style.height = rect[3] + "px";
+          annoDiv.setAttribute("id", matchIdx.id);
+          annoDiv.setAttribute("data-info", "searchable_annotation");
+          annoDiv.style.position = "absolute";
+          // annoDiv.style.backgroundColor = "rgba(250, 128, 95, 0.15)";
+          // annoDiv.style.borderBottom = "solid 2px #FA805F";
+          textLayerDiv.appendChild(annoDiv);
+          result.push(annoDiv);
+        }
+        continue;
+      }
 
       // Loop over the divIdxs.
       while (i !== end && matchIdx >= iIndex + textContentItemsStr[i].length) {
@@ -181,10 +205,7 @@ class TextHighlighter {
         textDivs[divIdx] = span;
         div = span;
       }
-      const content = textContentItemsStr[divIdx].substring(
-        fromOffset,
-        toOffset
-      );
+      const content = textContentItemsStr[divIdx].substring(fromOffset, toOffset);
       const node = document.createTextNode(content);
       if (className) {
         const span = document.createElement("span");
@@ -215,6 +236,25 @@ class TextHighlighter {
       const highlightSuffix = isSelected ? " selected" : "";
       let selectedLeft = 0;
 
+      const isFoliaAnnotation = !(match.hasOwnProperty("begin") && match.hasOwnProperty("end"));
+      if (isFoliaAnnotation) {
+        console.log("_renderMatches", match);
+        match.style.borderBottom = isSelected ? "none" : "solid 2px #FA805F";
+        match.style.backgroundColor = isSelected ? "rgba(250, 128, 95, 1)" : "transparent";
+      }
+      if (isSelected) {
+        findController.scrollMatchIntoView({
+          element: isFoliaAnnotation ? match : textDivs[begin.divIdx],
+          pageIndex: pageIdx,
+          matchIndex: selectedMatchIdx,
+        });
+      }
+
+      // console.log('PDFFindController=>_renderMatches', {pageIdx: pageIdx, match, isAnnotationDiv})
+      if (isFoliaAnnotation) {
+        continue;
+      }
+
       // Match inside new div.
       if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
         // If there was a previous div, then add the text at the end.
@@ -228,12 +268,7 @@ class TextHighlighter {
       }
 
       if (begin.divIdx === end.divIdx) {
-        selectedLeft = appendTextToDiv(
-          begin.divIdx,
-          begin.offset,
-          end.offset,
-          "highlight" + highlightSuffix
-        );
+        selectedLeft = appendTextToDiv(begin.divIdx, begin.offset, end.offset, "highlight" + highlightSuffix);
       } else {
         selectedLeft = appendTextToDiv(
           begin.divIdx,
@@ -274,6 +309,10 @@ class TextHighlighter {
 
     // Clear all current matches.
     for (const match of matches) {
+      console.log("_updateMatches", match);
+      const isFoliaAnnotation = !(match.hasOwnProperty("begin") && match.hasOwnProperty("end"));
+      if (isFoliaAnnotation) continue;
+
       const begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
       for (let n = begin, end = match.end.divIdx; n <= end; n++) {
         const div = textDivs[n];

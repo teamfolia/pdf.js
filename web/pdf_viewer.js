@@ -1563,11 +1563,12 @@ class PDFViewer {
    * @param {CreateTextHighlighterParameters}
    * @returns {TextHighlighter}
    */
-  createTextHighlighter({ pageIndex, eventBus }) {
+  createTextHighlighter({ pageIndex, eventBus, getTextLayerDiv }) {
     return new TextHighlighter({
       eventBus,
       pageIndex,
       findController: this.isInPresentationMode ? null : this.findController,
+      getTextLayerDiv,
     });
   }
 
