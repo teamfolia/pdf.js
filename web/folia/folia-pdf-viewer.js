@@ -582,7 +582,7 @@ export class FoliaPDFViewer {
   }
 
   search(query) {
-    console.log("SEARCH", query);
+    // console.log("SEARCH", query);
     this.searchQuery = query;
     this.eventBus.dispatch("find", {
       query: this.searchQuery,
@@ -594,7 +594,7 @@ export class FoliaPDFViewer {
     });
   }
   searchNext() {
-    console.log("SEARCH NEXT");
+    // console.log("SEARCH NEXT");
     this.eventBus.dispatch("find", {
       type: "again",
       query: this.searchQuery,
@@ -606,7 +606,7 @@ export class FoliaPDFViewer {
     });
   }
   searchPrev() {
-    console.log("SEARCH PREV");
+    // console.log("SEARCH PREV");
     this.eventBus.dispatch("find", {
       type: "again",
       query: this.searchQuery,

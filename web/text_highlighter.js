@@ -238,7 +238,7 @@ class TextHighlighter {
 
       const isFoliaAnnotation = !(match.hasOwnProperty("begin") && match.hasOwnProperty("end"));
       if (isFoliaAnnotation) {
-        console.log("_renderMatches", match);
+        // console.log("_renderMatches", match);
         match.style.borderBottom = isSelected ? "none" : "solid 2px #FA805F";
         match.style.backgroundColor = isSelected ? "rgba(250, 128, 95, 1)" : "transparent";
       }
@@ -309,7 +309,7 @@ class TextHighlighter {
 
     // Clear all current matches.
     for (const match of matches) {
-      console.log("_updateMatches", match);
+      // console.log("_updateMatches", match);
       const isFoliaAnnotation = !(match.hasOwnProperty("begin") && match.hasOwnProperty("end"));
       if (isFoliaAnnotation) continue;
 

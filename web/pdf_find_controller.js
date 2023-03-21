@@ -20,6 +20,7 @@
 import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { createPromiseCapability } from "pdfjs-lib";
 import { getCharacterType } from "./pdf_find_utils.js";
+import { fromPdfRect } from "./folia/folia-util.js";
 
 const FindState = {
   FOUND: 0,
@@ -556,6 +557,7 @@ class PDFFindController {
 
     const diffs = this._pageDiffs[pageIndex];
     const annots = this._pageAnnots[pageIndex];
+
     let match;
     while ((match = query.exec(pageContent)) !== null) {
       if (entireWord && !this.#isEntireWord(pageContent, match.index, match[0].length)) {
@@ -571,17 +573,21 @@ class PDFFindController {
     }
 
     for (const { text, id, rect, ...annot } of annots) {
+      const page = this._linkService.pdfViewer._pages[pageIndex];
+      const { width = 0, height = 0 } = page?.viewport || {};
+      const [, top, ,] = fromPdfRect(rect, width, height);
+      const index = matches.findIndex((item) => item < top) + 1;
+      // console.log("\tcalculateRegExpMatch ==>", pageIndex, matches.slice(), top, index);
       const annotText = text || "";
       if (query.test(annotText)) {
-        matches.push({ id, text, rect });
-        matchesLength.push(777);
+        matches.splice(index, 0, { id, text, rect, top });
+        matchesLength.splice(index, 0, 0);
       }
     }
 
     this._pageMatches[pageIndex] = matches;
     this._pageMatchesLength[pageIndex] = matchesLength;
-
-    console.log("calculateRegExpMatch", matches.slice(), matchesLength.slice());
+    // console.log("calculateRegExpMatch", pageIndex, matches.slice(), matchesLength.slice());
   }
 
   #convertToRegExpString(query, hasDiacritics) {

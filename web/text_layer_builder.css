@@ -67,7 +67,7 @@
 }
 
 .textLayer .highlight.selected {
-  background-color: rgba(0, 100, 0, 1);
+  background-color: rgb(250, 128, 95);
 }
 
 .textLayer ::selection {
