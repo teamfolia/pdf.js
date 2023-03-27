@@ -83,6 +83,24 @@ function keyDownHandler(e) {
       }
       break;
     }
+    case "Z":
+    case "z": {
+      if (ctrlKey || metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        shiftKey ? this.redo() : this.undo();
+      }
+      break;
+    }
+    case "D":
+    case "d": {
+      if (ctrlKey || metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.duplicateSelectedAnnotations();
+      }
+      break;
+    }
     default:
       break;
   }
