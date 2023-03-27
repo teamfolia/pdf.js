@@ -225,7 +225,7 @@ class TextHighlighter {
       return;
     }
 
-    console.log("_renderMatches", pageIdx, matches);
+    // console.log("_renderMatches", pageIdx, matches);
     for (let i = i0; i < i1; i++) {
       const match = matches[i];
       const begin = match.begin;
@@ -327,7 +327,7 @@ class TextHighlighter {
       annoDivs.forEach((el) => el.remove());
     }
     for (const match of matches) {
-      console.log("_updateMatches", match);
+      // console.log("_updateMatches", match);
       const isFoliaAnnotation = !(match.hasOwnProperty("begin") && match.hasOwnProperty("end"));
       if (isFoliaAnnotation) continue;
 

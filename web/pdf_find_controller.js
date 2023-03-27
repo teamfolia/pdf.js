@@ -733,7 +733,6 @@ class PDFFindController {
           return anno.rect && anno.text;
         });
       }
-      console.log("extractAnnotsText", this._pageAnnots);
     } catch (e) {
       this._pageAnnots[pageNumber] = [];
       console.error(`Unable to get annotations content for page ${pageNumber + 1}`, e.message);
@@ -990,6 +989,8 @@ class PDFFindController {
 
       const annoDivs = document.querySelectorAll('div[data-info="searchable_annotation"]');
       annoDivs.forEach((el) => el.remove());
+      this._matchesCountTotal = 0;
+      this._pageMatches = [];
     });
   }
 
