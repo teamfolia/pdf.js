@@ -323,6 +323,7 @@ class PDFFindController {
 
     this.#reset();
     eventBus._on("find", this.#onFind.bind(this));
+    eventBus._on("findneedrefresh", this.#onFindNeedRefresh.bind(this));
     eventBus._on("findbarclose", this.#onFindBarClose.bind(this));
   }
 
@@ -363,10 +364,27 @@ class PDFFindController {
     this._firstPageCapability.resolve();
   }
 
+  #onFindNeedRefresh() {
+    this.#onFindBarClose();
+    // console.log("onFindNeedRefresh");
+    // if (!this._state?.query) return;
+
+    // this._dirtyMatch = true;
+    // this.#onFind({
+    //   query: this._state.query,
+    //   phraseSearch: this._state.phraseSearch,
+    //   caseSensitive: this._state.caseSensitive,
+    //   entireWord: this._state.entireWord,
+    //   highlightAll: this._state.highlightAll,
+    //   findPrevious: this._state.findPrevious,
+    // });
+  }
+
   #onFind(state) {
     if (!state) {
       return;
     }
+
     const pdfDocument = this._pdfDocument;
     const { type } = state;
 
@@ -385,6 +403,7 @@ class PDFFindController {
         return;
       }
       this.#extractText();
+      this.#extractAnnots();
 
       const findbarClosed = !this._highlightMatches;
       const pendingTimeout = !!this._findTimeout;
@@ -444,7 +463,7 @@ class PDFFindController {
     // };
     // // scrollIntoView(element, spot, /* scrollMatches = */ true);
     // console.trace();
-    element.scrollIntoView({ block: "center", inline: "nearest" });
+    element && element.scrollIntoView({ block: "center", inline: "nearest" });
   }
 
   #reset() {
@@ -572,22 +591,18 @@ class PDFFindController {
       }
     }
 
-    for (const { text, id, rect, ...annot } of annots) {
-      const page = this._linkService.pdfViewer._pages[pageIndex];
-      const { width = 0, height = 0 } = page?.viewport || {};
-      const [, top, ,] = fromPdfRect(rect, width, height);
-      const index = matches.findIndex((item) => item < top) + 1;
-      // console.log("\tcalculateRegExpMatch ==>", pageIndex, matches.slice(), top, index);
-      const annotText = text || "";
+    for (const annot of annots) {
+      const annotText = annot.text || "";
+      query.lastIndex = 0;
       if (query.test(annotText)) {
-        matches.splice(index, 0, { id, text, rect, top });
-        matchesLength.splice(index, 0, 0);
+        matches.push(annot);
+        matchesLength.push(null);
       }
     }
 
     this._pageMatches[pageIndex] = matches;
     this._pageMatchesLength[pageIndex] = matchesLength;
-    // console.log("calculateRegExpMatch", pageIndex, matches.slice(), matchesLength.slice());
+    // console.log("-----------------------\n", pageIndex, matches.slice(), matchesLength.slice());
   }
 
   #convertToRegExpString(query, hasDiacritics) {
@@ -710,6 +725,21 @@ class PDFFindController {
     }
   }
 
+  #extractAnnots() {
+    try {
+      for (let pageNumber = 0; pageNumber < this._pdfDocument.numPages; pageNumber++) {
+        const annotationsContent = this._dataProxy.getObjects(pageNumber);
+        this._pageAnnots[pageNumber] = annotationsContent.filter((anno) => {
+          return anno.rect && anno.text;
+        });
+      }
+      console.log("extractAnnotsText", this._pageAnnots);
+    } catch (e) {
+      this._pageAnnots[pageNumber] = [];
+      console.error(`Unable to get annotations content for page ${pageNumber + 1}`, e.message);
+    }
+  }
+
   #extractText() {
     // Perform text extraction once if this method is called multiple times.
     if (this._extractTextPromises.length > 0) {
@@ -725,13 +755,10 @@ class PDFFindController {
         return this._pdfDocument
           .getPage(i + 1)
           .then((pdfPage) => {
-            return Promise.all([
-              pdfPage.getTextContent(),
-              Promise.resolve(this._dataProxy.getObjects(pdfPage.pageNumber - 1)),
-            ]);
+            return pdfPage.getTextContent();
           })
           .then(
-            ([textContent, annotationsContent]) => {
+            (textContent) => {
               const strBuf = [];
 
               for (const textItem of textContent.items) {
@@ -745,10 +772,6 @@ class PDFFindController {
               [this._pageContents[i], this._pageDiffs[i], this._hasDiacritics[i]] = normalize(
                 strBuf.join("")
               );
-              this._pageAnnots[i] = annotationsContent.filter((anno) => {
-                return anno.rect && anno.text;
-              });
-              // console.log("extractText", { i, annotationsContent: this._pageAnnots[i] });
               extractTextCapability.resolve();
             },
             (reason) => {
@@ -756,7 +779,6 @@ class PDFFindController {
               // Page error -- assuming no text content.
               this._pageContents[i] = "";
               this._pageDiffs[i] = null;
-              this._pageAnnots[i] = null;
               this._hasDiacritics[i] = false;
               extractTextCapability.resolve();
             }

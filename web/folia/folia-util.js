@@ -19,6 +19,8 @@
 //     left: el.offsetLeft, top: el.offsetTop
 //   }
 
+import { view } from "paper/dist/paper-core";
+
 //   reference = el.offsetParent
 //   do {
 //     offset.left += reference.offsetLeft
@@ -159,4 +161,64 @@ export const toPdfPath = (path, viewportWidth, viewporHeight, offsetX, offsetY) 
     const pdfPoint = toPdfPoint(point, viewportWidth, viewporHeight, offsetX, offsetY);
     return acc.concat(pdfPoint);
   }, []);
+};
+
+export const shiftRect = (rect, shiftValue) => {
+  const outRect = rect.slice();
+  outRect[0] += rect[0] - shiftValue > 0 ? -shiftValue : shiftValue;
+  outRect[1] += rect[1] - shiftValue > 0 ? -shiftValue : shiftValue;
+  return outRect;
+};
+
+export const shiftArrow = (inSource, inTarget, shiftValue) => {
+  const left = Math.min(inSource.x, inTarget.x);
+  const top = Math.min(inSource.y, inTarget.y);
+  const right = Math.max(inSource.x, inTarget.x);
+  const bottom = Math.max(inSource.y, inTarget.y);
+  const ratio = (right - left) / (bottom - top);
+  const outSource = { x: inSource.x, y: inSource.y };
+  const outTarget = { x: inTarget.x, y: inTarget.y };
+
+  if (ratio <= 1) {
+    // horizontal shift
+    if (left - shiftValue > 0) {
+      outSource.x -= shiftValue;
+      outTarget.x -= shiftValue;
+    } else {
+      outSource.x += shiftValue;
+      outTarget.x += shiftValue;
+    }
+  } else {
+    // vertical shift
+    if (top - shiftValue > 0) {
+      outSource.y -= shiftValue;
+      outTarget.y -= shiftValue;
+    } else {
+      outSource.y += shiftValue;
+      outTarget.y += shiftValue;
+    }
+  }
+
+  return { sourcePoint: outSource, targetPoint: outTarget };
+};
+
+export const shiftInk = (inPaths, shiftValue) => {
+  const { left, top, right, bottom } = [].concat.apply([], inPaths).reduce(
+    (acc, point) => {
+      return {
+        left: Math.min(acc.left, point.x),
+        top: Math.min(acc.top, point.y),
+        right: Math.max(acc.right, point.x),
+        bottom: Math.max(acc.bottom, point.y),
+      };
+    },
+    { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
+  );
+
+  return inPaths.map((path) => {
+    return path.map((point) => ({
+      x: (point.x += left - shiftValue > 0 ? -shiftValue : shiftValue),
+      y: (point.y += top - shiftValue > 0 ? -shiftValue : shiftValue),
+    }));
+  });
 };

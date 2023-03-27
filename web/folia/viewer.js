@@ -465,6 +465,9 @@ document.addEventListener(
     document
       .getElementById("search-prev")
       .addEventListener("click", () => window.foliaPdfViewer.searchPrev());
+    document
+      .getElementById("duplicate")
+      .addEventListener("click", () => window.foliaPdfViewer.duplicateSelectedAnnotations());
   },
 
   true

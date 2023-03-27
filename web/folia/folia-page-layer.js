@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import FoliaConversationAnnotation from "./annotations/_conversation-annotation";
 import FoliaImageAnnotation from "./annotations/image-annotation";
 import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
@@ -119,6 +120,17 @@ class FoliaPageLayer {
   resetObjectsSeletion() {
     this.multipleSelect.clear();
   }
+  duplicateSelectedAnnotations() {
+    const selectedObjects = this.multipleSelect.getObjects();
+    for (const object of selectedObjects) {
+      if (!object.canManage || object.permanentPosition) return;
+      const duplicatedAnnot = object.getDuplicate();
+
+      this.addAnnotationObject(duplicatedAnnot);
+      this.commitObjectChanges(duplicatedAnnot);
+      this.undoRedoManager.creatingObject(duplicatedAnnot);
+    }
+  }
 
   commitObjectChanges(objectData) {
     if (!objectData) return;
@@ -127,6 +139,7 @@ class FoliaPageLayer {
     } else {
       this.eventBus.dispatch("commit-object", objectData);
     }
+    this.eventBus.dispatch("findneedrefresh", {});
   }
 
   deleteSelectedAnnotations(object) {

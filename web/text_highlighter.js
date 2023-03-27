@@ -105,72 +105,69 @@ class TextHighlighter {
       iIndex = 0;
     const end = textContentItemsStr.length - 1;
     const result = [];
-
     const textLayerDiv = this.getTextLayerDiv();
-    // console.log("_convertMatches", textLayerDiv);
-    if (textLayerDiv) {
-      const annoDivs = textLayerDiv.querySelectorAll('div[data-info="searchable_annotation"]');
-      annoDivs.forEach((el) => el.remove());
-    }
 
     for (let m = 0, mm = matches.length; m < mm; m++) {
       // Calculate the start position.
       let matchIdx = matches[m];
+      // console.log("_convertMatches", matchIdx);
 
       if (!Number.isInteger(matchIdx)) {
-        if (textLayerDiv) {
-          const rect = fromPdfRect(matchIdx.rect, textLayerDiv.clientWidth, textLayerDiv.clientHeight);
-          // console.log("_convertMatches", matchIdx, rect);
-          const annoDiv = document.createElement("div");
-          annoDiv.style.left = rect[0] + "px";
-          annoDiv.style.top = rect[1] + "px";
-          annoDiv.style.width = rect[2] + "px";
-          annoDiv.style.height = rect[3] + "px";
-          annoDiv.setAttribute("id", matchIdx.id);
-          annoDiv.setAttribute("data-info", "searchable_annotation");
-          annoDiv.style.position = "absolute";
-          // annoDiv.style.backgroundColor = "rgba(250, 128, 95, 0.15)";
-          // annoDiv.style.borderBottom = "solid 2px #FA805F";
-          textLayerDiv.appendChild(annoDiv);
-          result.push(annoDiv);
-        }
+        if (!textLayerDiv) continue;
+        const rect = fromPdfRect(matchIdx.rect, textLayerDiv.clientWidth, textLayerDiv.clientHeight);
+        const foliaAnnotationAnchor = document.createElement("div");
+        foliaAnnotationAnchor.style.left = rect[0] + "px";
+        foliaAnnotationAnchor.style.top = rect[1] + "px";
+        foliaAnnotationAnchor.style.width = rect[2] + "px";
+        foliaAnnotationAnchor.style.height = rect[3] + "px";
+        foliaAnnotationAnchor.setAttribute("id", matchIdx.id);
+        foliaAnnotationAnchor.setAttribute("data-info", "searchable_annotation");
+        foliaAnnotationAnchor.style.position = "absolute";
+        // foliaAnnotationAnchor.style.backgroundColor = "rgba(250, 128, 95, 0.15)";
+        // foliaAnnotationAnchor.style.borderBottom = "solid 2px #FA805F";
+        textLayerDiv.appendChild(foliaAnnotationAnchor);
+        result.push(foliaAnnotationAnchor);
         continue;
-      }
+      } else {
+        // Loop over the divIdxs.
+        while (i !== end && matchIdx >= iIndex + textContentItemsStr[i].length) {
+          iIndex += textContentItemsStr[i].length;
+          i++;
+        }
 
-      // Loop over the divIdxs.
-      while (i !== end && matchIdx >= iIndex + textContentItemsStr[i].length) {
-        iIndex += textContentItemsStr[i].length;
-        i++;
-      }
+        if (i === textContentItemsStr.length) {
+          console.error("Could not find a matching mapping");
+        }
 
-      if (i === textContentItemsStr.length) {
-        console.error("Could not find a matching mapping");
-      }
+        const match = {
+          begin: {
+            divIdx: i,
+            offset: matchIdx - iIndex,
+          },
+        };
 
-      const match = {
-        begin: {
+        // Calculate the end position.
+        matchIdx += matchesLength[m];
+
+        // Somewhat the same array as above, but use > instead of >= to get
+        // the end position right.
+        while (i !== end && matchIdx > iIndex + textContentItemsStr[i].length) {
+          iIndex += textContentItemsStr[i].length;
+          i++;
+        }
+
+        match.end = {
           divIdx: i,
           offset: matchIdx - iIndex,
-        },
-      };
-
-      // Calculate the end position.
-      matchIdx += matchesLength[m];
-
-      // Somewhat the same array as above, but use > instead of >= to get
-      // the end position right.
-      while (i !== end && matchIdx > iIndex + textContentItemsStr[i].length) {
-        iIndex += textContentItemsStr[i].length;
-        i++;
+        };
+        result.push(match);
       }
-
-      match.end = {
-        divIdx: i,
-        offset: matchIdx - iIndex,
-      };
-      result.push(match);
     }
-    return result;
+    return result.sort((a, b) => {
+      const elA = a instanceof HTMLElement ? a : this.textDivs[a.begin.divIdx];
+      const elB = b instanceof HTMLElement ? b : this.textDivs[b.begin.divIdx];
+      return elA.offsetTop - elB.offsetTop;
+    });
   }
 
   _renderMatches(matches) {
@@ -228,6 +225,7 @@ class TextHighlighter {
       return;
     }
 
+    console.log("_renderMatches", pageIdx, matches);
     for (let i = i0; i < i1; i++) {
       const match = matches[i];
       const begin = match.begin;
@@ -238,55 +236,70 @@ class TextHighlighter {
 
       const isFoliaAnnotation = !(match.hasOwnProperty("begin") && match.hasOwnProperty("end"));
       if (isFoliaAnnotation) {
-        // console.log("_renderMatches", match);
-        match.style.borderBottom = isSelected ? "none" : "solid 2px #FA805F";
+        // match.style.borderBottom = isSelected ? "none" : "solid 2px #FA805F";
         match.style.backgroundColor = isSelected ? "rgba(250, 128, 95, 1)" : "transparent";
-      }
-      if (isSelected) {
-        findController.scrollMatchIntoView({
-          element: isFoliaAnnotation ? match : textDivs[begin.divIdx],
-          pageIndex: pageIdx,
-          matchIndex: selectedMatchIdx,
-        });
-      }
-
-      // console.log('PDFFindController=>_renderMatches', {pageIdx: pageIdx, match, isAnnotationDiv})
-      if (isFoliaAnnotation) {
-        continue;
-      }
-
-      // Match inside new div.
-      if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
-        // If there was a previous div, then add the text at the end.
-        if (prevEnd !== null) {
-          appendTextToDiv(prevEnd.divIdx, prevEnd.offset, infinity.offset);
-        }
-        // Clear the divs and set the content until the starting point.
-        beginText(begin);
       } else {
-        appendTextToDiv(prevEnd.divIdx, prevEnd.offset, begin.offset);
+        // Match inside new div.
+        if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
+          // If there was a previous div, then add the text at the end.
+          if (prevEnd !== null) {
+            appendTextToDiv(prevEnd.divIdx, prevEnd.offset, infinity.offset);
+          }
+          // Clear the divs and set the content until the starting point.
+          beginText(begin);
+        } else {
+          appendTextToDiv(prevEnd.divIdx, prevEnd.offset, begin.offset);
+        }
+
+        if (begin.divIdx === end.divIdx) {
+          selectedLeft = appendTextToDiv(
+            begin.divIdx,
+            begin.offset,
+            end.offset,
+            "highlight" + highlightSuffix
+          );
+        } else {
+          selectedLeft = appendTextToDiv(
+            begin.divIdx,
+            begin.offset,
+            infinity.offset,
+            "highlight begin" + highlightSuffix
+          );
+          for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
+            textDivs[n0].className = "highlight middle" + highlightSuffix;
+          }
+          beginText(end, "highlight end" + highlightSuffix);
+        }
+        prevEnd = end;
       }
 
-      if (begin.divIdx === end.divIdx) {
-        selectedLeft = appendTextToDiv(begin.divIdx, begin.offset, end.offset, "highlight" + highlightSuffix);
-      } else {
-        selectedLeft = appendTextToDiv(
-          begin.divIdx,
-          begin.offset,
-          infinity.offset,
-          "highlight begin" + highlightSuffix
-        );
-        for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
-          textDivs[n0].className = "highlight middle" + highlightSuffix;
-        }
-        beginText(end, "highlight end" + highlightSuffix);
-      }
-      prevEnd = end;
+      // if (isFoliaAnnotation) {
+      //   // console.log("_renderMatches", match);
+      //   const textLayerDiv = this.getTextLayerDiv();
+      //   if (false) {
+      //     const rect = fromPdfRect(matchIdx.rect, textLayerDiv.clientWidth, textLayerDiv.clientHeight);
+      //     const annoDiv = document.createElement("div");
+      //     annoDiv.style.left = rect[0] + "px";
+      //     annoDiv.style.top = rect[1] + "px";
+      //     annoDiv.style.width = rect[2] + "px";
+      //     annoDiv.style.height = rect[3] + "px";
+      //     annoDiv.setAttribute("id", matchIdx.id);
+      //     annoDiv.setAttribute("data-info", "searchable_annotation");
+      //     annoDiv.style.position = "absolute";
+      //     // annoDiv.style.backgroundColor = "rgba(250, 128, 95, 0.15)";
+      //     // annoDiv.style.borderBottom = "solid 2px #FA805F";
+      //     textLayerDiv.appendChild(annoDiv);
+      //     result.push(annoDiv);
+      //   }
+
+      //   // match.style.borderBottom = isSelected ? "none" : "solid 2px #FA805F";
+      //   // match.style.backgroundColor = isSelected ? "rgba(250, 128, 95, 1)" : "transparent";
+      // }
 
       if (isSelected) {
         // Attempt to scroll the selected match into view.
         findController.scrollMatchIntoView({
-          element: textDivs[begin.divIdx],
+          element: isFoliaAnnotation ? match : textDivs[begin.divIdx],
           selectedLeft,
           pageIndex: pageIdx,
           matchIndex: selectedMatchIdx,
@@ -308,8 +321,13 @@ class TextHighlighter {
     let clearedUntilDivIdx = -1;
 
     // Clear all current matches.
+    const textLayerDiv = this.getTextLayerDiv();
+    if (textLayerDiv) {
+      const annoDivs = textLayerDiv.querySelectorAll('div[data-info="searchable_annotation"]');
+      annoDivs.forEach((el) => el.remove());
+    }
     for (const match of matches) {
-      // console.log("_updateMatches", match);
+      console.log("_updateMatches", match);
       const isFoliaAnnotation = !(match.hasOwnProperty("begin") && match.hasOwnProperty("end"));
       if (isFoliaAnnotation) continue;
 
@@ -331,6 +349,7 @@ class TextHighlighter {
     const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
 
     this.matches = this._convertMatches(pageMatches, pageMatchesLength);
+    // console.log("_updateMatches", pageIdx, this.matches);
     this._renderMatches(this.matches);
   }
 }

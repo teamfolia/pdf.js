@@ -1,7 +1,18 @@
+import { v4 as uuid } from "uuid";
 import { cloneDeep } from "lodash";
-import { fromPdfRect, toPdfRect, fromPdfPath, toPdfPath } from "../folia-util";
+import {
+  fromPdfRect,
+  toPdfRect,
+  fromPdfPath,
+  toPdfPath,
+  fromPdfPoint,
+  toPdfPoint,
+  shiftRect,
+  shiftArrow,
+  shiftInk,
+} from "../folia-util";
 import { RECT_MIN_SIZE, FOLIA_LAYER_ROLES } from "../folia-page-layer";
-import { PERMISSIONS } from "../constants";
+import { ANNOTATION_WEIGHT, PERMISSIONS } from "../constants";
 
 class FoliaBaseAnnotation {
   isSelected = false;
@@ -22,6 +33,10 @@ class FoliaBaseAnnotation {
     annotationDIV.className = `folia-annotation ${this.annotationRawData.__typename}`;
     this.annotationDIV = annotationDIV;
     this.foliaLayer.appendChild(annotationDIV);
+  }
+
+  appendAnnot2Layer(parent, child) {
+    ANNOTATION_WEIGHT;
   }
 
   get editableProperties() {
@@ -180,6 +195,41 @@ class FoliaBaseAnnotation {
         y: this.targetPoint ? this.targetPoint.y : 0,
       },
     };
+  }
+
+  getDuplicate() {
+    const shiftValue = 20;
+    const duplicate = this.getRawData();
+    duplicate.id = uuid();
+    duplicate.addedAt = new Date().toISOString();
+    switch (duplicate.__typename) {
+      case "InkAnnotation": {
+        const paths = shiftInk(
+          duplicate.paths.map((path) => fromPdfPath(path, this.viewport.width, this.viewport.height)),
+          shiftValue
+        );
+        duplicate.paths = paths.map((path) => toPdfPath(path, this.viewport.width, this.viewport.height));
+        break;
+      }
+      case "ArrowAnnotation": {
+        const { sourcePoint, targetPoint } = shiftArrow(
+          fromPdfPoint(duplicate.sourcePoint, this.viewport.width, this.viewport.height),
+          fromPdfPoint(duplicate.targetPoint, this.viewport.width, this.viewport.height),
+          shiftValue
+        );
+        duplicate.sourcePoint = toPdfPoint(sourcePoint, this.viewport.width, this.viewport.height);
+        duplicate.targetPoint = toPdfPoint(targetPoint, this.viewport.width, this.viewport.height);
+        break;
+      }
+      default: {
+        const rect = shiftRect(
+          fromPdfRect(duplicate.rect, this.viewport.width, this.viewport.height),
+          shiftValue
+        );
+        duplicate.rect = toPdfRect(rect, this.viewport.width, this.viewport.height);
+      }
+    }
+    return duplicate;
   }
 
   updateRects() {}

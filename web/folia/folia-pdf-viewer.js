@@ -580,6 +580,12 @@ export class FoliaPDFViewer {
       page.foliaPageLayer.resetObjectsSeletion();
     });
   }
+  duplicateSelectedAnnotations() {
+    this.pdfViewer._pages.map((page) => {
+      if (!page.foliaPageLayer) return;
+      page.foliaPageLayer.duplicateSelectedAnnotations();
+    });
+  }
 
   search(query) {
     // console.log("SEARCH", query);
@@ -592,6 +598,11 @@ export class FoliaPDFViewer {
       highlightAll: false,
       findPrevious: false,
     });
+  }
+  closeSearch() {
+    // console.log("CLOSE SEARCH");
+    this.searchQuery = "";
+    this.eventBus.dispatch("findbarclose");
   }
   searchNext() {
     // console.log("SEARCH NEXT");
