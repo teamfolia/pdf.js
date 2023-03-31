@@ -460,7 +460,9 @@ export class FoliaPDFViewer {
   }
   redo() {
     if (this.undoRedoManager.redo()) {
-      this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+      if (this.pdfViewer.annotationBuilderClass) {
+        this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+      }
       return;
     } else {
       this.undoRedoManager.updateUI();
