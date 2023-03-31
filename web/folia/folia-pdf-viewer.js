@@ -473,18 +473,6 @@ export class FoliaPDFViewer {
       this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
     }
   }
-  // redo() {
-  //   if (this.pdfViewer.annotationBuilderClass) {
-  //     if (this.pdfViewer.annotationBuilderClass.undoRedoManager.redo()) {
-  //       this.undoRedoManager.updateUI();
-  //       return;
-  //     } else {
-  //       this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
-  //     }
-  //   }
-  //   this.undoRedoManager.redo();
-  //   this.undoRedoManager.updateUI();
-  // }
   zoomIn() {
     if (this.zoom >= 500) return;
     this.pdfViewer.increaseScale();

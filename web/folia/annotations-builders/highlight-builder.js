@@ -37,6 +37,21 @@ class HighlightBuilder extends BaseBuilder {
   }
 
   prepareAnnotations2save() {
+    return this.groups.map((anno) => {
+      return {
+        __typename: ANNOTATION_TYPES.HIGHLIGHT,
+        kind: this.kind,
+        color: anno.color,
+        rects: anno.blocks.map((block) => {
+          const { left, top, width, height } = block;
+          return toPdfRect([left, top, width, height], this.viewport.width, this.viewport.height);
+        }),
+        text: anno.text,
+      };
+    });
+  }
+
+  _prepareAnnotations2save() {
     let annotations = [];
 
     for (const group of this.groups) {
@@ -47,18 +62,6 @@ class HighlightBuilder extends BaseBuilder {
           text: block.letter,
         });
     }
-    // for (const group of this.groups) {
-    //   if (annotations[0]?.color === group.color) {
-    //     annotations[0].blocks.push(...group.blocks);
-    //     annotations[0].text += group.blocks.reduce((acc, block) => (acc += block.letter), "");
-    //   } else {
-    //     annotations.unshift({
-    //       color: group.color,
-    //       blocks: [...group.blocks],
-    //       text: group.blocks.reduce((acc, block) => (acc += block.letter), ""),
-    //     });
-    //   }
-    // }
 
     return annotations
       .sort((a, b) => {
