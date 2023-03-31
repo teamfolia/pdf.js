@@ -448,16 +448,41 @@ export class FoliaPDFViewer {
   }
   undo() {
     if (this.pdfViewer.annotationBuilderClass) {
-      return this.pdfViewer.annotationBuilderClass.undoRedoManager.undo();
+      if (this.pdfViewer.annotationBuilderClass.undoRedoManager.undo()) {
+        this.undoRedoManager.updateUI();
+        return;
+      } else {
+        this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+      }
     }
     this.undoRedoManager.undo();
+    this.undoRedoManager.updateUI();
   }
   redo() {
-    if (this.pdfViewer.annotationBuilderClass) {
-      return this.pdfViewer.annotationBuilderClass.undoRedoManager.redo();
+    if (this.undoRedoManager.redo()) {
+      this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+      return;
+    } else {
+      this.undoRedoManager.updateUI();
     }
-    this.undoRedoManager.redo();
+
+    if (this.pdfViewer.annotationBuilderClass) {
+      this.pdfViewer.annotationBuilderClass.undoRedoManager.redo();
+      this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+    }
   }
+  // redo() {
+  //   if (this.pdfViewer.annotationBuilderClass) {
+  //     if (this.pdfViewer.annotationBuilderClass.undoRedoManager.redo()) {
+  //       this.undoRedoManager.updateUI();
+  //       return;
+  //     } else {
+  //       this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+  //     }
+  //   }
+  //   this.undoRedoManager.redo();
+  //   this.undoRedoManager.updateUI();
+  // }
   zoomIn() {
     if (this.zoom >= 500) return;
     this.pdfViewer.increaseScale();
@@ -609,11 +634,12 @@ export class FoliaPDFViewer {
     // console.log("SEARCH", query);
     this.searchQuery = query;
     this.eventBus.dispatch("find", {
+      type: "",
       query: this.searchQuery,
       phraseSearch: true,
       caseSensitive: false,
       entireWord: false,
-      highlightAll: false,
+      highlightAll: true,
       findPrevious: false,
     });
   }
@@ -630,7 +656,7 @@ export class FoliaPDFViewer {
       phraseSearch: true,
       caseSensitive: false,
       entireWord: false,
-      highlightAll: false,
+      highlightAll: true,
       findPrevious: false,
     });
   }
@@ -642,7 +668,7 @@ export class FoliaPDFViewer {
       phraseSearch: true,
       caseSensitive: false,
       entireWord: false,
-      highlightAll: false,
+      highlightAll: true,
       findPrevious: true,
     });
   }

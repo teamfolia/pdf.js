@@ -225,18 +225,20 @@ export class UndoRedo {
 
   undo() {
     const command = this.undoStack.pop();
-    if (!command) return;
+    if (!command) return false;
     this.redoStack.push(command);
     command.undo();
-    this.updateUI();
+    // this.updateUI();
+    return true;
   }
 
   redo() {
     const command = this.redoStack.pop();
-    if (!command) return;
+    if (!command) return false;
     this.undoStack.push(command);
     command.redo();
-    this.updateUI();
+    // this.updateUI();
+    return true;
   }
 
   replaceObjectsId(oldId, newId) {

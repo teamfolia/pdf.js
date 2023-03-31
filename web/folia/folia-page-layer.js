@@ -139,7 +139,7 @@ class FoliaPageLayer {
     } else {
       this.eventBus.dispatch("commit-object", objectData);
     }
-    this.eventBus.dispatch("findneedrefresh", {});
+    // this.eventBus.dispatch("findneedrefresh", {});
   }
 
   deleteSelectedAnnotations(object) {

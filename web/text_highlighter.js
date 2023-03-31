@@ -123,8 +123,7 @@ class TextHighlighter {
         foliaAnnotationAnchor.setAttribute("id", matchIdx.id);
         foliaAnnotationAnchor.setAttribute("data-info", "searchable_annotation");
         foliaAnnotationAnchor.style.position = "absolute";
-        // foliaAnnotationAnchor.style.backgroundColor = "rgba(250, 128, 95, 0.15)";
-        // foliaAnnotationAnchor.style.borderBottom = "solid 2px #FA805F";
+        foliaAnnotationAnchor.style.backgroundColor = "#64748b";
         textLayerDiv.appendChild(foliaAnnotationAnchor);
         result.push(foliaAnnotationAnchor);
         continue;
@@ -237,7 +236,7 @@ class TextHighlighter {
       const isFoliaAnnotation = !(match.hasOwnProperty("begin") && match.hasOwnProperty("end"));
       if (isFoliaAnnotation) {
         // match.style.borderBottom = isSelected ? "none" : "solid 2px #FA805F";
-        match.style.backgroundColor = isSelected ? "rgba(250, 128, 95, 1)" : "transparent";
+        match.style.backgroundColor = isSelected ? "#fbbf24" : "#64748b";
       } else {
         // Match inside new div.
         if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
@@ -272,29 +271,6 @@ class TextHighlighter {
         }
         prevEnd = end;
       }
-
-      // if (isFoliaAnnotation) {
-      //   // console.log("_renderMatches", match);
-      //   const textLayerDiv = this.getTextLayerDiv();
-      //   if (false) {
-      //     const rect = fromPdfRect(matchIdx.rect, textLayerDiv.clientWidth, textLayerDiv.clientHeight);
-      //     const annoDiv = document.createElement("div");
-      //     annoDiv.style.left = rect[0] + "px";
-      //     annoDiv.style.top = rect[1] + "px";
-      //     annoDiv.style.width = rect[2] + "px";
-      //     annoDiv.style.height = rect[3] + "px";
-      //     annoDiv.setAttribute("id", matchIdx.id);
-      //     annoDiv.setAttribute("data-info", "searchable_annotation");
-      //     annoDiv.style.position = "absolute";
-      //     // annoDiv.style.backgroundColor = "rgba(250, 128, 95, 0.15)";
-      //     // annoDiv.style.borderBottom = "solid 2px #FA805F";
-      //     textLayerDiv.appendChild(annoDiv);
-      //     result.push(annoDiv);
-      //   }
-
-      //   // match.style.borderBottom = isSelected ? "none" : "solid 2px #FA805F";
-      //   // match.style.backgroundColor = isSelected ? "rgba(250, 128, 95, 1)" : "transparent";
-      // }
 
       if (isSelected) {
         // Attempt to scroll the selected match into view.
