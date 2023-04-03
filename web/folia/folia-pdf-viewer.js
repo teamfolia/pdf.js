@@ -449,10 +449,10 @@ export class FoliaPDFViewer {
   undo() {
     if (this.pdfViewer.annotationBuilderClass) {
       if (this.pdfViewer.annotationBuilderClass.undoRedoManager.undo()) {
-        this.undoRedoManager.updateUI();
+        this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
         return;
       } else {
-        this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+        this.undoRedoManager.updateUI();
       }
     }
     this.undoRedoManager.undo();
@@ -460,12 +460,12 @@ export class FoliaPDFViewer {
   }
   redo() {
     if (this.undoRedoManager.redo()) {
+      this.undoRedoManager.updateUI();
+      return;
+    } else {
       if (this.pdfViewer.annotationBuilderClass) {
         this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
       }
-      return;
-    } else {
-      this.undoRedoManager.updateUI();
     }
 
     if (this.pdfViewer.annotationBuilderClass) {
