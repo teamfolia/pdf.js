@@ -67,7 +67,8 @@ class UpdatingAnnotation {
 
     const annoObject = page.foliaPageLayer.annotationObjects.get(this.prevState.id);
     if (!annoObject) return;
-    annoObject.forcedUpdate(this.prevState);
+    annoObject.update(this.prevState, null, true);
+    annoObject.markAsChanged();
     page.foliaPageLayer.commitObjectChanges(annoObject.getRawData());
     // console.log("UpdatingAnnotation.undo -> update", annoObject.id);
   }
@@ -88,7 +89,8 @@ class UpdatingAnnotation {
 
     const annoObject = page.foliaPageLayer.annotationObjects.get(this.newState.id);
     if (!annoObject) return;
-    annoObject.forcedUpdate(this.newState);
+    annoObject.update(this.newState, null, true);
+    annoObject.markAsChanged();
     page.foliaPageLayer.commitObjectChanges(annoObject.getRawData());
     // console.log("UpdatingAnnotation.redo -> update", annoObject.id);
   }
@@ -197,7 +199,8 @@ export class UndoRedo {
 
   creatingObject(objectData) {
     const command = new CreatingAnnotation(this, objectData);
-    this.undoStack.push(command);
+    this.undoStack = [...this.undoStack.filter((item) => !(item instanceof ToolUndoRedo)), command];
+    // this.undoStack.push(command);
     this.redoStack = [];
     this.updateUI();
   }
@@ -216,8 +219,8 @@ export class UndoRedo {
     this.updateUI();
   }
 
-  addToolStep(prevState, newState) {
-    const command = new ToolUndoRedo(this, prevState, newState);
+  addToolStep(previousData, nextData) {
+    const command = new ToolUndoRedo(this, previousData, nextData);
     this.undoStack.push(command);
     this.redoStack = [];
     this.updateUI();
@@ -228,7 +231,7 @@ export class UndoRedo {
     if (!command) return false;
     this.redoStack.push(command);
     command.undo();
-    // this.updateUI();
+    this.updateUI();
     return true;
   }
 
@@ -237,7 +240,7 @@ export class UndoRedo {
     if (!command) return false;
     this.undoStack.push(command);
     command.redo();
-    // this.updateUI();
+    this.updateUI();
     return true;
   }
 
@@ -268,7 +271,6 @@ export class UndoRedo {
     this.foliaPdfViewer.eventBus.dispatch("undo-redo-changed", {
       canUndo: this.undoStack.length > 0,
       canRedo: this.redoStack.length > 0,
-      stat: `${this.undoStack.length}/${this.redoStack.length}`,
     });
   }
 }

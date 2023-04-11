@@ -46,7 +46,7 @@ class HighlightBuilder extends BaseBuilder {
           const { left, top, width, height } = block;
           return toPdfRect([left, top, width, height], this.viewport.width, this.viewport.height);
         }),
-        text: anno.text,
+        text: anno.blocks.reduce((acc, block) => (acc += block.letter), ""),
       };
     });
   }
@@ -244,7 +244,7 @@ class HighlightBuilder extends BaseBuilder {
   }
 
   applyUndoRedo(groups) {
-    this.groups = groups;
+    this.groups = groups.slice();
     this.draw();
     this.path = [];
   }

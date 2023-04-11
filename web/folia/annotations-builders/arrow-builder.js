@@ -124,7 +124,7 @@ class ArrowBuilder extends BaseBuilder {
   }
 
   applyUndoRedo(arrows) {
-    this.arrows = arrows;
+    this.arrows = arrows.slice();
     this.draw();
   }
 

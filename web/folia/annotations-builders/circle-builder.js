@@ -110,7 +110,7 @@ class CircleBuilder extends BaseBuilder {
   }
 
   applyUndoRedo(circles) {
-    this.circles = circles;
+    this.circles = circles.slice();
     this.draw();
   }
 

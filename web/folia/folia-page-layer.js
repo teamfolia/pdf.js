@@ -90,7 +90,7 @@ class FoliaPageLayer {
   startDrawing = (BuilderClass) => {
     this.stopDrawing();
     this.annotationBuilderClass = BuilderClass;
-    this.annotationBuilder = new BuilderClass(this, BuilderClass);
+    this.annotationBuilder = new BuilderClass(this, BuilderClass, this.undoRedoManager);
   };
   updateToolDrawingProperties(preset) {
     this.annotationBuilder.applyPreset(preset);

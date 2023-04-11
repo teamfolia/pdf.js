@@ -4,11 +4,8 @@ import * as turf from "@turf/turf";
 import { ANNOTATION_TYPES } from "../constants";
 
 class InkBuilder extends BaseBuilder {
-  mouseIsDown = false;
-  mouseIsMove = false;
-  path = [];
-  parts = [];
-  path = [];
+  paths = [];
+  drawingPath = null;
 
   static type = "InkAnnotation";
 
@@ -34,8 +31,8 @@ class InkBuilder extends BaseBuilder {
     const annotations = [];
     let annotation = null;
 
-    // the similar parts of drawing should be saved as a single annotation
-    for (const part of this.parts) {
+    // the similar paths of drawing should be saved as a single annotation
+    for (const part of this.paths) {
       if (annotation) {
         if (part.color === annotation.color && part.lineWidth === annotation.lineWidth) {
           annotation.paths.push(part.path);
@@ -49,8 +46,8 @@ class InkBuilder extends BaseBuilder {
     }
     if (annotation) annotations.push(annotation);
 
-    this.parts = [];
-    this.path = [];
+    this.paths = [];
+    this.drawingPath = [];
 
     return annotations.map((anno) => {
       return {
@@ -62,86 +59,92 @@ class InkBuilder extends BaseBuilder {
     });
   }
 
+  simplifyPath(path) {
+    try {
+      if (!path) return [];
+      if (path.length < 3) return path;
+      const line = turf.lineString(path.map((p) => [p.x, p.y]));
+      const simplified = turf.simplify(line, { tolerance: 0.4, highQuality: false });
+      return simplified.geometry.coordinates.map((c) => ({ x: c[0], y: c[1] }));
+    } catch (e) {
+      // console.error("turf error:", e.message);
+      return path;
+    }
+  }
+
   onMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
-    this.mouseIsDown = true;
-    this.path.push(this.getRelativePoint(e));
+    const point = this.getRelativePoint(e);
+    this.drawingPath = {
+      color: this.preset.color,
+      lineWidth: this.preset.lineWidth,
+      path: [point],
+    };
   }
   onMouseMove(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (!this.mouseIsDown) return;
-    this.mouseIsMove = true;
+    if (!this.drawingPath) return;
 
-    this.path.push(this.getRelativePoint(e));
-    try {
-      const line = turf.lineString(this.path.map((p) => [p.x, p.y]));
-      const options = { tolerance: 0.4, highQuality: false };
-      const simplified = turf.simplify(line, options);
-      this.path = simplified.geometry.coordinates.map((c) => ({ x: c[0], y: c[1] }));
-    } catch (e) {}
+    const point = this.getRelativePoint(e);
+    this.drawingPath.path.push(point);
 
-    window.requestAnimationFrame(() =>
-      this.draw([
-        {
-          color: this.preset.color,
-          lineWidth: this.preset.lineWidth,
-          path: this.path,
-        },
-        ...this.parts,
-      ])
-    );
+    window.requestAnimationFrame(() => this.drawAll());
   }
   onMouseUp(e) {
     e.preventDefault();
     e.stopPropagation();
-    this.mouseIsDown = false;
-    this.mouseIsMove = false;
-    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.parts.slice() };
-    this.parts.push({
+
+    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.paths.slice() };
+    this.paths.push({
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
-      path: this.path,
+      path: this.simplifyPath(this.drawingPath.path),
     });
-    const newState = { page: this.foliaPageLayer.pageNumber, data: this.parts.slice() };
+    const newState = { page: this.foliaPageLayer.pageNumber, data: this.paths.slice() };
     this.undoRedoManager.addToolStep(prevState, newState);
-    window.requestAnimationFrame(() => {
-      this.draw(this.parts);
-      this.path = [];
-    });
+    this.drawingPath = null;
   }
 
-  applyUndoRedo(parts) {
-    this.parts = parts;
-    this.draw(this.parts);
+  applyUndoRedo(paths) {
+    // console.log("applyUndoRedo", paths);
+    this.paths = paths.slice();
     this.path = [];
+    this.drawAll();
   }
 
-  draw(parts = []) {
+  drawSegment(color, lineWidth, path) {
+    if (path.length === 0) return;
+    const ctx = this.canvas.getContext("2d");
+    ctx.save();
+    ctx.strokeStyle = hexColor2RGBA(color);
+    ctx.lineWidth = lineWidth * this.viewport.scale * 0.5;
+    let p1 = path[0];
+    let p2 = path[1];
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    for (let i = 1, len = path.length; i < len; i++) {
+      const mp = { x: p1.x + (p2.x - p1.x) * 0.5, y: p1.y + (p2.y - p1.y) * 0.5 };
+      ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
+      p1 = path[i];
+      p2 = path[i + 1];
+    }
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
+    ctx.closePath();
+  }
+
+  drawAll() {
     const ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    parts.forEach(({ color, lineWidth, path }) => {
-      if (path.length === 0) return;
-      ctx.save();
-      ctx.strokeStyle = hexColor2RGBA(color);
-      // ctx.lineWidth = lineWidth * this.foliaPageLayer.pdfViewerScale;
-      ctx.lineWidth = lineWidth * this.viewport.scale * 0.5;
-      let p1 = path[0];
-      let p2 = path[1];
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      for (let i = 1, len = path.length; i < len; i++) {
-        const mp = { x: p1.x + (p2.x - p1.x) * 0.5, y: p1.y + (p2.y - p1.y) * 0.5 };
-        ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
-        p1 = path[i];
-        p2 = path[i + 1];
-      }
-      ctx.lineTo(p1.x, p1.y);
-      ctx.stroke();
-      ctx.closePath();
+    this.paths.forEach(({ color, lineWidth, path }) => {
+      this.drawSegment(color, lineWidth, path);
     });
+    if (this.drawingPath) {
+      this.drawSegment(this.preset.color, this.preset.lineWidth, this.simplifyPath(this.drawingPath.path));
+    }
   }
 }
 

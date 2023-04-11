@@ -108,7 +108,7 @@ class SquareBuilder extends BaseBuilder {
   }
 
   applyUndoRedo(squares) {
-    this.squares = squares;
+    this.squares = squares.slice();
     this.draw();
   }
 

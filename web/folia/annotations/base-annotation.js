@@ -140,29 +140,22 @@ class FoliaBaseAnnotation {
   markAsChanged() {
     this.isDirty = new Date().toISOString();
   }
-  update(annotationRawData, viewport) {
+  update(annotationRawData, viewport, force = false) {
     this.viewport = this.viewport || viewport;
 
+    const newDate = new Date(annotationRawData.addedAt).getTime();
+    const currDate = new Date(this.annotationRawData.addedAt).getTime();
     if (this.isDirty === annotationRawData.addedAt) this.isDirty = null;
-    if (this.isDirty) return this.render();
 
-    for (const [key, value] of Object.entries(annotationRawData)) {
-      if (this.editablePropertiesList.includes(key)) {
+    if (!this.isDirty || force || newDate > currDate) {
+      // console.log("==>", { serv: annotationRawData.addedAt, local: this.annotationRawData.addedAt });
+      for (const [key, value] of Object.entries(annotationRawData)) {
         this.needToReRender = JSON.stringify(this.annotationRawData[key]) !== JSON.stringify(value);
         this.annotationRawData[key] = value;
+        // if (this.editablePropertiesList.includes(key)) {}
       }
     }
-    this.render();
-  }
-  forcedUpdate(annotationRawData, viewport) {
-    this.viewport = this.viewport || viewport;
-    for (const [key, value] of Object.entries(annotationRawData)) {
-      if (this.editablePropertiesList.includes(key)) {
-        this.needToReRender = JSON.stringify(this.annotationRawData[key]) !== JSON.stringify(value);
-        this.annotationRawData[key] = value;
-        this.markAsChanged();
-      }
-    }
+
     this.render();
   }
 
@@ -202,6 +195,7 @@ class FoliaBaseAnnotation {
     const duplicate = this.getRawData();
     duplicate.id = uuid();
     duplicate.addedAt = new Date().toISOString();
+
     switch (duplicate.__typename) {
       case "InkAnnotation": {
         const paths = shiftInk(
@@ -227,6 +221,7 @@ class FoliaBaseAnnotation {
           shiftValue
         );
         duplicate.rect = toPdfRect(rect, this.viewport.width, this.viewport.height);
+        if (duplicate.__typename === "ImageAnnotation") duplicate.newbie = true;
       }
     }
     return duplicate;

@@ -447,31 +447,33 @@ export class FoliaPDFViewer {
     await Promise.all(promises);
   }
   undo() {
-    if (this.pdfViewer.annotationBuilderClass) {
-      if (this.pdfViewer.annotationBuilderClass.undoRedoManager.undo()) {
-        this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
-        return;
-      } else {
-        this.undoRedoManager.updateUI();
-      }
-    }
+    // if (this.pdfViewer.annotationBuilderClass) {
+    //   if (this.pdfViewer.annotationBuilderClass.undoRedoManager.undo()) {
+    //     this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+    //     return;
+    //   } else {
+    //     this.undoRedoManager.updateUI();
+    //   }
+    // }
     this.undoRedoManager.undo();
-    this.undoRedoManager.updateUI();
+    // this.undoRedoManager.updateUI();
   }
   redo() {
-    if (this.undoRedoManager.redo()) {
-      this.undoRedoManager.updateUI();
-      return;
-    } else {
-      if (this.pdfViewer.annotationBuilderClass) {
-        this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
-      }
-    }
+    this.undoRedoManager.redo();
+    // this.undoRedoManager.updateUI();
+    // if (this.undoRedoManager.redo()) {
+    //   this.undoRedoManager.updateUI();
+    //   return;
+    // } else {
+    //   if (this.pdfViewer.annotationBuilderClass) {
+    //     this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+    //   }
+    // }
 
-    if (this.pdfViewer.annotationBuilderClass) {
-      this.pdfViewer.annotationBuilderClass.undoRedoManager.redo();
-      this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
-    }
+    // if (this.pdfViewer.annotationBuilderClass) {
+    //   this.pdfViewer.annotationBuilderClass.undoRedoManager.redo();
+    //   this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
+    // }
   }
   zoomIn() {
     if (this.zoom >= 500) return;
@@ -550,7 +552,7 @@ export class FoliaPDFViewer {
   continueStartDrawing(BuilderClass, preset, asset) {
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
-    BuilderClass.undoRedoManager = new UndoRedo(this);
+    // BuilderClass.undoRedoManager = new UndoRedo(this);
     this.pdfViewer.annotationBuilderClass = BuilderClass;
 
     this.pdfViewer._pages.map((page) => {

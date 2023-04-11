@@ -12,12 +12,12 @@ class BaseBuilder {
 
   static initialPreset = {};
 
-  constructor(foliaPageLayer, BuildingClass) {
+  constructor(foliaPageLayer, BuildingClass, undoRedoManager) {
     this.foliaPageLayer = foliaPageLayer;
     this.viewport = foliaPageLayer.viewport.clone({ dontFlip: true });
     this.applyPreset(BuildingClass.initialPreset);
     this.asset = BuildingClass.asset;
-    this.undoRedoManager = BuildingClass.undoRedoManager;
+    this.undoRedoManager = undoRedoManager;
     this.resume();
     this.undoRedoManager.updateUI();
   }
