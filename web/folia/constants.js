@@ -31,15 +31,16 @@ export const ANNOTATION_TYPES = {
   REPLY: "ReplyAnnotation",
 };
 
-export const ANNOTATION_WEIGHT = {
-  CommentAnnotation: 0,
-  HighlightAnnotation: 1,
-  SquareAnnotation: 2,
-  CircleAnnotation: 2,
-  ArrowAnnotation: 2,
-  InkAnnotation: 3,
-  TextBoxAnnotation: 4,
-};
+export const ANNOTATION_WEIGHT = [
+  ANNOTATION_TYPES.TEXT_BOX,
+  ANNOTATION_TYPES.INK,
+  ANNOTATION_TYPES.ARROW,
+  ANNOTATION_TYPES.CIRCLE,
+  ANNOTATION_TYPES.SQUARE,
+  ANNOTATION_TYPES.COMMENT,
+  ANNOTATION_TYPES.IMAGE,
+  ANNOTATION_TYPES.HIGHLIGHT,
+];
 
 export const HighlightKind = {
   MARKER: "MARKER",

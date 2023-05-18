@@ -59,7 +59,7 @@ class BaseBuilder {
       this.foliaPageLayer.undoRedoManager.creatingObject(annotation);
     }
 
-    // console.log("stop builder on page", page);
+    this.foliaPageLayer.undoRedoManager.removeToolUndoRedoItems();
     this.foliaPageLayer.pageDiv
       .querySelectorAll(".annotation-builder-container")
       .forEach((el) => el.remove());

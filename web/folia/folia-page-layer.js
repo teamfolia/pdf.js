@@ -165,11 +165,6 @@ class FoliaPageLayer {
       annotationObject.update(annotation, this.viewport);
     }
   }
-  refresh() {
-    // console.log("refreshFoliaLayers");
-    this.render(this.viewport);
-  }
-
   render(viewport) {
     // console.time("render");
     // console.log("render", this.pageNumber);
@@ -190,12 +185,17 @@ class FoliaPageLayer {
     }
 
     try {
+      // const annotations = this.dataProxy.getObjects(this.pageNumber).sort((a, b) => {
+      //   const weightA = ANNOTATION_WEIGHT[a.__typename];
+      //   const weightB = ANNOTATION_WEIGHT[b.__typename];
+      //   const createdA = new Date(a.createdAt);
+      //   const createdB = new Date(b.createdAt);
+      //   return weightA === weightB ? createdA - createdB : weightA - weightB;
+      // });
       const annotations = this.dataProxy.getObjects(this.pageNumber).sort((a, b) => {
-        const weightA = ANNOTATION_WEIGHT[a.__typename];
-        const weightB = ANNOTATION_WEIGHT[b.__typename];
         const createdA = new Date(a.createdAt);
         const createdB = new Date(b.createdAt);
-        return weightA === weightB ? createdA - createdB : weightA - weightB;
+        return createdA - createdB;
       });
       // delete
       for (const [id, annotationObject] of this.annotationObjects) {
@@ -215,16 +215,12 @@ class FoliaPageLayer {
           if (!annotationObject) {
             const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
             annotationObject = new AnnoClass(this, annotation);
-            // console.time("anno-create " + annotation.__typename);
             this.annotationObjects.set(annotation.id, annotationObject);
-            // console.timeEnd("anno-create " + annotation.__typename);
           } else {
-            // console.time("anno-update " + annotation.__typename);
             annotationObject.update(annotation, this.viewport);
-            // console.timeEnd("anno-update " + annotation.__typename);
           }
         } catch (e) {
-          console.error("error rendering anno", annotation);
+          console.error("error rendering anno 123", e, annotation);
         }
       }
 
@@ -236,6 +232,9 @@ class FoliaPageLayer {
       console.error(`error in render on page ${this.pageNumber}`, err.message);
     }
     // console.timeEnd("render");
+  }
+  refresh() {
+    this.render(this.viewport);
   }
   cancel() {
     // console.log("FoliaPageLayer cancel ==>", this.pageNumber);

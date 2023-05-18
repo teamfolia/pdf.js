@@ -28,7 +28,7 @@ class ArrowBuilder extends BaseBuilder {
   }
 
   prepareAnnotations2save() {
-    return this.arrows.map(({ color, lineWidth, sourcePoint, targetPoint }) => {
+    return this.arrows.map(({ color, lineWidth, sourcePoint, targetPoint, addedAt }) => {
       // increase each line side in a half of arrow width
       const deltaX = targetPoint.x - sourcePoint.x;
       const deltaY = targetPoint.y - sourcePoint.y;
@@ -47,6 +47,7 @@ class ArrowBuilder extends BaseBuilder {
       };
       return {
         __typename: ANNOTATION_TYPES.ARROW,
+        addedAt,
         color,
         lineWidth,
         sourcePoint: toPdfPoint(sp, this.viewport.width, this.viewport.height),
@@ -113,6 +114,7 @@ class ArrowBuilder extends BaseBuilder {
       lineWidth: this.preset.lineWidth,
       sourcePoint,
       targetPoint,
+      addedAt: new Date().toISOString(),
     });
 
     const newState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };

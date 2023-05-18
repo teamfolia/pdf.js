@@ -33,7 +33,7 @@ class CircleBuilder extends BaseBuilder {
   }
 
   prepareAnnotations2save() {
-    return this.circles.map(({ color, lineWidth, rect }) => {
+    return this.circles.map(({ addedAt, color, lineWidth, rect }) => {
       const pdfRect = toPdfRect(
         [
           rect[0] - (lineWidth * this.viewport.scale * 0.4) / 2,
@@ -46,6 +46,7 @@ class CircleBuilder extends BaseBuilder {
       );
       return {
         __typename: ANNOTATION_TYPES.CIRCLE,
+        addedAt,
         lineWidth,
         color,
         rect: pdfRect,
@@ -93,6 +94,7 @@ class CircleBuilder extends BaseBuilder {
     this.circles.pop();
     const prevState = { page: this.foliaPageLayer.pageNumber, data: this.circles.slice() };
     this.circles.push({
+      addedAt: new Date().toISOString(),
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
       rect: [

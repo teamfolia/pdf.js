@@ -113,7 +113,6 @@ class Viewer {
   async getPermissions() {
     const projectId = this.#projectId;
     const project = await this.$fetch.get(`/store/projects/${projectId}`);
-    // console.log(project.permissions);
     this.permissions = project.permissions;
   }
   async getContent() {
@@ -189,12 +188,6 @@ class Viewer {
         },
         get permissions() {
           return that.permissions;
-          return [
-            "MANAGE_ANNOTATION",
-            "DELETE_FOREIGN_ANNOTATION",
-            "MANAGE_OWN_COMMENT",
-            "DELETE_FOREIGN_COMMENT",
-          ];
         },
         getObjects: (pageNumber) => this.#annotations.filter((object) => object.page === pageNumber),
         // postObject: this.postObject.bind(this),
@@ -386,11 +379,11 @@ class Viewer {
       }
       this.zoom = parseFloat((this.zoom + zoomFactor * zoomDirection).toFixed(2));
       viewerDiv.style.zoom = this.zoom;
-      console.log("onWheelListener", this.zoom);
 
       this.zoomTimerId = setTimeout(() => {
-        window.foliaPdfViewer.pdfViewer.currentScaleValue =
-          window.foliaPdfViewer.pdfViewer.currentScale * this.zoom;
+        // prettier-ignore
+        const newScale = window.foliaPdfViewer.pdfViewer.currentScale * this.zoom;
+        window.foliaPdfViewer.pdfViewer.currentScaleValue = newScale;
         window.foliaPdfViewer.forceRendering();
         this.zoom = 1;
         viewerDiv.style.zoom = this.zoom;
@@ -413,6 +406,8 @@ document.addEventListener(
         redirect_uri: window.location.origin,
       },
     });
+    const { email } = await window.authClient.getUser();
+    localStorage.setItem("email", email);
     const viewer = new Viewer();
     await viewer.resume();
 
@@ -427,8 +422,8 @@ document.addEventListener(
     // ----- setup zoom buttons -----
     const zoomInBtn = document.querySelector("#zoom-in");
     const zoomOutBtn = document.querySelector("#zoom-out");
-    zoomInBtn.onclick = () => window.foliaPdfViewer.zoomIn();
-    zoomOutBtn.onclick = () => window.foliaPdfViewer.zoomOut();
+    zoomInBtn.onclick = () => window.foliaPdfViewer.zoomIn(5);
+    zoomOutBtn.onclick = () => window.foliaPdfViewer.zoomOut(5);
 
     // ------ setup tool buttons -----
     document.querySelectorAll(".tool-button").forEach((el) => {

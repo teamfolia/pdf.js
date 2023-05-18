@@ -1,4 +1,5 @@
 import { v4 as uuid } from "uuid";
+import { ANNOTATION_TYPES } from "./constants";
 
 class CreatingAnnotation {
   constructor(undoRedoManager, state) {
@@ -117,6 +118,9 @@ class DeletingAnnotation {
       allowNegativeOffset: true,
     });
 
+    if (this.prevState.__typename === ANNOTATION_TYPES.IMAGE) {
+      this.prevState.newbie = true;
+    }
     page.foliaPageLayer.addAnnotationObject(this.prevState);
     page.foliaPageLayer.commitObjectChanges(this.prevState);
     // console.log("DeletingAnnotation.undo -> create", this.prevState.id);
@@ -199,8 +203,8 @@ export class UndoRedo {
 
   creatingObject(objectData) {
     const command = new CreatingAnnotation(this, objectData);
-    this.undoStack = [...this.undoStack.filter((item) => !(item instanceof ToolUndoRedo)), command];
-    // this.undoStack.push(command);
+    // this.undoStack = [...this.undoStack.filter((item) => !(item instanceof ToolUndoRedo)), command];
+    this.undoStack.push(command);
     this.redoStack = [];
     this.updateUI();
   }
@@ -265,6 +269,11 @@ export class UndoRedo {
         if (cmd.prevState.id === oldId) cmd.prevState.id = newId;
       }
     }
+  }
+
+  removeToolUndoRedoItems() {
+    this.undoStack = this.undoStack.filter((item) => !(item instanceof ToolUndoRedo));
+    this.redoStack = this.redoStack.filter((item) => !(item instanceof ToolUndoRedo));
   }
 
   updateUI() {

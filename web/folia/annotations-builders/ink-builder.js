@@ -38,10 +38,20 @@ class InkBuilder extends BaseBuilder {
           annotation.paths.push(part.path);
         } else {
           annotations.push(annotation);
-          annotation = { paths: [part.path], color: part.color, lineWidth: part.lineWidth };
+          annotation = {
+            paths: [part.path],
+            color: part.color,
+            lineWidth: part.lineWidth,
+            addedAt: part.addedAt,
+          };
         }
       } else {
-        annotation = { paths: [part.path], color: part.color, lineWidth: part.lineWidth };
+        annotation = {
+          paths: [part.path],
+          color: part.color,
+          lineWidth: part.lineWidth,
+          addedAt: part.addedAt,
+        };
       }
     }
     if (annotation) annotations.push(annotation);
@@ -52,6 +62,7 @@ class InkBuilder extends BaseBuilder {
     return annotations.map((anno) => {
       return {
         __typename: ANNOTATION_TYPES.INK,
+        addedAt: anno.addedAt,
         lineWidth: anno.lineWidth,
         color: anno.color,
         paths: anno.paths.map((path) => toPdfPath(path, this.viewport.width, this.viewport.height)),
@@ -98,6 +109,7 @@ class InkBuilder extends BaseBuilder {
 
     const prevState = { page: this.foliaPageLayer.pageNumber, data: this.paths.slice() };
     this.paths.push({
+      addedAt: new Date().toISOString(),
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
       path: this.simplifyPath(this.drawingPath.path),

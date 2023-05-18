@@ -31,7 +31,7 @@ class SquareBuilder extends BaseBuilder {
   }
 
   prepareAnnotations2save() {
-    return this.squares.map(({ color, lineWidth, rect }) => {
+    return this.squares.map(({ addedAt, color, lineWidth, rect }) => {
       const pdfRect = toPdfRect(
         [
           rect[0] - (lineWidth * this.viewport.scale) / 2,
@@ -45,6 +45,7 @@ class SquareBuilder extends BaseBuilder {
 
       return {
         __typename: ANNOTATION_TYPES.SQUARE,
+        addedAt,
         lineWidth,
         color,
         rect: pdfRect,
@@ -92,6 +93,7 @@ class SquareBuilder extends BaseBuilder {
     this.squares.pop();
     const prevState = { page: this.foliaPageLayer.pageNumber, data: this.squares.slice() };
     this.squares.push({
+      addedAt: new Date().toISOString(),
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
       rect: [

@@ -32,7 +32,34 @@ class FoliaBaseAnnotation {
     annotationDIV.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
     annotationDIV.className = `folia-annotation ${this.annotationRawData.__typename}`;
     this.annotationDIV = annotationDIV;
+
+    const annoWeight = ANNOTATION_WEIGHT.indexOf(this.annotationRawData.__typename);
+    const children = this.foliaLayer.children;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const childWeight = Array.from(child.classList).reduce((acc, className) => {
+        return Math.max(acc, ANNOTATION_WEIGHT.indexOf(className));
+      }, -1);
+      if (childWeight < annoWeight) {
+        this.foliaLayer.insertBefore(annotationDIV, child);
+        return;
+      } else if (childWeight === annoWeight) {
+        const childAnno = this.foliaPageLayer.annotationObjects.get(child.dataset?.id);
+        const childAddedTime = new Date(childAnno.annotationRawData.addedAt);
+        const annoAddedTime = new Date(this.annotationRawData.addedAt);
+        if (childAddedTime.getTime() > annoAddedTime.getTime()) {
+          this.foliaLayer.insertBefore(annotationDIV, child);
+          return;
+        }
+      }
+    }
     this.foliaLayer.appendChild(annotationDIV);
+
+    try {
+    } catch (e) {
+      console.error(e);
+      this.foliaLayer.appendChild(annotationDIV);
+    }
   }
 
   appendAnnot2Layer(parent, child) {
@@ -139,20 +166,24 @@ class FoliaBaseAnnotation {
   }
   markAsChanged() {
     this.isDirty = new Date().toISOString();
+    this.annotationRawData.addedAt = this.isDirty;
   }
   update(annotationRawData, viewport, force = false) {
     this.viewport = this.viewport || viewport;
 
     const newDate = new Date(annotationRawData.addedAt).getTime();
     const currDate = new Date(this.annotationRawData.addedAt).getTime();
-    if (this.isDirty === annotationRawData.addedAt) this.isDirty = null;
+    // if (this.isDirty === annotationRawData.addedAt) this.isDirty = null;
+    // if (this.isDirty) return;
 
-    if (!this.isDirty || force || newDate > currDate) {
-      // console.log("==>", { serv: annotationRawData.addedAt, local: this.annotationRawData.addedAt });
+    if (force || newDate > currDate) {
+      // console.log("==>", {
+      //   f: force,
+      //   serv: new Date(annotationRawData.addedAt).toLocaleTimeString(),
+      //   local: new Date(this.annotationRawData.addedAt).toLocaleTimeString(),
+      // });
       for (const [key, value] of Object.entries(annotationRawData)) {
-        this.needToReRender = JSON.stringify(this.annotationRawData[key]) !== JSON.stringify(value);
         this.annotationRawData[key] = value;
-        // if (this.editablePropertiesList.includes(key)) {}
       }
     }
 

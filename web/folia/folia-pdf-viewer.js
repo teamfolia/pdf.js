@@ -47,7 +47,7 @@ function onClickHandler(e) {
 }
 function keyDownHandler(e) {
   const { key, keyCode, altKey, ctrlKey, metaKey, shiftKey, target, currentTarget } = e;
-  console.log("keyDownHandler", target.nodeName);
+  // console.log("keyDownHandler", target.nodeName);
   if (target.nodeName === "TEXTAREA") return;
   if (target.nodeName === "INPUT") return;
   if (target.nodeName === "DIV" && target.hasAttribute("contenteditable")) return;
@@ -447,42 +447,17 @@ export class FoliaPDFViewer {
     await Promise.all(promises);
   }
   undo() {
-    // if (this.pdfViewer.annotationBuilderClass) {
-    //   if (this.pdfViewer.annotationBuilderClass.undoRedoManager.undo()) {
-    //     this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
-    //     return;
-    //   } else {
-    //     this.undoRedoManager.updateUI();
-    //   }
-    // }
     this.undoRedoManager.undo();
-    // this.undoRedoManager.updateUI();
   }
   redo() {
     this.undoRedoManager.redo();
-    // this.undoRedoManager.updateUI();
-    // if (this.undoRedoManager.redo()) {
-    //   this.undoRedoManager.updateUI();
-    //   return;
-    // } else {
-    //   if (this.pdfViewer.annotationBuilderClass) {
-    //     this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
-    //   }
-    // }
-
-    // if (this.pdfViewer.annotationBuilderClass) {
-    //   this.pdfViewer.annotationBuilderClass.undoRedoManager.redo();
-    //   this.pdfViewer.annotationBuilderClass.undoRedoManager.updateUI();
-    // }
   }
-  zoomIn() {
-    if (this.zoom >= 500) return;
-    this.pdfViewer.increaseScale();
+  zoomIn(steps) {
+    this.pdfViewer.increaseScale(steps);
     this.pdfViewer.update();
   }
-  zoomOut() {
-    if (this.zoom <= 40) return;
-    this.pdfViewer.decreaseScale();
+  zoomOut(steps) {
+    this.pdfViewer.decreaseScale(steps);
     this.pdfViewer.update();
   }
   zoomReset() {
@@ -515,7 +490,7 @@ export class FoliaPDFViewer {
   loadImageAsset(completeCallback) {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = "image/*";
+    fileInput.accept = "image/png, image/jpg, image/jpeg";
     fileInput.onchange = (fileInputEvent) => {
       const file = fileInputEvent.target.files[0];
       completeCallback(file);

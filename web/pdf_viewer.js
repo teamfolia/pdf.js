@@ -465,7 +465,11 @@ class PDFViewer {
     if (!this.pdfDocument) {
       return;
     }
-    this._setScale(val, false);
+    // console.log("!!!", { currentScaleValue: val });
+    if (Number.isNaN(parseFloat(val))) {
+      return this._setScale(val, false);
+    }
+    this._setScale(Math.min(3.0, Math.max(0.05, val)), false);
   }
 
   /**
@@ -2068,8 +2072,8 @@ class PDFViewer {
   increaseScale(steps = 1) {
     let newScale = this._currentScale;
     do {
-      newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
-      newScale = Math.ceil(newScale * 10) / 10;
+      newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(3);
+      newScale = Math.ceil(newScale * 100) / 100;
       newScale = Math.min(MAX_SCALE, newScale);
     } while (--steps > 0 && newScale < MAX_SCALE);
     // console.log("increaseScale", newScale);
@@ -2083,8 +2087,8 @@ class PDFViewer {
   decreaseScale(steps = 1) {
     let newScale = this._currentScale;
     do {
-      newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
-      newScale = Math.floor(newScale * 10) / 10;
+      newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(3);
+      newScale = Math.floor(newScale * 100) / 100;
       newScale = Math.max(MIN_SCALE, newScale);
     } while (--steps > 0 && newScale > MIN_SCALE);
     // console.log("decreaseScale", newScale);
