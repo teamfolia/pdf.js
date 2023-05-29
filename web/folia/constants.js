@@ -1,5 +1,6 @@
 export const TOOLS = {
   NO_SELECTED_TOOL: "NO_SELECTED_TOOL",
+  ERASER: "ERASER",
   INK: "INK",
   CIRCLE: "CIRCLE",
   SQUARE: "SQUARE",

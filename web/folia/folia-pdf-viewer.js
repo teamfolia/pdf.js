@@ -27,6 +27,7 @@ import ImageBuilder from "./annotations-builders/image-builder";
 import TextBoxBuilder from "./annotations-builders/text-box-builder";
 import "./css/folia.css";
 import { UndoRedo } from "./undo-redo";
+import ObjectEraser from "./annotations-builders/object-eraser";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -520,6 +521,9 @@ export class FoliaPDFViewer {
       const BuilderClass = HighlightBuilder;
       BuilderClass.kind = toolType;
       this.continueStartDrawing(BuilderClass, preset);
+    } else if (toolType === TOOLS.ERASER) {
+      const BuilderClass = ObjectEraser;
+      this.continueStartDrawing(BuilderClass, {});
     } else {
       console.warn(`${toolType} does not exist yet`);
     }
@@ -527,7 +531,6 @@ export class FoliaPDFViewer {
   continueStartDrawing(BuilderClass, preset, asset) {
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
-    // BuilderClass.undoRedoManager = new UndoRedo(this);
     this.pdfViewer.annotationBuilderClass = BuilderClass;
 
     this.pdfViewer._pages.map((page) => {

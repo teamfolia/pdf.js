@@ -193,9 +193,9 @@ class FoliaPageLayer {
       //   return weightA === weightB ? createdA - createdB : weightA - weightB;
       // });
       const annotations = this.dataProxy.getObjects(this.pageNumber).sort((a, b) => {
-        const createdA = new Date(a.createdAt);
-        const createdB = new Date(b.createdAt);
-        return createdA - createdB;
+        const addedAtA = new Date(a.addedAt);
+        const addedAtB = new Date(b.addedAt);
+        return addedAtA - addedAtB;
       });
       // delete
       for (const [id, annotationObject] of this.annotationObjects) {
