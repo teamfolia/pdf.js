@@ -8,6 +8,7 @@
 @import url(./fonts/SourceSansPro/font.css);
 
 @import url(../annotations-builders/annotation-builders.css);
+@import url(../web-components/folia-comment.scss);
 
 body {
   padding: 0;
@@ -158,4 +159,19 @@ body {
   right: -6px;
   /* bottom: -2.5px; */
   cursor: move;
+}
+
+.error-status::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  border: dashed 2px red;
+  background-color: rgba(255, 0, 0, 0.051);
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxyZWN0IHg9IjAuNSIgeT0iMC41IiB3aWR0aD0iMjMiIGhlaWdodD0iMjMiIHJ4PSIxMS41IiBmaWxsPSIjRkNEQ0QzIi8+CiAgICA8cGF0aCBkPSJNMTkuOTA4NyAxNi45OTE3TDEyLjU4MzYgNC4zMzYwOUMxMi4zMjQzIDMuODg3OTcgMTEuNjc1OCAzLjg4Nzk3IDExLjQxNjQgNC4zMzYwOUw0LjA5MTMxIDE2Ljk5MTdDMy44MzE5IDE3LjQzOTggNC4xNTYxMiAxOCA0LjY3NDg3IDE4SDE5LjMyNTFDMTkuODQzOCAxOCAyMC4xNjgxIDE3LjQzOTggMTkuOTA4NyAxNi45OTE3Wk0xMi42NTczIDE2LjIyNTVDMTIuNjU3MyAxNi4zMDkgMTIuMzYzIDE2LjM3NjcgMTIuMDAwMSAxNi4zNzY3QzExLjYzNyAxNi4zNzY3IDExLjM0MjcgMTYuMzA5IDExLjM0MjcgMTYuMjI1NVYxNS4xNzY0QzExLjM0MjcgMTUuMDkyOCAxMS42MzcgMTUuMDI1MSAxMi4wMDAxIDE1LjAyNTFDMTIuMzYzIDE1LjAyNTEgMTIuNjU3MyAxNS4wOTI5IDEyLjY1NzMgMTUuMTc2NFYxNi4yMjU1Wk0xMi41NDc4IDEzLjc3NzdDMTIuNTQ4IDEzLjc4MDggMTIuNTQ5OCAxMy43ODM4IDEyLjU0OTggMTMuNzg3QzEyLjU0OTggMTMuOTIyNSAxMi4zMDM2IDE0LjAzMjIgMTIgMTQuMDMyMkMxMS42OTYyIDE0LjAzMjIgMTEuNDUwMiAxMy45MjI1IDExLjQ1MDIgMTMuNzg3QzExLjQ1MDIgMTMuNzgzOSAxMS40NTE5IDEzLjc4MDkgMTEuNDUyMiAxMy43Nzc3TDExLjExMDUgOS4zOTgxQzExLjExMDUgOS4yNjI2OSAxMS41MDg3IDkuMTUyOSAxMiA5LjE1MjlDMTIuNDkxMyA5LjE1MjkgMTIuODg5NSA5LjI2MjY5IDEyLjg4OTUgOS4zOTgxTDEyLjU0NzggMTMuNzc3N1oiIGZpbGw9IiNGMDRFMjMiLz4KICAgIDxyZWN0IHg9IjAuNSIgeT0iMC41IiB3aWR0aD0iMjMiIGhlaWdodD0iMjMiIHJ4PSIxMS41IiBzdHJva2U9IiNGMDRFMjMiLz4KPC9zdmc+Cg==");
+  background-repeat: no-repeat;
+  background-position: center;
 }

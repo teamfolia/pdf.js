@@ -1,0 +1,90 @@
+import FoliaComment from "../web-components/folia-comment";
+import { toPdfPoint, toPdfRect } from "../folia-util";
+import BaseBuilder from "./base-builder";
+import { ANNOTATION_TYPES } from "../constants";
+
+class CommentBuilder extends BaseBuilder {
+  constructor(...props) {
+    super(...props);
+  }
+
+  resume() {
+    if (!this.canvas) {
+      this.canvas = document.createElement("div");
+      this.canvas.className = "annotation-builder-container";
+      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth;
+      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight;
+      this.canvas.onclick = this.onMouseClick.bind(this);
+      this.canvas.style.backgroundColor = "rgba(0, 0, 0, 0.1)";
+      this.canvas.style.cursor = `url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxwYXRoIGQ9Ik0wIDEwQzAgNC40NzcxNiA0LjQ3NzE2IDAgMTAgMEgxMC42NjY3QzE1LjgyMTMgMCAyMCA0LjE3ODY4IDIwIDkuMzMzMzNWOS4zMzMzM0MyMCAxNS4yMjQ0IDE1LjIyNDQgMjAgOS4zMzMzNSAyMEgwVjEwWiIgZmlsbD0ibm9uZSIvPgogICAgPHBhdGggZD0iTTEwIDAuNzVIMTAuNjY2N0MxNS40MDcxIDAuNzUgMTkuMjUgNC41OTI4OSAxOS4yNSA5LjMzMzMzQzE5LjI1IDE0LjgxMDIgMTQuODEwMiAxOS4yNSA5LjMzMzM1IDE5LjI1SDAuNzVWMTBDMC43NSA0Ljg5MTM3IDQuODkxMzcgMC43NSAxMCAwLjc1WiIgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8L3N2Zz4K") 15 15, move`;
+    }
+    this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+  }
+
+  prepareAnnotations2save() {
+    console.log("comment builder.prepareAnnotations2save");
+    return this.annotationData ? [this.annotationData] : [];
+  }
+
+  //   stop() {
+  //     console.log("comment builder.stop");
+  //     this.foliaPageLayer.pageDiv
+  //       .querySelectorAll(".annotation-builder-container")
+  //       .forEach((el) => el.remove());
+  //     this.canvas = null;
+  //   }
+
+  getRelativePoint(e) {
+    let reference;
+    const offset = {
+      left: e.currentTarget.offsetLeft,
+      top: e.currentTarget.offsetTop,
+    };
+    reference = e.currentTarget.offsetParent;
+    do {
+      offset.left += reference.offsetLeft;
+      offset.top += reference.offsetTop - reference.scrollTop;
+      reference = reference.offsetParent;
+    } while (reference);
+
+    return {
+      x: e.pageX - offset.left,
+      y: e.pageY - offset.top,
+    };
+  }
+
+  onMouseClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("canvas onMouseClick", e.target.className);
+    let comment = this.canvas.querySelector("folia-comment");
+    if (comment) comment.remove();
+
+    let { x, y } = this.getRelativePoint(e);
+    x -= 15;
+    y -= 15;
+
+    comment = document.createElement("folia-comment");
+    comment.style.left = `${x}px`;
+    comment.style.top = `${y}px`;
+    comment.setAttribute("creating", "true");
+    // comment.setAttribute("opened", "true");
+    comment.setAttribute("userName", this.foliaPageLayer.dataProxy.userEmail);
+    comment.addEventListener("submit", (e) => {
+      console.log("post comment on ", { x, y }, e.detail, this);
+      this.annotationData = {
+        __typename: ANNOTATION_TYPES.COMMENT,
+        text: e.detail.text,
+        anchorPoint: toPdfPoint(
+          { x, y },
+          this.foliaPageLayer.viewport.width,
+          this.foliaPageLayer.viewport.height
+        ),
+      };
+      this.foliaPageLayer.eventBus.dispatch("stop-drawing");
+    });
+    this.canvas.appendChild(comment);
+  }
+}
+
+export default CommentBuilder;

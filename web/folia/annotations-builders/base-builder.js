@@ -22,21 +22,13 @@ class BaseBuilder {
     this.undoRedoManager.updateUI();
   }
 
-  // prepareConversation(e) {
-  //   const viewRect = [e.offsetX, e.offsetY, 50, 50];
-  //   const annoData = {
-  //     edited: false,
-  //     initial_comment: "",
-  //     rect: viewRect2pdfRect(viewRect, this.viewport),
-  //   };
-  //   this.newbieAnnotationsData = [annoData];
-  // }
-
   prepareAnnotations2save() {
+    console.log("base builder.prepareAnnotations2save");
     return [];
   }
 
   stop() {
+    console.log("base builder.stop");
     if (this.removeOnClickListener) this.removeOnClickListener();
     const collaboratorEmail = this.foliaPageLayer.dataProxy.userEmail;
     const addedAt = new Date().toISOString();

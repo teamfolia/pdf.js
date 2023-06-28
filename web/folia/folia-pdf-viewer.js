@@ -28,6 +28,7 @@ import TextBoxBuilder from "./annotations-builders/text-box-builder";
 import "./css/folia.css";
 import { UndoRedo } from "./undo-redo";
 import ObjectEraser from "./annotations-builders/object-eraser";
+import CommentBuilder from "./annotations-builders/comment-builder";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -488,6 +489,12 @@ export class FoliaPDFViewer {
       page.foliaPageLayer.refresh();
     });
   }
+  revertChanges(annotationId) {
+    this.pdfViewer._pages.map((page) => {
+      if (!page.foliaPageLayer) return;
+      page.foliaPageLayer.revertChanges(annotationId);
+    });
+  }
   loadImageAsset(completeCallback) {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
@@ -499,7 +506,7 @@ export class FoliaPDFViewer {
     fileInput.click();
   }
   startDrawing(toolType, preset) {
-    // console.log('startDrawing 1', {annotationType, preset})
+    // console.log("startDrawing 1", { toolType, preset });
     if (toolType === TOOLS.INK) {
       this.continueStartDrawing(InkBuilder, preset);
     } else if (toolType === TOOLS.ARROW) {
@@ -508,8 +515,6 @@ export class FoliaPDFViewer {
       this.continueStartDrawing(CircleBuilder, preset);
     } else if (toolType === TOOLS.SQUARE) {
       this.continueStartDrawing(SquareBuilder, preset);
-    } else if (toolType === TOOLS.COMMENT) {
-      this.continueStartDrawing(BaseBuilder, preset);
     } else if (toolType === TOOLS.TEXT_BOX) {
       this.continueStartDrawing(TextBoxBuilder, preset);
     } else if (toolType === TOOLS.IMAGE) {
@@ -524,11 +529,15 @@ export class FoliaPDFViewer {
     } else if (toolType === TOOLS.ERASER) {
       const BuilderClass = ObjectEraser;
       this.continueStartDrawing(BuilderClass, {});
+    } else if (toolType === TOOLS.COMMENT) {
+      const BuilderClass = CommentBuilder;
+      this.continueStartDrawing(BuilderClass, {});
     } else {
       console.warn(`${toolType} does not exist yet`);
     }
   }
   continueStartDrawing(BuilderClass, preset, asset) {
+    // console.log("continueStartDrawing 1", { BuilderClass, preset, asset });
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
     this.pdfViewer.annotationBuilderClass = BuilderClass;

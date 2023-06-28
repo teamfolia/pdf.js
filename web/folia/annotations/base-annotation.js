@@ -31,6 +31,8 @@ class FoliaBaseAnnotation {
     annotationDIV.setAttribute("data-id", `${this.id}`);
     annotationDIV.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
     annotationDIV.className = `folia-annotation ${this.annotationRawData.__typename}`;
+    // console.log("error on constructor", this.annotationRawData.error);
+    annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
     this.annotationDIV = annotationDIV;
 
     const annoWeight = ANNOTATION_WEIGHT.indexOf(this.annotationRawData.__typename);
@@ -128,6 +130,9 @@ class FoliaBaseAnnotation {
     this.annotationDIV.style.height = `${height}px`;
   }
 
+  updateErrorStatus() {
+    this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
+  }
   deleteFromCanvas() {
     this.annotationDIV.remove();
   }
@@ -170,24 +175,23 @@ class FoliaBaseAnnotation {
   }
   update(annotationRawData, viewport, force = false) {
     this.viewport = this.viewport || viewport;
+    this.annotationRawData.error = annotationRawData.error;
+    this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
 
     const newDate = new Date(annotationRawData.addedAt).getTime();
     const currDate = new Date(this.annotationRawData.addedAt).getTime();
-    // if (this.isDirty === annotationRawData.addedAt) this.isDirty = null;
-    // if (this.isDirty) return;
 
     if (force || newDate > currDate) {
-      // console.log("==>", {
-      //   f: force,
-      //   serv: new Date(annotationRawData.addedAt).toLocaleTimeString(),
-      //   local: new Date(this.annotationRawData.addedAt).toLocaleTimeString(),
-      // });
       for (const [key, value] of Object.entries(annotationRawData)) {
         this.annotationRawData[key] = value;
       }
     }
 
     this.render();
+  }
+  revertChanges() {
+    this.annotationRawData.addedAt = 0;
+    this.isDirty = null;
   }
 
   saveRectsState(startPoint) {

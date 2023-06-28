@@ -1,5 +1,5 @@
 import { v4 as uuid } from "uuid";
-import FoliaConversationAnnotation from "./annotations/_conversation-annotation";
+// import FoliaConversationAnnotation from "./annotations/_conversation-annotation";
 import FoliaImageAnnotation from "./annotations/image-annotation";
 import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
 import MultipleSelect from "./MultiSelectObjects";
@@ -8,6 +8,7 @@ import FoliaSquareAnnotation from "./annotations/square-annotation";
 import FoliaCircleAnnotation from "./annotations/circle-annotation";
 import FoliaArrowAnnotation from "./annotations/arrow-annotation";
 import FoliaHighlightAnnotation from "./annotations/highlight-annotation";
+import FoliaCommentAnnotation from "./annotations/comment-annotation";
 import { ANNOTATION_TYPES, ANNOTATION_WEIGHT } from "./constants";
 
 const ANNOTATIONS_CLASSES = {
@@ -18,7 +19,7 @@ const ANNOTATIONS_CLASSES = {
   [ANNOTATION_TYPES.SQUARE]: FoliaSquareAnnotation,
   [ANNOTATION_TYPES.TEXT_BOX]: FoliaTextBoxAnnotation,
   [ANNOTATION_TYPES.IMAGE]: FoliaImageAnnotation,
-  [ANNOTATION_TYPES.COMMENT]: FoliaConversationAnnotation,
+  [ANNOTATION_TYPES.COMMENT]: FoliaCommentAnnotation,
 };
 
 export const FOLIA_LAYER_ROLES = {
@@ -72,7 +73,6 @@ class FoliaPageLayer {
   annotationBuilder;
 
   constructor(props) {
-    // console.log("FoliaPageLayer.constructor", props);
     this.pageDiv = props.pageDiv;
     this.pdfPage = props.pdfPage;
     this.viewport = props.viewport;
@@ -124,8 +124,9 @@ class FoliaPageLayer {
     const selectedObjects = this.multipleSelect.getObjects();
     for (const object of selectedObjects) {
       if (!object.canManage || object.permanentPosition) return;
-      const duplicatedAnnot = object.getDuplicate();
+      const duplicatedAnnot = Object.assign({}, object.getDuplicate());
 
+      duplicatedAnnot.collaboratorEmail = this.dataProxy.userEmail;
       this.addAnnotationObject(duplicatedAnnot);
       this.commitObjectChanges(duplicatedAnnot);
       this.undoRedoManager.creatingObject(duplicatedAnnot);
@@ -185,13 +186,6 @@ class FoliaPageLayer {
     }
 
     try {
-      // const annotations = this.dataProxy.getObjects(this.pageNumber).sort((a, b) => {
-      //   const weightA = ANNOTATION_WEIGHT[a.__typename];
-      //   const weightB = ANNOTATION_WEIGHT[b.__typename];
-      //   const createdA = new Date(a.createdAt);
-      //   const createdB = new Date(b.createdAt);
-      //   return weightA === weightB ? createdA - createdB : weightA - weightB;
-      // });
       const annotations = this.dataProxy.getObjects(this.pageNumber).sort((a, b) => {
         const addedAtA = new Date(a.addedAt);
         const addedAtB = new Date(b.addedAt);
@@ -235,6 +229,11 @@ class FoliaPageLayer {
   }
   refresh() {
     this.render(this.viewport);
+  }
+  revertChanges(annotationId) {
+    const object = this.annotationObjects.get(annotationId);
+    if (!object) return;
+    object.revertChanges();
   }
   cancel() {
     // console.log("FoliaPageLayer cancel ==>", this.pageNumber);

@@ -117,6 +117,7 @@ class InkBuilder extends BaseBuilder {
     const newState = { page: this.foliaPageLayer.pageNumber, data: this.paths.slice() };
     this.undoRedoManager.addToolStep(prevState, newState);
     this.drawingPath = null;
+    window.requestAnimationFrame(() => this.drawAll());
   }
 
   applyUndoRedo(paths) {

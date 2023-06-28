@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
@@ -6,13 +6,21 @@ module.exports = {
     rules: [
       {
         test: /\.css$/i,
-        use: ["style-loader","css-loader"],
+        use: ["style-loader", "css-loader"],
+      },
+      {
+        test: /\.scss$/i,
+        use: ["sass-loader"],
+      },
+      {
+        test: /\.html$/i,
+        loader: "html-loader",
       },
     ],
   },
-  entry: './web/folia/viewer.js',
+  entry: "./web/folia/viewer.js",
   cache: true,
-  mode: 'development',
+  mode: "development",
   performance: {
     hints: false,
   },
@@ -21,24 +29,26 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'pdfjs-lib': path.resolve(__dirname, 'build/dist/build/pdf.js'),
-      'pdfjs-worker': path.resolve(__dirname, 'build/dist/build/pdf.worker.js'),
-    }
+      "pdfjs-lib": path.resolve(__dirname, "build/dist/build/pdf.js"),
+      "pdfjs-worker": path.resolve(__dirname, "build/dist/build/pdf.worker.js"),
+    },
   },
   output: {
     asyncChunks: false,
-    path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js',
+    path: path.resolve(__dirname, "dist"),
+    filename: "[name].js",
   },
-  plugins: [new HtmlWebpackPlugin({
-    template: './public/index.html'
-  })],
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: "./public/index.html",
+    }),
+  ],
 
   devServer: {
     static: {
-      directory: path.join(__dirname, 'public'),
+      directory: path.join(__dirname, "public"),
     },
     compress: true,
     port: 9000,
   },
-}
+};
