@@ -1,66 +1,4 @@
-// export const pdfRect2viewRect = (rect, viewport) => {
-//   return [
-//     Math.round(rect[0] * viewport.width),
-//     Math.round(rect[1] * viewport.height),
-//     Math.round(rect[2] * viewport.width),
-//     Math.round(rect[3] * viewport.height)
-//   ]
-// }
-// export const viewRect2pdfRect = (rect, viewport) => {
-//   const x = parseFloat((rect[0] / viewport.width).toFixed(8))
-//   const y = parseFloat((rect[1] / viewport.height).toFixed(8))
-//   const w = parseFloat((rect[2] / viewport.width).toFixed(8))
-//   const h = parseFloat((rect[3] / viewport.height).toFixed(8))
-//   return [x, y, w, h]
-// }
-// export const getAbsoluteOffset = (el, stopEl) => {
-//   let reference
-//   const offset = {
-//     left: el.offsetLeft, top: el.offsetTop
-//   }
-
 import { view } from "paper/dist/paper-core";
-
-//   reference = el.offsetParent
-//   do {
-//     offset.left += reference.offsetLeft
-//     offset.top += (reference.offsetTop - reference.scrollTop)
-
-//     reference = reference.offsetParent
-//     if (reference === stopEl) break
-//   } while(reference)
-
-//   return offset
-// }
-
-// export const pdfPoint2viewPoint = (point, viewport, offset) => {
-//   const x = Math.round(point.x * viewport.width) - (offset ? offset.x : 0);
-//   const y = Math.round(point.y * viewport.height) - (offset ? offset.y : 0);
-//   return { x, y };
-// };
-// export const pdfPath2viewPath = (path, viewport, offset) => {
-//   return path.reduce((acc, num, index, arr) => {
-//     if (index % 2 === 0) return acc;
-//     const pdfPoint = { x: arr[index - 1], y: num };
-//     const point = pdfPoint2viewPoint(pdfPoint, viewport, offset);
-//     acc.push(point);
-//     return acc;
-//   }, []);
-// };
-
-// export const viewPoint2pdfPoint = (point, viewport, offset) => {
-//   const px = point.x + (offset ? offset.x : 0);
-//   const py = point.y + (offset ? offset.y : 0);
-//   const x = parseFloat((px / viewport.width).toFixed(8));
-//   const y = parseFloat((py / viewport.height).toFixed(8));
-//   return { x, y };
-// };
-// export const viewPath2pdfPath = (path = [], viewport, offset) => {
-//   return path.reduce((acc, point) => {
-//     const pdfPoint = viewPoint2pdfPoint(point, viewport, offset);
-//     return acc.concat(pdfPoint.x, pdfPoint.y);
-//   }, []);
-// };
 
 export const hexColor2pdf = (hexColor = "#F04E23DC") => {
   const hex = hexColor.toLowerCase().split("").slice(1).join("");
@@ -128,10 +66,10 @@ export const fromPdfRect = (pdfRect, viewportWidth, viewporHeight, borderSize = 
 
 export const toPdfRect = (rect, viewportWidth, viewporHeight) => {
   return [
-    parseFloat((rect[0] / viewportWidth).toFixed(8)),
-    parseFloat((rect[1] / viewporHeight).toFixed(8)),
-    parseFloat(((rect[2] + rect[0]) / viewportWidth).toFixed(8)),
-    parseFloat(((rect[3] + rect[1]) / viewporHeight).toFixed(8)),
+    1 * (rect[0] / viewportWidth).toFixed(8),
+    1 * (rect[1] / viewporHeight).toFixed(8),
+    1 * ((rect[2] + rect[0]) / viewportWidth).toFixed(8),
+    1 * ((rect[3] + rect[1]) / viewporHeight).toFixed(8),
   ];
 };
 
@@ -142,8 +80,8 @@ export const fromPdfPoint = (point, viewportWidth, viewporHeight, offsetX = 0, o
 };
 
 export const toPdfPoint = (point, viewportWidth, viewporHeight, offsetX = 0, offsetY = 0) => {
-  const x = parseFloat(((point.x - offsetX) / viewportWidth).toFixed(8));
-  const y = parseFloat(((point.y - offsetY) / viewporHeight).toFixed(8));
+  const x = 1 * ((point.x - offsetX) / viewportWidth).toFixed(8);
+  const y = 1 * ((point.y - offsetY) / viewporHeight).toFixed(8);
   return [x, y];
 };
 
@@ -221,4 +159,50 @@ export const shiftInk = (inPaths, shiftValue) => {
       y: (point.y += top - shiftValue > 0 ? -shiftValue : shiftValue),
     }));
   });
+};
+
+export const foliaDateFormat = (isoDate) => {
+  try {
+    const formatter = Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit" });
+    const fullFormatter = Intl.DateTimeFormat("en-US", {
+      month: "short",
+      year: "numeric",
+      hour12: "2-digit",
+      minute: "2-digit",
+    });
+    const now = new Date();
+    const printedDate = new Date(isoDate);
+
+    const isToday =
+      now.getDay() === printedDate.getDay() &&
+      now.getMonth() === printedDate.getMonth() &&
+      now.getFullYear() === printedDate.getFullYear();
+
+    const isYesterday =
+      now.getDay() - printedDate.getDay() === 1 &&
+      now.getMonth() === printedDate.getMonth() &&
+      now.getFullYear() === printedDate.getFullYear();
+
+    if (isToday) {
+      // today + time
+      return `Today, at ${formatter.format(printedDate)}`;
+    } else if (isYesterday) {
+      // yesterday + time
+      return `Yesterday, at ${formatter.format(printedDate)}`;
+    } else {
+      return fullFormatter.format(printedDate);
+    }
+  } catch (e) {
+    return "unknown date";
+  }
+};
+
+export const setTextAreaDynamicHeight = (textArea) => {
+  if (!textArea) return;
+  textArea.style.height = "auto";
+  const textAreaStyles = window.getComputedStyle(textArea);
+  const paddingTop = parseInt(textAreaStyles.getPropertyValue("padding-top"), 10);
+  const paddingBottom = parseInt(textAreaStyles.getPropertyValue("padding-bottom"), 10);
+  const height = textArea.scrollHeight - paddingTop - paddingBottom;
+  textArea.style.height = height + "px";
 };

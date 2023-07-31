@@ -1,0 +1,238 @@
+<div class="folia-reply-title">
+  <div class="folia-reply-title-icon">- -</div>
+  <div class="folia-reply-title-info">
+    <span class="folia-reply-title-info-username">- - -</span>
+    <span class="folia-reply-title-info-timestamp">- - -</span>
+  </div>
+  <button class="folia-reply-title-menu-btn">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12.5 7C12.5 7.27614 12.2761 7.5 12 7.5C11.7239 7.5 11.5 7.27614 11.5 7C11.5 6.72386 11.7239 6.5 12 6.5C12.2761 6.5 12.5 6.72386 12.5 7Z"
+        stroke="#64748B"
+      />
+      <path
+        d="M12.5 12C12.5 12.2761 12.2761 12.5 12 12.5C11.7239 12.5 11.5 12.2761 11.5 12C11.5 11.7239 11.7239 11.5 12 11.5C12.2761 11.5 12.5 11.7239 12.5 12Z"
+        stroke="#64748B"
+      />
+      <path
+        d="M12.5 17C12.5 17.2761 12.2761 17.5 12 17.5C11.7239 17.5 11.5 17.2761 11.5 17C11.5 16.7239 11.7239 16.5 12 16.5C12.2761 16.5 12.5 16.7239 12.5 17Z"
+        stroke="#64748B"
+      />
+    </svg>
+    <div class="folia-reply-title-menu-btn-options-overlay hidden"></div>
+    <ul class="folia-reply-title-menu-btn-options hidden">
+      <li class="folia-reply-title-menu-btn-option edit">Edit</li>
+      <li class="folia-reply-title-menu-btn-option delete">Delete</li>
+    </ul>
+  </button>
+</div>
+
+<textarea rows="1" class="folia-reply-text" readonly></textarea>
+<div class="folia-reply-message-buttons hidden">
+  <button class="folia-reply-done" disabled>✔︎</button>
+  <button class="folia-reply-cancel">✘</button>
+</div>
+<style>
+  .folia-reply {
+    box-sizing: border-box;
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 8px;
+    border-top: 1px solid #d5d8db;
+  }
+  .folia-reply-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .folia-reply-title-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 32px;
+    max-width: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    background-color: rgba(144, 238, 144, 0.5);
+
+    color: #334155;
+    font-family: Inter, sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+    font-size: 12px;
+  }
+  .folia-reply-title-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    flex-grow: 1;
+  }
+  .folia-reply-title-info-username {
+    color: #334155;
+    font-size: 12px;
+    font-family: Inter, sans-serif;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 16px;
+    white-space: nowrap;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .folia-reply-title-info-timestamp {
+    color: #64748b;
+    font-size: 12px;
+    font-family: Inter, sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+    white-space: nowrap;
+    max-width: 140px;
+    overflow: hidden;
+  }
+  .folia-reply-title-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  /* .folia-reply-title-menu-btn:active {
+    transform: translate(1px, 1px);
+  } */
+  .folia-reply-title-menu-btn:hover {
+    background-color: #f1f1f1;
+  }
+
+  .folia-reply-title-menu-btn-options-overlay {
+    position: fixed;
+    z-index: 2;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    /* background-color: rgba(0, 0, 0, 0.2); */
+  }
+  .folia-reply-title-menu-btn-options-overlay.hidden {
+    display: none;
+  }
+
+  .folia-reply-title-menu-btn-options {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    z-index: 3;
+    top: 5px;
+    right: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(51, 65, 85, 0.15);
+    background: white;
+    box-shadow: 0px 8px 20px 0px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    margin: 0;
+    padding: 4px 0;
+  }
+  .folia-reply-title-menu-btn-options.hidden {
+    display: none;
+  }
+
+  .folia-reply-title-menu-btn-option {
+    max-width: 100px;
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 15px;
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-bottom: 5px;
+    margin: 0;
+  }
+  .folia-reply-title-menu-btn-option:not(.disabled):hover {
+    background-color: #f1f1f1;
+  }
+  .folia-reply-title-menu-btn-option.disabled {
+    color: silver;
+    cursor: not-allowed;
+  }
+
+  .folia-reply-message-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+  }
+
+  .folia-reply-message-buttons.hidden {
+    display: none;
+  }
+
+  .folia-reply-text {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    text-align: left;
+    color: #334155;
+    font-family: Inter, sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+    font-size: 14px;
+    padding: 6px 3px;
+    outline: none;
+    resize: none;
+    border: none;
+    user-select: none;
+  }
+
+  .folia-reply-text:not([readonly]) {
+    border: solid 1px silver;
+    user-select: all;
+    background-color: #f1f5f9;
+  }
+
+  .folia-reply-done,
+  .folia-reply-cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-bottom: 5px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+  }
+
+  .folia-reply-done {
+    /* background-color: #334155; */
+    color: limegreen;
+  }
+  .folia-reply-cancel {
+    /* background-color: #334155; */
+    color: gray;
+  }
+
+  .folia-reply-done:disabled {
+    color: #cbd5e1;
+    cursor: not-allowed;
+  }
+
+  .folia-reply-done:enabled:active {
+    transform: translate(1px, 1px);
+  }
+</style>

@@ -114,6 +114,7 @@ class Viewer {
     const projectId = this.#projectId;
     const project = await this.$fetch.get(`/store/projects/${projectId}`);
     this.permissions = project.permissions;
+    this.owner = await this.$fetch.get("/store/owner");
   }
   async getContent() {
     const projectId = this.#projectId;
@@ -181,7 +182,10 @@ class Viewer {
       const that = this;
       const dataProxy = {
         get userEmail() {
-          return localStorage.getItem("email");
+          return that.owner.email;
+        },
+        get userName() {
+          return that.owner.name;
         },
         get documentId() {
           return documentId;
@@ -190,9 +194,6 @@ class Viewer {
           return that.permissions;
         },
         getObjects: (pageNumber) => this.#annotations.filter((object) => object.page === pageNumber),
-        // postObject: this.postObject.bind(this),
-        // deleteObject: this.deleteObject.bind(this),
-        // stopDrawing: () => this.stopDrawing(),
       };
 
       await window.foliaPdfViewer.init(ui, dataProxy);
@@ -239,7 +240,7 @@ class Viewer {
   onPostObject(objectData) {
     const projectId = this.#projectId;
     const documentId = this.#documentId;
-    console.log("postObject", { projectId, documentId, objectData });
+    console.log("postObject", objectData.text);
   }
   onDeleteObject(objectId) {
     const projectId = this.#projectId;

@@ -57,13 +57,11 @@ class ObjectEraser {
   findOutIntersects(e, onlyTopRemove = false) {
     const { x, y } = e;
     for (const [annoId, anno] of this.foliaPageLayer.annotationObjects) {
+      if (["CommentAnnotation"].includes(anno?.annotationRawData?.__typename)) continue;
       const { left, top, right, bottom } = anno.annotationDIV.getBoundingClientRect();
-      // console.log("onMouseMove", { left, top, right, bottom }, x, y, anno.annotationDIV.classList);
       if (x + 15 > left && x - 15 < right && y + 15 > top && y - 15 < bottom) {
-        // anno.annotationDIV.classList.add("high-lighted-anno");
         this.intersected.add(anno);
       } else {
-        // anno.annotationDIV.classList.remove("high-lighted-anno");
         this.intersected.delete(anno);
       }
     }

@@ -1,6 +1,7 @@
 import { hexColor2pdf } from "../folia-util";
 import { v4 as uuid } from "uuid";
 import { UndoRedo } from "../undo-redo";
+import { ANNOTATION_TYPES } from "../constants";
 
 class BaseBuilder {
   viewport;
@@ -23,12 +24,12 @@ class BaseBuilder {
   }
 
   prepareAnnotations2save() {
-    console.log("base builder.prepareAnnotations2save");
+    // console.log("base builder.prepareAnnotations2save");
     return [];
   }
 
   stop() {
-    console.log("base builder.stop");
+    // console.log("base builder.stop");
     if (this.removeOnClickListener) this.removeOnClickListener();
     const collaboratorEmail = this.foliaPageLayer.dataProxy.userEmail;
     const addedAt = new Date().toISOString();
@@ -46,7 +47,8 @@ class BaseBuilder {
         ...data,
       };
 
-      this.foliaPageLayer.addAnnotationObject(annotation);
+      const makeSelected = [ANNOTATION_TYPES.COMMENT].includes(annotation.__typename);
+      this.foliaPageLayer.addAnnotationObject(annotation, makeSelected);
       this.foliaPageLayer.commitObjectChanges(annotation);
       this.foliaPageLayer.undoRedoManager.creatingObject(annotation);
     }
@@ -60,7 +62,7 @@ class BaseBuilder {
   }
 
   applyUndoRedo() {
-    console.log("Base method of applyUndoRedo");
+    // console.log("Base method of applyUndoRedo");
   }
 
   applyPreset(preset) {

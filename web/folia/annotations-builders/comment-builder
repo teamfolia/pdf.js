@@ -1,5 +1,5 @@
-import FoliaComment from "../web-components/folia-comment";
-import { toPdfPoint, toPdfRect } from "../folia-util";
+import FoliaCreateComment from "../web-components/folia-create-comment";
+import { toPdfPoint } from "../folia-util";
 import BaseBuilder from "./base-builder";
 import { ANNOTATION_TYPES } from "../constants";
 
@@ -15,24 +15,16 @@ class CommentBuilder extends BaseBuilder {
       this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth;
       this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight;
       this.canvas.onclick = this.onMouseClick.bind(this);
-      this.canvas.style.backgroundColor = "rgba(0, 0, 0, 0.1)";
-      this.canvas.style.cursor = `url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxwYXRoIGQ9Ik0wIDEwQzAgNC40NzcxNiA0LjQ3NzE2IDAgMTAgMEgxMC42NjY3QzE1LjgyMTMgMCAyMCA0LjE3ODY4IDIwIDkuMzMzMzNWOS4zMzMzM0MyMCAxNS4yMjQ0IDE1LjIyNDQgMjAgOS4zMzMzNSAyMEgwVjEwWiIgZmlsbD0ibm9uZSIvPgogICAgPHBhdGggZD0iTTEwIDAuNzVIMTAuNjY2N0MxNS40MDcxIDAuNzUgMTkuMjUgNC41OTI4OSAxOS4yNSA5LjMzMzMzQzE5LjI1IDE0LjgxMDIgMTQuODEwMiAxOS4yNSA5LjMzMzM1IDE5LjI1SDAuNzVWMTBDMC43NSA0Ljg5MTM3IDQuODkxMzcgMC43NSAxMCAwLjc1WiIgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8L3N2Zz4K") 15 15, move`;
+      this.canvas.style.cursor = `url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxwYXRoIGQ9Ik0wIDEwQzAgNC40NzcxNiA0LjQ3NzE2IDAgMTAgMEgxMC42NjY3QzE1LjgyMTMgMCAyMCA0LjE3ODY4IDIwIDkuMzMzMzNWOS4zMzMzM0MyMCAxNS4yMjQ0IDE1LjIyNDQgMjAgOS4zMzMzNSAyMEgwVjEwWiIgZmlsbD0ibm9uZSIvPgogICAgPHBhdGggZD0iTTEwIDAuNzVIMTAuNjY2N0MxNS40MDcxIDAuNzUgMTkuMjUgNC41OTI4OSAxOS4yNSA5LjMzMzMzQzE5LjI1IDE0LjgxMDIgMTQuODEwMiAxOS4yNSA5LjMzMzM1IDE5LjI1SDAuNzVWMTBDMC43NSA0Ljg5MTM3IDQuODkxMzcgMC43NSAxMCAwLjc1WiIgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8L3N2Zz4K") 0 20, move`;
     }
     this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    localStorage.removeItem("folia-create-comment");
   }
 
   prepareAnnotations2save() {
-    console.log("comment builder.prepareAnnotations2save");
+    // console.log("comment builder.prepareAnnotations2save", this.annotationData);
     return this.annotationData ? [this.annotationData] : [];
   }
-
-  //   stop() {
-  //     console.log("comment builder.stop");
-  //     this.foliaPageLayer.pageDiv
-  //       .querySelectorAll(".annotation-builder-container")
-  //       .forEach((el) => el.remove());
-  //     this.canvas = null;
-  //   }
 
   getRelativePoint(e) {
     let reference;
@@ -56,34 +48,53 @@ class CommentBuilder extends BaseBuilder {
   onMouseClick(e) {
     e.preventDefault();
     e.stopPropagation();
-    console.log("canvas onMouseClick", e.target.className);
-    let comment = this.canvas.querySelector("folia-comment");
-    if (comment) comment.remove();
 
     let { x, y } = this.getRelativePoint(e);
-    x -= 15;
-    y -= 15;
+    // x -= 20;
+    y -= 25;
 
-    comment = document.createElement("folia-comment");
-    comment.style.left = `${x}px`;
-    comment.style.top = `${y}px`;
-    comment.setAttribute("creating", "true");
-    // comment.setAttribute("opened", "true");
-    comment.setAttribute("userName", this.foliaPageLayer.dataProxy.userEmail);
-    comment.addEventListener("submit", (e) => {
-      console.log("post comment on ", { x, y }, e.detail, this);
+    let commentPointer = this.canvas.querySelector(".comment-pointer");
+    if (commentPointer) commentPointer.remove();
+
+    commentPointer = document.createElement("div");
+    commentPointer.className = "comment-pointer";
+    commentPointer.onclick = (e) => e.stopPropagation();
+    commentPointer.style.left = `${x}px`;
+    commentPointer.style.top = `${y}px`;
+
+    const avatar = document.createElement("canvas");
+    avatar.width = 20;
+    avatar.height = 20;
+    const avatarCtx = avatar.getContext("2d");
+    avatarCtx.fillStyle = "lightgreen";
+    avatarCtx.arc(10, 10, 10, 0, 2 * Math.PI);
+    avatarCtx.fill();
+
+    commentPointer.style.background = `white url("${avatar.toDataURL()}") no-repeat center`;
+
+    const createCommentEl = document.createElement("folia-create-comment");
+    createCommentEl.className = "folia-create-comment";
+    createCommentEl.addEventListener("submit-comment", (e) => {
+      const now = new Date().toISOString();
+      // console.log("post comment on ", { x, y }, e.detail);
       this.annotationData = {
         __typename: ANNOTATION_TYPES.COMMENT,
         text: e.detail.text,
+        createdAt: now,
+        addedAt: now,
         anchorPoint: toPdfPoint(
           { x, y },
           this.foliaPageLayer.viewport.width,
           this.foliaPageLayer.viewport.height
         ),
+        replies: [],
+        collaboratorName: this.foliaPageLayer.dataProxy.userName,
       };
       this.foliaPageLayer.eventBus.dispatch("stop-drawing");
     });
-    this.canvas.appendChild(comment);
+    commentPointer.appendChild(createCommentEl);
+
+    this.canvas.appendChild(commentPointer);
   }
 }
 

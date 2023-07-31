@@ -1,0 +1,217 @@
+.folia-comment {
+  position: absolute;
+  left: 35px;
+  top: -15px;
+
+  min-width: 250px;
+  max-width: 250px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  box-shadow: 0px 8px 20px 0px rgba(0, 0, 0, 0.1);
+  cursor: default;
+}
+
+/** comment header part */
+
+.folia-comment-header {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  width: 100%;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.folia-comment-header-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.folia-comment-header-close-btn:active {
+  transform: translate(1px, 1px);
+}
+.folia-comment-header-close-btn:hover {
+  background-color: #f1f1f1;
+}
+
+/** comment body part */
+
+.folia-commnet-conversation {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.folia-comment-body {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 8px;
+}
+
+.folia-comment-body-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.folia-comment-body-title-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 32px;
+  max-width: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  background-color: lightgreen;
+
+  color: #334155;
+  font-family: Inter, sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  font-size: 12px;
+}
+.folia-comment-body-title-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.folia-comment-body-title-info-username {
+  color: #334155;
+  font-size: 12px;
+  font-family: Inter, sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.folia-comment-body-title-info-timestamp {
+  color: #64748b;
+  font-size: 12px;
+  font-family: Inter, sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+}
+.folia-comment-body-title-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.folia-comment-body-title-menu-btn:active {
+  transform: translate(1px, 1px);
+}
+.folia-comment-body-title-menu-btn:hover {
+  background-color: #f1f1f1;
+}
+
+.folia-comment-body-title-menu-btn-options {
+  display: none;
+  position: absolute;
+  top: 0px;
+  right: 10px !important;
+  border-radius: 8px;
+  border: 1px solid rgba(51, 65, 85, 0.15);
+  background: white;
+  box-shadow: 0px 8px 20px 0px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+}
+.folia-comment-body-title-menu-btn-option {
+  height: 36px;
+  min-width: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  margin: 0;
+  border: solid 1px red;
+}
+
+.folia-comment-text {
+  display: flex;
+  align-items: center;
+  color: #334155;
+  font-family: Inter, sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  font-size: 12px;
+}
+
+/** footer part */
+
+.folia-comment-footer {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px;
+  gap: 5px;
+  border-top: 1px solid #e2e8f0;
+  background: #f1f5f9;
+}
+
+.folia-comment-footer-textarea {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  padding: 0 8px;
+  color: #334155;
+  width: 100%;
+
+  border: none;
+  outline: none;
+  resize: none;
+  background: #f1f5f9;
+}
+.folia-comment-footer-textarea::placeholder {
+  color: #94a3b8;
+}
+.folia-comment-footer-send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background-color: #cbd5e1;
+  cursor: pointer;
+}
+.folia-comment-footer-send-btn:active {
+  transform: translate(1px, 1px);
+}

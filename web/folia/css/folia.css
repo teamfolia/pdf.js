@@ -8,7 +8,7 @@
 @import url(./fonts/SourceSansPro/font.css);
 
 @import url(../annotations-builders/annotation-builders.css);
-@import url(../web-components/folia-comment.scss);
+/* @import url(../web-components/folia-comment.scss); */
 
 body {
   padding: 0;
@@ -31,10 +31,10 @@ body {
   top: 0;
   right: 0;
   bottom: 0;
-  /* border: solid 1px red; */
 }
 
 .folia-annotation {
+  box-sizing: content-box;
   position: absolute;
   cursor: grabbing;
   background-repeat: no-repeat;
@@ -43,19 +43,6 @@ body {
   background-size: 100% 100%;
   --annotation-border-color: silver;
 }
-
-/* .folia-annotation.changed::after {
-  content: "";
-  position: absolute;
-  display: inline-flex;
-  background-color: #0a84ff;
-  width: 10px;
-  height: 10px;
-  border-radius: 10px;
-  top: -15px;
-  right: -15px;
-  z-index: 1;
-} */
 
 .folia-annotation.selected:not(.TextBoxAnnotation)::before {
   display: block;
@@ -117,7 +104,7 @@ body {
   border: dashed 1px silver !important;
 }
 
-@import url("./comments/conversation.scss");
+/* @import url("./comments/conversation.scss"); */
 
 .corner-div {
   display: none;
@@ -174,4 +161,66 @@ body {
   background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxyZWN0IHg9IjAuNSIgeT0iMC41IiB3aWR0aD0iMjMiIGhlaWdodD0iMjMiIHJ4PSIxMS41IiBmaWxsPSIjRkNEQ0QzIi8+CiAgICA8cGF0aCBkPSJNMTkuOTA4NyAxNi45OTE3TDEyLjU4MzYgNC4zMzYwOUMxMi4zMjQzIDMuODg3OTcgMTEuNjc1OCAzLjg4Nzk3IDExLjQxNjQgNC4zMzYwOUw0LjA5MTMxIDE2Ljk5MTdDMy44MzE5IDE3LjQzOTggNC4xNTYxMiAxOCA0LjY3NDg3IDE4SDE5LjMyNTFDMTkuODQzOCAxOCAyMC4xNjgxIDE3LjQzOTggMTkuOTA4NyAxNi45OTE3Wk0xMi42NTczIDE2LjIyNTVDMTIuNjU3MyAxNi4zMDkgMTIuMzYzIDE2LjM3NjcgMTIuMDAwMSAxNi4zNzY3QzExLjYzNyAxNi4zNzY3IDExLjM0MjcgMTYuMzA5IDExLjM0MjcgMTYuMjI1NVYxNS4xNzY0QzExLjM0MjcgMTUuMDkyOCAxMS42MzcgMTUuMDI1MSAxMi4wMDAxIDE1LjAyNTFDMTIuMzYzIDE1LjAyNTEgMTIuNjU3MyAxNS4wOTI5IDEyLjY1NzMgMTUuMTc2NFYxNi4yMjU1Wk0xMi41NDc4IDEzLjc3NzdDMTIuNTQ4IDEzLjc4MDggMTIuNTQ5OCAxMy43ODM4IDEyLjU0OTggMTMuNzg3QzEyLjU0OTggMTMuOTIyNSAxMi4zMDM2IDE0LjAzMjIgMTIgMTQuMDMyMkMxMS42OTYyIDE0LjAzMjIgMTEuNDUwMiAxMy45MjI1IDExLjQ1MDIgMTMuNzg3QzExLjQ1MDIgMTMuNzgzOSAxMS40NTE5IDEzLjc4MDkgMTEuNDUyMiAxMy43Nzc3TDExLjExMDUgOS4zOTgxQzExLjExMDUgOS4yNjI2OSAxMS41MDg3IDkuMTUyOSAxMiA5LjE1MjlDMTIuNDkxMyA5LjE1MjkgMTIuODg5NSA5LjI2MjY5IDEyLjg4OTUgOS4zOTgxTDEyLjU0NzggMTMuNzc3N1oiIGZpbGw9IiNGMDRFMjMiLz4KICAgIDxyZWN0IHg9IjAuNSIgeT0iMC41IiB3aWR0aD0iMjMiIGhlaWdodD0iMjMiIHJ4PSIxMS41IiBzdHJva2U9IiNGMDRFMjMiLz4KPC9zdmc+Cg==");
   background-repeat: no-repeat;
   background-position: center;
+}
+
+.comment-pointer {
+  box-sizing: border-box;
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 0;
+  border: solid 2px #e2e8f0;
+  box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.1);
+  cursor: auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 12px;
+  font-family: "Inter", sans-serif;
+  color: gray;
+
+  &.selected {
+    border: solid 2px #334155;
+  }
+
+  &::before {
+    display: none !important;
+  }
+}
+
+.folia-comment {
+  position: absolute;
+  left: 35px;
+  top: -15px;
+
+  min-width: 300px;
+  max-width: 300px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  box-shadow: 0px 8px 20px 0px rgba(0, 0, 0, 0.1);
+  cursor: default;
+  z-index: 2;
+}
+
+.folia-create-comment {
+  position: absolute;
+  left: 35px;
+  top: -15px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  box-shadow: 0px 8px 20px 0px rgba(0, 0, 0, 0.1);
+  cursor: default;
+  z-index: 2;
 }

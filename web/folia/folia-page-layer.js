@@ -95,7 +95,7 @@ class FoliaPageLayer {
   updateToolDrawingProperties(preset) {
     this.annotationBuilder.applyPreset(preset);
   }
-  stopDrawing() {
+  stopDrawing(payload) {
     if (!this.annotationBuilder) return;
     this.annotationBuilder.stop();
     this.annotationBuilder = null;
@@ -155,13 +155,14 @@ class FoliaPageLayer {
     this.annotationObjects.delete(object.id);
     this.multipleSelect.deleteObject(object);
   }
-  addAnnotationObject(annotation) {
+  addAnnotationObject(annotation, makeSelected = false) {
     if (this._cancelled) return;
     let annotationObject = this.annotationObjects.get(annotation.id);
     if (!annotationObject) {
       const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
       annotationObject = new AnnoClass(this, annotation);
       this.annotationObjects.set(annotation.id, annotationObject);
+      if (makeSelected) this.multipleSelect.toggleObject(annotationObject);
     } else {
       annotationObject.update(annotation, this.viewport);
     }
@@ -202,7 +203,7 @@ class FoliaPageLayer {
 
       // create or update
       for (const annotation of annotations) {
-        // console.log("annotation", annotation);
+        // console.log("annotation", annotation.__typename, annotation.deletedAt);
         try {
           if (this._cancelled) return;
           let annotationObject = this.annotationObjects.get(annotation.id);
@@ -229,11 +230,6 @@ class FoliaPageLayer {
   }
   refresh() {
     this.render(this.viewport);
-  }
-  revertChanges(annotationId) {
-    const object = this.annotationObjects.get(annotationId);
-    if (!object) return;
-    object.revertChanges();
   }
   cancel() {
     // console.log("FoliaPageLayer cancel ==>", this.pageNumber);

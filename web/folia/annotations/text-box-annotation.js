@@ -1,8 +1,7 @@
-import { toPdfRect, hexColor2RGBA } from "../folia-util";
+import { toPdfRect, hexColor2RGBA, fromPdfRect } from "../folia-util";
 import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import FoliaBaseAnnotation from "./base-annotation";
 import { ANNOTATION_TYPES, FONT_FAMILY, FONT_WEIGHT, TEXT_ALIGNMENT } from "../constants";
-import { doc } from "prettier";
 
 class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
   editablePropertiesList = ["color", "rect", "text", "fontSize", "fontFamily", "fontWeight", "textAlignment"];
@@ -73,48 +72,36 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
   }
 
   getRawData() {
-    const {
-      id,
-      addedAt,
-      deletedAt,
-      collaboratorEmail,
-      page,
-      rect,
-      color,
-      text,
-      fontFamily,
-      fontSize,
-      fontWeight,
-      textAlignment,
-    } = this.annotationRawData;
-    return {
-      __typename: ANNOTATION_TYPES.TEXT_BOX,
-      id,
-      addedAt: this.isDirty || addedAt,
-      deletedAt,
-      collaboratorEmail,
-      page,
-      color,
-      text,
-      fontFamily,
-      fontSize,
-      fontWeight,
-      textAlignment,
-      rect,
-    };
-  }
-
-  updateRects() {
+    const { width: viewportWidth, height: viewportHeight } = this.viewport;
     const viewRect = [
       this.annotationDIV.offsetLeft,
       this.annotationDIV.offsetTop,
       this.annotationDIV.clientWidth,
       this.annotationDIV.clientHeight,
     ];
-    this.textArea.style.width = `${this.annotationDIV.clientWidth - 2}px`;
-    this.textArea.style.height = `${this.annotationDIV.clientHeight - 2}px`;
+    const pdfRect = toPdfRect(viewRect, viewportWidth, viewportHeight);
+    this.annotationRawData.rect = pdfRect;
 
-    this.annotationRawData.rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
+    return {
+      __typename: ANNOTATION_TYPES.TEXT_BOX,
+      id: this.annotationRawData.id,
+      addedAt: this.isDirty || this.annotationRawData.addedAt,
+      deletedAt: this.annotationRawData.deletedAt,
+      collaboratorEmail: this.annotationRawData.collaboratorEmail,
+      page: this.annotationRawData.page,
+      color: this.annotationRawData.color,
+      text: this.annotationRawData.text,
+      fontFamily: this.annotationRawData.fontFamily,
+      fontSize: this.annotationRawData.fontSize,
+      fontWeight: this.annotationRawData.fontWeight,
+      textAlignment: this.annotationRawData.textAlignment,
+      rect: pdfRect,
+    };
+  }
+
+  updateRects() {
+    this.textArea.style.width = `${this.annotationDIV.clientWidth}px`;
+    this.textArea.style.height = `${this.annotationDIV.clientHeight}px`;
   }
 
   render() {
@@ -123,8 +110,8 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
 
     this.textArea.style.left = "0px";
     this.textArea.style.top = "0px";
-    this.textArea.style.width = `${this.annotationDIV.clientWidth - 4}px`;
-    this.textArea.style.height = `${this.annotationDIV.clientHeight - 4}px`;
+    this.textArea.style.width = `${this.annotationDIV.clientWidth}px`;
+    this.textArea.style.height = `${this.annotationDIV.clientHeight}px`;
 
     this.textArea.style.color = hexColor2RGBA(this.annotationRawData.color);
     const fontSize = this.annotationRawData.fontSize * this.viewport.scale;

@@ -12,7 +12,7 @@ import {
   shiftInk,
 } from "../folia-util";
 import { RECT_MIN_SIZE, FOLIA_LAYER_ROLES } from "../folia-page-layer";
-import { ANNOTATION_WEIGHT, PERMISSIONS } from "../constants";
+import { ANNOTATION_TYPES, ANNOTATION_WEIGHT, PERMISSIONS } from "../constants";
 
 class FoliaBaseAnnotation {
   isSelected = false;
@@ -130,6 +130,27 @@ class FoliaBaseAnnotation {
     this.annotationDIV.style.height = `${height}px`;
   }
 
+  update(annotationRawData, viewport, force = false) {
+    this.viewport = this.viewport || viewport;
+    this.annotationRawData.error = annotationRawData.error;
+    this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
+
+    const newDate = new Date(annotationRawData.addedAt).getTime();
+    const currDate = new Date(this.annotationRawData.addedAt).getTime();
+
+    if (newDate === currDate) this.isDirty = null;
+
+    if (force || newDate > currDate) {
+      // console.log("anno update", annotationRawData);
+      for (const [key, value] of Object.entries(annotationRawData)) {
+        // console.log("anno update", { [key]: value });
+        this.annotationRawData[key] = value;
+      }
+    }
+
+    this.render();
+  }
+
   updateErrorStatus() {
     this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
   }
@@ -172,26 +193,6 @@ class FoliaBaseAnnotation {
   markAsChanged() {
     this.isDirty = new Date().toISOString();
     this.annotationRawData.addedAt = this.isDirty;
-  }
-  update(annotationRawData, viewport, force = false) {
-    this.viewport = this.viewport || viewport;
-    this.annotationRawData.error = annotationRawData.error;
-    this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
-
-    const newDate = new Date(annotationRawData.addedAt).getTime();
-    const currDate = new Date(this.annotationRawData.addedAt).getTime();
-
-    if (force || newDate > currDate) {
-      for (const [key, value] of Object.entries(annotationRawData)) {
-        this.annotationRawData[key] = value;
-      }
-    }
-
-    this.render();
-  }
-  revertChanges() {
-    this.annotationRawData.addedAt = 0;
-    this.isDirty = null;
   }
 
   saveRectsState(startPoint) {
@@ -478,11 +479,17 @@ class FoliaBaseAnnotation {
   }
   get canManage() {
     const { permissions } = this.foliaPageLayer.dataProxy;
+    if (this.annotationRawData.__typename === ANNOTATION_TYPES.COMMENT) {
+      return this.annotationRawData.collaboratorEmail === this.dataProxy.userEmail;
+    }
     return permissions.includes(PERMISSIONS.MANAGE_ANNOTATION);
   }
   get canDelete() {
     const { userEmail, permissions } = this.foliaPageLayer.dataProxy;
     const isAnnotationOwn = this.annotationRawData.collaboratorEmail === userEmail;
+    if (this.annotationRawData.__typename === ANNOTATION_TYPES.COMMENT) {
+      return isAnnotationOwn;
+    }
     return isAnnotationOwn
       ? permissions.includes(PERMISSIONS.MANAGE_ANNOTATION)
       : permissions.includes(PERMISSIONS.DELETE_FOREIGN_ANNOTATION);

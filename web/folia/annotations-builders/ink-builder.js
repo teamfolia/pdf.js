@@ -101,7 +101,8 @@ class InkBuilder extends BaseBuilder {
     const point = this.getRelativePoint(e);
     this.drawingPath.path.push(point);
 
-    window.requestAnimationFrame(() => this.drawAll());
+    // window.requestAnimationFrame(() => this.drawAll());
+    this.drawAll();
   }
   onMouseUp(e) {
     e.preventDefault();
@@ -117,7 +118,8 @@ class InkBuilder extends BaseBuilder {
     const newState = { page: this.foliaPageLayer.pageNumber, data: this.paths.slice() };
     this.undoRedoManager.addToolStep(prevState, newState);
     this.drawingPath = null;
-    window.requestAnimationFrame(() => this.drawAll());
+    // window.requestAnimationFrame(() => this.drawAll());
+    this.drawAll();
   }
 
   applyUndoRedo(paths) {
@@ -146,12 +148,15 @@ class InkBuilder extends BaseBuilder {
     }
     ctx.lineTo(p1.x, p1.y);
     ctx.stroke();
-    ctx.closePath();
+    // ctx.closePath();
   }
 
   drawAll() {
     const ctx = this.canvas.getContext("2d");
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    /* ---- great hack for clear a canvas, it much more faster than common way */
+    // ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.canvas.width = this.canvas.width;
+    /* ---- end of hack */
     this.paths.forEach(({ color, lineWidth, path }) => {
       this.drawSegment(color, lineWidth, path);
     });

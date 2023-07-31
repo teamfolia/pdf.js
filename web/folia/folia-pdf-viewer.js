@@ -49,9 +49,12 @@ function onClickHandler(e) {
 }
 function keyDownHandler(e) {
   const { key, keyCode, altKey, ctrlKey, metaKey, shiftKey, target, currentTarget } = e;
-  // console.log("keyDownHandler", target.nodeName);
+  // console.log("foliaPdfViewer -> keyDownHandler", target.nodeName);
   if (target.nodeName === "TEXTAREA") return;
   if (target.nodeName === "INPUT") return;
+  if (target.nodeName === "FOLIA-REPLY") return;
+  if (target.nodeName === "FOLIA-COMMENT") return;
+  if (target.nodeName === "FOLIA-CREATE-COMMENT") return;
   if (target.nodeName === "DIV" && target.hasAttribute("contenteditable")) return;
 
   switch (key) {
@@ -100,6 +103,16 @@ function keyDownHandler(e) {
         e.preventDefault();
         e.stopPropagation();
         this.duplicateSelectedAnnotations();
+      }
+      break;
+    }
+    case "f":
+    case "F": {
+      if (ctrlKey || metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("pressed Ctrl + F");
+        this.eventBus.dispatch("open-search-bar");
       }
       break;
     }
