@@ -238,8 +238,7 @@
   position: absolute;
   max-width: calc(180px * var(--scale-factor));
   background-color: rgba(255, 255, 153, 1);
-  box-shadow: 0 calc(2px * var(--scale-factor)) calc(5px * var(--scale-factor))
-    rgba(136, 136, 136, 1);
+  box-shadow: 0 calc(2px * var(--scale-factor)) calc(5px * var(--scale-factor)) rgba(136, 136, 136, 1);
   border-radius: calc(2px * var(--scale-factor));
   padding: calc(6px * var(--scale-factor));
   margin-left: calc(5px * var(--scale-factor));
