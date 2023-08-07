@@ -44,21 +44,28 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
     this.render();
   }
 
+  update(annotationRawData, viewport, force = false) {
+    super.update(annotationRawData, viewport, force);
+    console.log("afer update", this.annotationRawData);
+    const commentEl = this.annotationDIV.querySelector("folia-comment");
+    if (commentEl) {
+      commentEl.initialComment = this.annotationRawData;
+      commentEl.replies = this.annotationRawData.replies.slice();
+      commentEl.setPermissions(
+        this.annotationRawData.permissions,
+        this.dataProxy.userEmail,
+        this.annotationRawData.userRole
+      );
+    }
+  }
+
   render() {
+    // console.log("comment render", this.annotationRawData);
     const { width: viewportWidth, height: viewportHeight } = this.viewport;
     const { x, y } = fromPdfPoint(this.annotationRawData.anchorPoint, viewportWidth, viewportHeight);
     this.annotationDIV.style.left = `${x}px`;
     this.annotationDIV.style.top = `${y}px`;
     this.drawAvatar();
-    const commentEl = this.annotationDIV.querySelector("folia-comment");
-    // console.log("commentEl", commentEl);
-    if (commentEl) {
-      commentEl.permissions = {
-        whoAreYou: this.dataProxy.userEmail,
-        canManageOwn: this.dataProxy.permissions.includes("MANAGE_OWN_COMMENT"),
-        canDeleteForeign: this.dataProxy.permissions.includes("DELETE_FOREIGN_COMMENT"),
-      };
-    }
   }
 
   drawAvatar() {
@@ -78,6 +85,11 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
     avatarCtx.fillText(text, avatar.width / 2 - textRect.width / 2, 14, 20);
 
     this.annotationDIV.style.background = `white url("${avatar.toDataURL()}") no-repeat center`;
+    this.annotationDIV.classList.toggle(
+      "error",
+      Boolean(this.annotationRawData.error) ||
+        this.annotationRawData.replies.some((reply) => Boolean(reply.error))
+    );
   }
 
   commentAnnotationElementMutaionCallback(mutations) {
@@ -89,14 +101,14 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
       if (mutation.type !== "attributes" || mutation.attributeName !== "class") return;
       const selected = mutation.target.classList.contains("selected");
       if (selected) {
-        const comment = document.createElement("folia-comment");
-        comment.permissions = {
-          whoAreYou: this.dataProxy.userEmail,
-          canManageOwn: this.dataProxy.permissions.includes("MANAGE_OWN_COMMENT"),
-          canDeleteForeign: this.dataProxy.permissions.includes("DELETE_FOREIGN_COMMENT"),
-        };
+        const comment = this.__comment || document.createElement("folia-comment");
         comment.initialComment = this.annotationRawData;
         comment.replies = this.annotationRawData.replies.slice();
+        comment.setPermissions(
+          this.annotationRawData.permissions,
+          this.dataProxy.userEmail,
+          this.annotationRawData.userRole
+        );
 
         comment.addEventListener("submit-comment", (e) => {
           const addedAt = new Date().toISOString();
@@ -146,10 +158,11 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
 
         comment.addEventListener("close", () => {
           this.foliaPageLayer.multipleSelect.clear();
+          if (this.__comment) this.__comment.remove();
         });
 
         comment.addEventListener("remove", (e) => {
-          // console.log("remove object", e.detail);
+          // console.log("remove object", e.detail, this);
           const { commentId, replyId } = e.detail;
           if (commentId) {
             this.foliaPageLayer.deleteSelectedAnnotations(this);
@@ -166,6 +179,7 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
         this.__comment = this.annotationDIV.appendChild(comment);
       } else {
         if (this.__comment) this.__comment.remove();
+        this.__comment = null;
       }
     });
   }

@@ -1,5 +1,11 @@
+<div class="folia-reply-error">
+  <span>Unable to sync comment</span>
+</div>
+
 <div class="folia-reply-title">
-  <div class="folia-reply-title-icon">- -</div>
+  <div class="folia-reply-title-icon">
+    <span class="folia-reply-title-icon-initials">XX</span>
+  </div>
   <div class="folia-reply-title-info">
     <span class="folia-reply-title-info-username">- - -</span>
     <span class="folia-reply-title-info-timestamp">- - -</span>
@@ -28,6 +34,7 @@
 </div>
 
 <textarea rows="1" class="folia-reply-text" readonly></textarea>
+
 <div class="folia-reply-message-buttons hidden">
   <button class="folia-reply-done" disabled>✔︎</button>
   <button class="folia-reply-cancel">✘</button>
@@ -43,6 +50,31 @@
     gap: 8px;
     border-top: 1px solid #d5d8db;
   }
+
+  .folia-reply-error {
+    display: none;
+    height: 32px;
+    padding: 3px 10px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: #ffe4e6;
+    background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10.0514 5.875C10.9175 4.375 13.0825 4.375 13.9486 5.875L19.1447 14.875C20.0107 16.375 18.9282 18.25 17.1962 18.25H6.80385C5.0718 18.25 3.98927 16.375 4.85529 14.875L10.0514 5.875Z' stroke='%23F43F5E' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='12.0503' cy='15.55' r='0.5' fill='%23F43F5E' stroke='%23F43F5E' stroke-width='0.5'/%3E%3Cline x1='12.05' y1='8.35022' x2='12.05' y2='13.0502' stroke='%23F43F5E' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E%0A");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    border-radius: 4px;
+
+    color: #f43f5e;
+    font-family: Inter, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 16px;
+    user-select: none;
+  }
+  .folia-reply-error.shown {
+    display: flex;
+  }
+
   .folia-reply-title {
     display: flex;
     align-items: flex-start;
@@ -50,22 +82,24 @@
     gap: 8px;
   }
   .folia-reply-title-icon {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 32px;
-    max-width: 32px;
-    min-height: 32px;
-    max-height: 32px;
+    min-width: 30px;
+    max-width: 30px;
+    min-height: 30px;
+    max-height: 30px;
     border: 1px solid #e2e8f0;
     border-radius: 50%;
     background-color: rgba(144, 238, 144, 0.5);
-
+  }
+  .folia-reply-title-icon-initials {
     color: #334155;
     font-family: Inter, sans-serif;
     font-style: normal;
     font-weight: 400;
-    line-height: 16px;
+    line-height: 15px;
     font-size: 12px;
   }
   .folia-reply-title-info {
@@ -110,9 +144,6 @@
     cursor: pointer;
     padding: 0;
   }
-  /* .folia-reply-title-menu-btn:active {
-    transform: translate(1px, 1px);
-  } */
   .folia-reply-title-menu-btn:hover {
     background-color: #f1f1f1;
   }
@@ -226,12 +257,10 @@
     /* background-color: #334155; */
     color: gray;
   }
-
   .folia-reply-done:disabled {
     color: #cbd5e1;
     cursor: not-allowed;
   }
-
   .folia-reply-done:enabled:active {
     transform: translate(1px, 1px);
   }

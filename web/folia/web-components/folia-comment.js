@@ -2,24 +2,19 @@ import def from "ajv/dist/vocabularies/discriminator";
 import { setTextAreaDynamicHeight } from "../folia-util";
 import html from "./folia-comment.html";
 import reply from "./folia-reply";
+import { PERMISSIONS, USER_ROLE } from "../constants";
 
 class FoliaComment extends HTMLElement {
-  #template = null;
-  #userEmail = "";
-  #userName = "";
   #initialComment = null;
   #replies = [];
-  #permissions = {
-    whoAreYou: "",
-    canManageOwn: false,
-    canDeleteForeign: false,
-  };
+  #userEmail = "";
+  #userRole = USER_ROLE.VIEWER;
+  #permissions = [];
 
   constructor() {
     super();
     const template = document.createElement("template");
     template.innerHTML = html;
-    this.#template = template.content;
     this.attachShadow({ mode: "open" });
     this.shadowRoot.appendChild(template.content.cloneNode(true));
   }
@@ -37,7 +32,7 @@ class FoliaComment extends HTMLElement {
   }
 
   connectedCallback() {
-    // console.log("connectedCallback");
+    console.log("connectedCallback");
     this.className = "folia-comment";
 
     const deleteDialogOverlay = this.shadowRoot.querySelector(".folia-comment-dialog-overlay");
@@ -51,7 +46,6 @@ class FoliaComment extends HTMLElement {
     const deleteBtn = this.shadowRoot.querySelector(".folia-comment-header-delete-btn");
     deleteBtn.onclick = () => {
       this.toggleDeleteDialog();
-      // this.dispatchEvent(new CustomEvent("remove", { detail: { commentId: this.#initialComment.id } }));
     };
 
     const closeBtn = this.shadowRoot.querySelector(".folia-comment-header-close-btn");
@@ -61,22 +55,15 @@ class FoliaComment extends HTMLElement {
     sendReplyBtn.onclick = () => this.submitReply();
 
     const replyEditor = this.shadowRoot.querySelector(".folia-comment-footer-textarea");
-    const footer = this.shadowRoot.querySelector(".folia-comment-footer");
-    if (this.#permissions.canManageOwn) {
-      replyEditor.onkeydown = (e) => this.editorOnKeyDown(e);
-      replyEditor.oninput = (e) => this.editorOnChange(e);
-      replyEditor.focus();
-    } else {
-      footer.classList.toggle("hidden", true);
-    }
+    replyEditor.onkeydown = (e) => this.editorOnKeyDown(e);
+    replyEditor.oninput = (e) => this.editorOnChange(e);
+    replyEditor.focus();
+
+    this.#applyPermissions();
     setTextAreaDynamicHeight(replyEditor);
   }
 
   disconnectedCallback() {}
-
-  get initialComment() {
-    return Object.assign({}, this.#initialComment);
-  }
 
   set initialComment(comment) {
     // console.log("setup initial comment", this.#permissions);
@@ -89,30 +76,21 @@ class FoliaComment extends HTMLElement {
     }
     initialCommentEl.setAttribute("created-at", comment.createdAt);
     initialCommentEl.setAttribute("author", comment.collaboratorName || comment.collaboratorEmail);
-    initialCommentEl.setAttribute("status", comment.status);
-    initialCommentEl.setAttribute("updated-at", comment.addedAt);
-    initialCommentEl.setAttribute("is-comment", true);
     initialCommentEl.text = comment.text;
+    initialCommentEl.error = comment.error;
+    initialCommentEl.isInitialComment = true;
+    initialCommentEl.addedAt = comment.addedAt;
+    initialCommentEl.editedStatus = comment.status;
+    initialCommentEl.authorEmail = comment.collaboratorEmail;
+
     initialCommentEl.onRemove = (commentId) => {
       this.toggleDeleteDialog();
-      // this.dispatchEvent(new CustomEvent("remove", { detail: { commentId } }));
     };
     initialCommentEl.onChange = (commentId, text) => {
       this.dispatchEvent(new CustomEvent("submit-comment", { detail: { commentId, text } }));
     };
-    initialCommentEl.canEdit =
-      comment.collaboratorEmail === this.#permissions.whoAreYou && this.#permissions.canManageOwn;
-
-    initialCommentEl.canDelete =
-      comment.collaboratorEmail === this.#permissions.whoAreYou && this.#permissions.canManageOwn;
-
-    const deleteBtn = this.shadowRoot.querySelector(".folia-comment-header-delete-btn");
-    deleteBtn.classList.toggle("hidden", !initialCommentEl.canDelete);
     this.#initialComment = comment;
-  }
-
-  get replies() {
-    return this.#replies.slice();
+    this.#applyPermissions();
   }
 
   set replies(repliesList) {
@@ -121,10 +99,10 @@ class FoliaComment extends HTMLElement {
     const sortedRepliesList = repliesList.sort((replyA, replyB) => {
       return new Date(replyA.createdAt).getTime() - new Date(replyB.createdAt).getTime();
     });
+    const conversationBox = this.shadowRoot.querySelector(".folia-commnet-conversation");
 
     for (const reply of sortedRepliesList) {
-      // console.log("setup reply", this.#permissions);
-      const conversationBox = this.shadowRoot.querySelector(".folia-commnet-conversation");
+      // console.log("setup reply", reply);
       let replyEl = this.shadowRoot.getElementById(reply.id);
       if (!replyEl) {
         const el = document.createElement("folia-reply");
@@ -133,9 +111,13 @@ class FoliaComment extends HTMLElement {
       }
       replyEl.setAttribute("created-at", reply.createdAt);
       replyEl.setAttribute("author", reply.collaboratorName || reply.collaboratorEmail);
-      replyEl.setAttribute("status", reply.status);
-      replyEl.setAttribute("updated-at", reply.addedAt);
       replyEl.text = reply.text;
+      replyEl.error = reply.error;
+      replyEl.isInitialComment = false;
+      replyEl.addedAt = reply.addedAt;
+      replyEl.editedStatus = reply.status;
+      replyEl.authorEmail = reply.collaboratorEmail;
+
       replyEl.onRemove = (replyId) => {
         this.dispatchEvent(
           new CustomEvent("remove", {
@@ -150,27 +132,43 @@ class FoliaComment extends HTMLElement {
           })
         );
       };
-      replyEl.canEdit =
-        reply.collaboratorEmail === this.#permissions.whoAreYou && this.#permissions.canManageOwn;
-
-      replyEl.canDelete =
-        (reply.collaboratorEmail !== this.#permissions.whoAreYou && this.#permissions.canDeleteForeign) ||
-        (reply.collaboratorEmail === this.#permissions.whoAreYou && this.#permissions.canManageOwn);
     }
 
     this.#replies = repliesList.slice();
+    this.#applyPermissions();
+    setTimeout(() => (conversationBox.scrollTop = conversationBox.scrollHeight), 0);
   }
 
-  get permissions() {
-    return this.#permissions;
+  setPermissions(permissions = [], userEmail, userRole) {
+    // console.log("setPermissions", { permissions, userEmail, userRole });
+    this.#permissions = permissions.slice();
+    this.#userEmail = userEmail;
+    this.#userRole = userRole;
+    this.#applyPermissions();
   }
 
-  set permissions(perms) {
-    this.#permissions = {
-      whoAreYou: perms?.whoAreYou || "",
-      canManageOwn: perms?.canManageOwn || false,
-      canDeleteForeign: perms?.canDeleteForeign || false,
-    };
+  #applyPermissions() {
+    const canDeleteComment = this.#userRole === USER_ROLE.OWNER || this.#userRole === USER_ROLE.EDITOR;
+    const canMakeReply = this.#userRole !== USER_ROLE.VIEWER && this.#userRole !== USER_ROLE.PUBLIC_VIEWER;
+
+    this.shadowRoot.querySelectorAll(".folia-comment-header-delete-btn").forEach((el) => {
+      el.classList.toggle("hidden", !canDeleteComment);
+    });
+
+    this.shadowRoot.querySelectorAll(".folia-comment-footer").forEach((el) => {
+      el.classList.toggle("hidden", !canMakeReply);
+    });
+
+    this.shadowRoot.querySelectorAll("folia-reply").forEach((replyEl) => {
+      const canEditReply = this.#userRole !== USER_ROLE.VIEWER && this.#userEmail === replyEl.authorEmail;
+      const canDeleteReply =
+        this.#userRole === USER_ROLE.OWNER ||
+        this.#userRole === USER_ROLE.EDITOR ||
+        (this.#userEmail === replyEl.authorEmail && this.#userRole !== USER_ROLE.VIEWER);
+
+      replyEl.canEdit = canEditReply;
+      replyEl.canDelete = replyEl.isInitialComment ? canDeleteComment : canDeleteReply;
+    });
   }
 
   editorOnChange(e) {
@@ -196,7 +194,6 @@ class FoliaComment extends HTMLElement {
     const editor = this.shadowRoot.querySelector(".folia-comment-footer-textarea");
     const text = editor.value;
     if (!text) return;
-    if (!this.#permissions.canManageOwn) return;
     this.dispatchEvent(new CustomEvent("submit-replay", { detail: { text } }));
 
     editor.value = "";

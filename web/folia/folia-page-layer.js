@@ -281,6 +281,7 @@ class FoliaPageLayer {
     if (annoObject) {
       // if (annoObject.editable && annoObject.isFocused) return;
       if (annoObject.permanentPosition) return;
+      if (!annoObject.canManage) return;
     }
     // e.preventDefault();
 

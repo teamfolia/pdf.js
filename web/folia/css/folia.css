@@ -44,7 +44,7 @@ body {
   --annotation-border-color: silver;
 }
 
-.folia-annotation.selected:not(.TextBoxAnnotation)::before {
+.folia-annotation.selected:not(.TextBoxAnnotation):not(.CommentAnnotation)::before {
   display: block;
   content: "";
   border: dashed 2px var(--annotation-border-color);
@@ -53,7 +53,6 @@ body {
   top: -3px;
   right: -3px;
   bottom: -3px;
-  /* background-color: rgba(255, 0, 0, 0.5); */
 }
 
 .folia-annotation.TextBoxAnnotation {
@@ -148,7 +147,13 @@ body {
   cursor: move;
 }
 
-.error-status::after {
+.folia-annotation.InkAnnotation.error::after,
+.folia-annotation.CircleAnnotation.error::after,
+.folia-annotation.SquareAnnotation.error::after,
+.folia-annotation.ArrowAnnotation.error::after,
+.folia-annotation.HighlightAnnotation.error::after,
+.folia-annotation.TextBoxAnnotation.error::after,
+.folia-annotation.ImageAnnotation.error::after {
   content: "";
   display: block;
   position: absolute;
@@ -161,6 +166,18 @@ body {
   background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxyZWN0IHg9IjAuNSIgeT0iMC41IiB3aWR0aD0iMjMiIGhlaWdodD0iMjMiIHJ4PSIxMS41IiBmaWxsPSIjRkNEQ0QzIi8+CiAgICA8cGF0aCBkPSJNMTkuOTA4NyAxNi45OTE3TDEyLjU4MzYgNC4zMzYwOUMxMi4zMjQzIDMuODg3OTcgMTEuNjc1OCAzLjg4Nzk3IDExLjQxNjQgNC4zMzYwOUw0LjA5MTMxIDE2Ljk5MTdDMy44MzE5IDE3LjQzOTggNC4xNTYxMiAxOCA0LjY3NDg3IDE4SDE5LjMyNTFDMTkuODQzOCAxOCAyMC4xNjgxIDE3LjQzOTggMTkuOTA4NyAxNi45OTE3Wk0xMi42NTczIDE2LjIyNTVDMTIuNjU3MyAxNi4zMDkgMTIuMzYzIDE2LjM3NjcgMTIuMDAwMSAxNi4zNzY3QzExLjYzNyAxNi4zNzY3IDExLjM0MjcgMTYuMzA5IDExLjM0MjcgMTYuMjI1NVYxNS4xNzY0QzExLjM0MjcgMTUuMDkyOCAxMS42MzcgMTUuMDI1MSAxMi4wMDAxIDE1LjAyNTFDMTIuMzYzIDE1LjAyNTEgMTIuNjU3MyAxNS4wOTI5IDEyLjY1NzMgMTUuMTc2NFYxNi4yMjU1Wk0xMi41NDc4IDEzLjc3NzdDMTIuNTQ4IDEzLjc4MDggMTIuNTQ5OCAxMy43ODM4IDEyLjU0OTggMTMuNzg3QzEyLjU0OTggMTMuOTIyNSAxMi4zMDM2IDE0LjAzMjIgMTIgMTQuMDMyMkMxMS42OTYyIDE0LjAzMjIgMTEuNDUwMiAxMy45MjI1IDExLjQ1MDIgMTMuNzg3QzExLjQ1MDIgMTMuNzgzOSAxMS40NTE5IDEzLjc4MDkgMTEuNDUyMiAxMy43Nzc3TDExLjExMDUgOS4zOTgxQzExLjExMDUgOS4yNjI2OSAxMS41MDg3IDkuMTUyOSAxMiA5LjE1MjlDMTIuNDkxMyA5LjE1MjkgMTIuODg5NSA5LjI2MjY5IDEyLjg4OTUgOS4zOTgxTDEyLjU0NzggMTMuNzc3N1oiIGZpbGw9IiNGMDRFMjMiLz4KICAgIDxyZWN0IHg9IjAuNSIgeT0iMC41IiB3aWR0aD0iMjMiIGhlaWdodD0iMjMiIHJ4PSIxMS41IiBzdHJva2U9IiNGMDRFMjMiLz4KPC9zdmc+Cg==");
   background-repeat: no-repeat;
   background-position: center;
+}
+.folia-annotation.CommentAnnotation.error::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 20px;
+  height: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M17.9087 14.9917L10.5836 2.33609C10.3243 1.88797 9.67578 1.88797 9.41637 2.33609L2.09131 14.9917C1.8319 15.4398 2.15612 16 2.67487 16H17.3251C17.8438 16 18.1681 15.4398 17.9087 14.9917ZM10.6573 14.2255C10.6573 14.309 10.363 14.3767 10.0001 14.3767C9.63696 14.3767 9.34265 14.309 9.34265 14.2255V13.1764C9.34265 13.0928 9.63696 13.0251 10.0001 13.0251C10.363 13.0251 10.6573 13.0929 10.6573 13.1764V14.2255ZM10.5478 11.7777C10.548 11.7808 10.5498 11.7838 10.5498 11.787C10.5498 11.9225 10.3036 12.0322 10 12.0322C9.69625 12.0322 9.45015 11.9225 9.45015 11.787C9.45015 11.7839 9.4519 11.7809 9.45221 11.7777L9.11046 7.3981C9.11046 7.26269 9.50871 7.1529 10 7.1529C10.4913 7.1529 10.8895 7.26269 10.8895 7.3981L10.5478 11.7777Z' fill='%23F04E23'/%3E%3C/svg%3E%0A");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
 }
 
 .comment-pointer {
@@ -180,14 +197,14 @@ body {
   font-size: 12px;
   font-family: "Inter", sans-serif;
   color: gray;
+}
 
-  &.selected {
-    border: solid 2px #334155;
-  }
+.comment-pointer.selected {
+  border: solid 2px #334155;
+}
 
-  &::before {
-    display: none !important;
-  }
+.comment-pointer::before {
+  display: none !important;
 }
 
 .folia-comment {

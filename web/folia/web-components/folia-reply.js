@@ -8,14 +8,10 @@ const STATUS = {
 
 class FoliaReply extends HTMLElement {
   #template = null;
-  #createdAt = null;
-  #status = STATUS.NOT_EDITED;
-  #updatedAt = null;
+  #createdAtRedrawTimer = null;
   #initialText = "";
-  #addedAtRedrawTimer = null;
-  #isComment = false;
-  #canEdit = false;
-  #canDelete = false;
+  #isInitialComment = false;
+  #authorEmail;
 
   constructor() {
     super();
@@ -31,22 +27,12 @@ class FoliaReply extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ["id", "created-at", "author", "avatar", "status", "updated-at", "is-comment"];
+    return ["id", "created-at", "author"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     // console.log("REPLY attributeChangedCallback", { name, oldValue, newValue });
     switch (name) {
-      case "is-comment": {
-        this.#isComment = Boolean(newValue);
-        break;
-      }
-      case "avatar": {
-        const avatar = this.shadowRoot.querySelector(".folia-reply-title-icon");
-        if (!newValue) return;
-        avatar.style.background = `lightgreen url(${newValue}) center no-repeat`;
-        break;
-      }
       case "author": {
         const userName = this.shadowRoot.querySelector(".folia-reply-title-info-username");
         const userAvatar = this.shadowRoot.querySelector(".folia-reply-title-icon");
@@ -55,16 +41,7 @@ class FoliaReply extends HTMLElement {
         break;
       }
       case "created-at": {
-        this.#createdAt = newValue;
-        this.drawAddedAt();
-        break;
-      }
-      case "status": {
-        this.#status = newValue;
-        break;
-      }
-      case "updated-at": {
-        this.#updatedAt = newValue;
+        this.drawCreatedAt(newValue);
         break;
       }
       default:
@@ -77,21 +54,18 @@ class FoliaReply extends HTMLElement {
     this.append(this.#template);
 
     const replyMenuBtn = this.shadowRoot.querySelector(".folia-reply-title-menu-btn");
-    replyMenuBtn.onclick = () => this.toggleMenuVisibility();
+    replyMenuBtn.onclick = () => this.#toggleMenuVisibility();
 
     const optionsOverlay = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-options-overlay");
     const optionEdit = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-option.edit");
     const optionDelete = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-option.delete");
-
-    optionEdit.classList.toggle("disabled", !this.#canEdit);
-    optionDelete.classList.toggle("disabled", !this.#canDelete);
 
     optionsOverlay.addEventListener("click", this.optionsOverlayClickBinded, true);
     optionEdit.addEventListener("click", this.editReplyBinded, true);
     optionDelete.addEventListener("click", this.deleteReplyBinded, true);
 
     const editor = this.shadowRoot.querySelector(".folia-reply-text");
-    setTextAreaDynamicHeight(editor);
+    setTimeout(() => setTextAreaDynamicHeight(editor), 0);
   }
 
   disconnectedCallback() {
@@ -102,14 +76,14 @@ class FoliaReply extends HTMLElement {
     optionsOverlay.removeEventListener("click", this.optionsOverlayClickBinded, true);
     optionEdit.removeEventListener("click", this.editReplyBinded, true);
     optionDelete.removeEventListener("click", this.deleteReplyBinded, true);
-    clearTimeout(this.#addedAtRedrawTimer);
+    clearTimeout(this.#createdAtRedrawTimer);
   }
 
-  drawAddedAt() {
-    clearTimeout(this.#addedAtRedrawTimer);
+  drawCreatedAt(createdAt) {
+    clearTimeout(this.#createdAtRedrawTimer);
     const commentDate = this.shadowRoot.querySelector(".folia-reply-title-info-timestamp");
-    commentDate.innerHTML = foliaDateFormat(this.#createdAt);
-    this.#addedAtRedrawTimer = setTimeout(() => this.drawAddedAt(), 1000);
+    commentDate.innerHTML = foliaDateFormat(createdAt);
+    this.#createdAtRedrawTimer = setTimeout(() => this.drawCreatedAt(createdAt), 1000);
   }
 
   get text() {
@@ -121,29 +95,45 @@ class FoliaReply extends HTMLElement {
     this.#initialText = text;
   }
 
-  get canEdit() {
-    return this.#canEdit;
+  set error(err) {
+    this.shadowRoot.querySelector(".folia-reply-error").classList.toggle("shown", Boolean(err));
   }
 
-  set canEdit(value) {
-    this.#canEdit = Boolean(value);
+  get isInitialComment() {
+    return this.#isInitialComment;
+  }
+
+  set isInitialComment(status) {
+    this.#isInitialComment = status;
+  }
+
+  set canEdit(canEditStatus) {
     const optionEdit = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-option.edit");
-    optionEdit.classList.toggle("disabled", !this.#canEdit);
-    // console.log("set canEdit", this.#canEdit, optionEdit);
+    optionEdit.classList.toggle("disabled", !canEditStatus);
   }
 
-  get canDelete() {
-    return this.#canDelete;
-  }
-
-  set canDelete(value) {
-    this.#canDelete = Boolean(value);
+  set canDelete(canDeleteStatus) {
     const optionDelete = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-option.delete");
-    optionDelete.classList.toggle("disabled", !this.#canDelete);
-    // console.log("set canDelete", this.#canDelete, optionDelete);
+    optionDelete.classList.toggle("disabled", !canDeleteStatus);
   }
 
-  toggleMenuVisibility() {
+  set addedAt(date) {
+    // console.log("reply addedAt is", date);
+  }
+
+  set editedStatus(status) {
+    // console.log("reply editedStatus is", status);
+  }
+
+  get authorEmail() {
+    return this.#authorEmail;
+  }
+
+  set authorEmail(email) {
+    this.#authorEmail = email;
+  }
+
+  #toggleMenuVisibility() {
     // console.log("open Menu", this.id);
     const options = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-options");
     const optionsOverlay = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-options-overlay");
@@ -155,7 +145,7 @@ class FoliaReply extends HTMLElement {
     e.stopPropagation();
     e.preventDefault();
     // console.log("Overlay Click", this.id);
-    this.toggleMenuVisibility();
+    this.#toggleMenuVisibility();
   }
 
   editReply(e) {
@@ -173,6 +163,7 @@ class FoliaReply extends HTMLElement {
     cancelButton.onclick = (e) => {
       doneButton.toggleAttribute("disabled", true);
       editor.value = this.#initialText;
+      window.getSelection().removeAllRanges();
       setTextAreaDynamicHeight(editor);
       editor.toggleAttribute("readonly", true);
       buttonsBox.classList.toggle("hidden", true);
@@ -195,8 +186,16 @@ class FoliaReply extends HTMLElement {
       setTextAreaDynamicHeight(editor);
       doneButton.toggleAttribute("disabled", editor.value.length === 0);
     };
+    editor.onkeydown = (e) => {
+      if (!e.shiftKey && e.key === "Enter") {
+        e.preventDefault();
+        doneButton.dispatchEvent(new CustomEvent("click"));
+      } else if (e.key === "Escape") {
+        cancelButton.dispatchEvent(new CustomEvent("click"));
+      }
+    };
 
-    this.toggleMenuVisibility();
+    this.#toggleMenuVisibility();
     setTimeout(() => {
       setTextAreaDynamicHeight(editor);
       editor.focus();
@@ -209,11 +208,11 @@ class FoliaReply extends HTMLElement {
     e.preventDefault();
     if (e.target.classList.contains("disabled")) return;
 
-    this.toggleMenuVisibility();
+    this.#toggleMenuVisibility();
     if (typeof this.onRemove === "function") {
       this.onRemove(this.id);
     }
-    if (!this.#isComment) this.remove();
+    if (!this.#isInitialComment) this.remove();
   }
 }
 

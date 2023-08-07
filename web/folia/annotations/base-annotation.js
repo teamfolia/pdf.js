@@ -31,8 +31,7 @@ class FoliaBaseAnnotation {
     annotationDIV.setAttribute("data-id", `${this.id}`);
     annotationDIV.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
     annotationDIV.className = `folia-annotation ${this.annotationRawData.__typename}`;
-    // console.log("error on constructor", this.annotationRawData.error);
-    annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
+    annotationDIV.classList.toggle("error", Boolean(this.annotationRawData.error));
     this.annotationDIV = annotationDIV;
 
     const annoWeight = ANNOTATION_WEIGHT.indexOf(this.annotationRawData.__typename);
@@ -140,15 +139,18 @@ class FoliaBaseAnnotation {
 
     if (newDate === currDate) this.isDirty = null;
 
-    if (force || newDate > currDate) {
-      // console.log("anno update", annotationRawData);
+    const updateByErrorChanges = Boolean(annotationRawData.error) !== Boolean(this.annotationRawData.error);
+    const roleHasBeenChanged = annotationRawData.userRole !== this.annotationRawData.userRole;
+    if (force || newDate > currDate || updateByErrorChanges || roleHasBeenChanged) {
+      console.log("update", { new: annotationRawData.addedAt, curr: this.annotationRawData.addedAt });
       for (const [key, value] of Object.entries(annotationRawData)) {
         // console.log("anno update", { [key]: value });
         this.annotationRawData[key] = value;
       }
+      this.render();
+    } else {
+      console.log("not update", { new: annotationRawData, curr: this.annotationRawData.addedAt });
     }
-
-    this.render();
   }
 
   updateErrorStatus() {
@@ -487,9 +489,6 @@ class FoliaBaseAnnotation {
   get canDelete() {
     const { userEmail, permissions } = this.foliaPageLayer.dataProxy;
     const isAnnotationOwn = this.annotationRawData.collaboratorEmail === userEmail;
-    if (this.annotationRawData.__typename === ANNOTATION_TYPES.COMMENT) {
-      return isAnnotationOwn;
-    }
     return isAnnotationOwn
       ? permissions.includes(PERMISSIONS.MANAGE_ANNOTATION)
       : permissions.includes(PERMISSIONS.DELETE_FOREIGN_ANNOTATION);
