@@ -69,7 +69,7 @@ class TextBoxBuilder extends BaseBuilder {
     this.textArea.style.color = this.preset.color;
     this.textArea.style.fontFamily = FONT_FAMILY[this.preset.fontFamily];
     const fontSize = this.preset.fontSize * this.viewport.scale;
-    this.textArea.style.fontSize = `${fontSize * 0.55}px`;
+    this.textArea.style.fontSize = `${fontSize}px`;
     this.textArea.style.fontWeight = FONT_WEIGHT[this.preset.fontWeight];
     this.textArea.style.textAlign = TEXT_ALIGNMENT[this.preset.textAlignment];
 
@@ -86,7 +86,7 @@ class TextBoxBuilder extends BaseBuilder {
     textArea.style.outline = "none";
     textArea.style.visibility = "hidden";
     textArea.style.fontFamily = FONT_FAMILY[this.preset.fontFamily];
-    textArea.style.fontSize = `${fontSize * 0.55}px`;
+    textArea.style.fontSize = `${fontSize}px`;
     textArea.style.fontWeight = FONT_WEIGHT[this.preset.fontWeight];
     textArea.style.height = "1em";
     this.builderContainer.appendChild(textArea);

@@ -110,7 +110,7 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = lineWidth * 0.4;
+    ctx.lineWidth = lineWidth;
 
     const arrowheadFactor = 1.3;
     let dx = targetPoint.x - sourcePoint.x;

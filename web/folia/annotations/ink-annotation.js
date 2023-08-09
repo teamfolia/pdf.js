@@ -83,7 +83,7 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     canvas.height = this.annotationDIV.clientHeight;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * 0.5;
+    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
 
     this.relativePaths.forEach((viewportPath) => {
       ctx.save();

@@ -36,10 +36,10 @@ class CircleBuilder extends BaseBuilder {
     return this.circles.map(({ addedAt, color, lineWidth, rect }) => {
       const pdfRect = toPdfRect(
         [
-          rect[0] - (lineWidth * this.viewport.scale * 0.4) / 2,
-          rect[1] - (lineWidth * this.viewport.scale * 0.4) / 2,
-          rect[2] + lineWidth * this.viewport.scale * 0.4,
-          rect[3] + lineWidth * this.viewport.scale * 0.4,
+          rect[0] - (lineWidth * this.viewport.scale) / 2,
+          rect[1] - (lineWidth * this.viewport.scale) / 2,
+          rect[2] + lineWidth * this.viewport.scale,
+          rect[3] + lineWidth * this.viewport.scale,
         ],
         this.viewport.width,
         this.viewport.height
@@ -124,7 +124,7 @@ class CircleBuilder extends BaseBuilder {
       ctx.save();
       ctx.beginPath();
       ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth * this.viewport.scale * 0.4;
+      ctx.lineWidth = lineWidth * this.viewport.scale;
       const x = rect[0] + rect[2] / 2;
       const y = rect[1] + rect[3] / 2;
       const radiusX = rect[2] / 2;

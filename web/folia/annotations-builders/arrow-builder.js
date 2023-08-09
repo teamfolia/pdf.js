@@ -153,7 +153,7 @@ class ArrowBuilder extends BaseBuilder {
       const hpy1 = targetPoint.y + headLen * dx - headLen * dy;
 
       ctx.beginPath();
-      ctx.lineWidth = _lineWidth * 0.4;
+      ctx.lineWidth = _lineWidth;
       ctx.moveTo(sourcePoint.x, sourcePoint.y);
       ctx.lineTo(targetPoint.x, targetPoint.y);
       ctx.moveTo(hpx0, hpy0);

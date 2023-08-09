@@ -134,7 +134,7 @@ class InkBuilder extends BaseBuilder {
     const ctx = this.canvas.getContext("2d");
     ctx.save();
     ctx.strokeStyle = hexColor2RGBA(color);
-    ctx.lineWidth = lineWidth * this.viewport.scale * 0.5;
+    ctx.lineWidth = lineWidth * this.viewport.scale;
     let p1 = path[0];
     let p2 = path[1];
     ctx.lineCap = "round";

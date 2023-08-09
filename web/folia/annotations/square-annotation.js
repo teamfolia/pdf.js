@@ -68,7 +68,7 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
     canvas.height = this.annotationDIV.clientHeight;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = lineWidth * 0.4;
+    ctx.lineWidth = lineWidth;
     ctx.strokeRect(
       lineWidth / 2,
       lineWidth / 2,

@@ -73,7 +73,7 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
     canvas.height = this.annotationDIV.clientHeight;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * 0.4;
+    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     const x = this.annotationDIV.clientWidth / 2;
     const y = this.annotationDIV.clientHeight / 2;
     const radiusX = x - ctx.lineWidth / 2;

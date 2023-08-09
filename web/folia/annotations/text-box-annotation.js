@@ -54,7 +54,7 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
     textArea.style.outline = "none";
     textArea.style.visibility = "hidden";
     textArea.style.fontFamily = FONT_FAMILY[this.annotationRawData.fontFamily];
-    textArea.style.fontSize = `${fontSize * 0.55}px`;
+    textArea.style.fontSize = `${fontSize}px`;
     textArea.style.fontWeight = FONT_WEIGHT[this.annotationRawData.fontWeight];
     textArea.style.height = "1em";
     this.annotationDIV.appendChild(textArea);
@@ -115,7 +115,7 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
 
     this.textArea.style.color = hexColor2RGBA(this.annotationRawData.color);
     const fontSize = this.annotationRawData.fontSize * this.viewport.scale;
-    this.textArea.style.fontSize = `${fontSize * 0.55}px`;
+    this.textArea.style.fontSize = `${fontSize}px`;
     this.textArea.style.textAlign = TEXT_ALIGNMENT[this.annotationRawData.textAlignment];
     this.textArea.style.fontWeight = FONT_WEIGHT[this.annotationRawData.fontWeight];
     this.textArea.style.fontFamily = FONT_FAMILY[this.annotationRawData.fontFamily];
