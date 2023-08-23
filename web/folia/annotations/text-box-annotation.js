@@ -4,71 +4,88 @@ import FoliaBaseAnnotation from "./base-annotation";
 import { ANNOTATION_TYPES, FONT_FAMILY, FONT_WEIGHT, TEXT_ALIGNMENT } from "../constants";
 
 class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
+  static placeholderText = "Type something";
+
   editablePropertiesList = ["color", "rect", "text", "fontSize", "fontFamily", "fontWeight", "textAlignment"];
   editable = true;
-  inEditMode = false;
-  textArea;
+  editorEl;
 
   constructor(...props) {
     super(...props);
+    this.onKeyDownBinded = this.onKeyDown.bind(this);
+
     if (this.annotationRawData.newbie) {
       delete this.annotationRawData.newbie;
     }
-    this.textArea = document.createElement("textarea");
-    this.textArea.placeholder = "Type something";
-    this.textArea.className = "typewriter";
-    this.textArea.setAttribute("disabled", "disabled");
-    this.textArea.oninput = (e) => {
-      this.annotationRawData.text = e.target.value;
+    this.editorEl = document.createElement("div");
+    this.editorEl.className = "text-box";
+    this.editorEl.innerText = this.annotationRawData.text;
+    this.editorEl.setAttribute("data-id", `${this.id}`);
+    this.editorEl.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+    this.editorEl.setAttribute("text-box-placeholder", FoliaTextBoxAnnotation.placeholderText);
+    // this.editorEl.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
+    this.editorEl.oninput = (e) => {
+      this.annotationRawData.text = e.target.innerText;
       this.adjustHeight();
       this.markAsChanged();
     };
-    this.textArea.onclick = (e) => e.stopPropagation();
-    this.textArea.onmousedown = (e) => e.stopPropagation();
-    this.textArea.onmousemove = (e) => e.stopPropagation();
-    this.textArea.onmouseup = (e) => e.stopPropagation();
 
-    this.lid = document.createElement("div");
-    this.lid.style.position = "absolute";
-    this.lid.style.left = 0;
-    this.lid.style.top = 0;
-    this.lid.style.right = 0;
-    this.lid.style.bottom = 0;
-    // this.lid.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
-    this.lid.setAttribute("role", "lid");
-    this.lid.setAttribute("data-id", `${this.id}`);
-    this.lid.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
-
-    this.annotationDIV.appendChild(this.textArea);
-    this.annotationDIV.appendChild(this.lid);
+    this.annotationDIV.appendChild(this.editorEl);
     this.buildBaseCorners();
+    this.calculateMinTextHeight(FoliaTextBoxAnnotation.placeholderText);
+
+    this.updateRects();
   }
 
-  calculateMinTextHeight() {
+  onKeyDown(e) {
+    if (e.key === "Escape") this.stopEditMode();
+  }
+
+  startEditMode() {
+    if (!this.canManage) return;
+
+    this.editorEl.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_EDITOR);
+    this.editorEl.toggleAttribute("contenteditable", true);
+    this.editorEl.addEventListener("keydown", this.onKeyDownBinded, true);
+
+    this.prevState = this.getRawData();
+    this.editorEl.focus();
+  }
+
+  stopEditMode() {
+    this.editorEl.removeEventListener("keydown", this.onKeyDownBinded, true);
+
+    this.editorEl.toggleAttribute("contenteditable", false);
+    this.editorEl.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+    if (!this.prevState) return;
+    if (!this.canManage) return;
+    this.newState = this.getRawData();
+    this.foliaPageLayer.undoRedoManager.updatingObject(this.prevState, this.newState);
+    this.prevState = null;
+    this.newState = null;
+  }
+
+  calculateMinTextHeight(text) {
     const fontSize = this.annotationRawData.fontSize * this.viewport.scale;
-    const textArea = document.createElement("textarea");
-    textArea.rows = 1;
-    textArea.style.border = "dashed 1px #999999";
-    textArea.style.overflow = "hidden";
-    textArea.rows = 1;
-    textArea.style.outline = "none";
-    textArea.style.visibility = "hidden";
-    textArea.style.fontFamily = FONT_FAMILY[this.annotationRawData.fontFamily];
-    textArea.style.fontSize = `${fontSize}px`;
-    textArea.style.fontWeight = FONT_WEIGHT[this.annotationRawData.fontWeight];
-    textArea.style.height = "1em";
-    this.annotationDIV.appendChild(textArea);
-    this.minHeight = textArea.getBoundingClientRect().height;
+    const fontFamily = FONT_FAMILY[this.annotationRawData.fontFamily];
+    const fontWeight = FONT_WEIGHT[this.annotationRawData.fontWeight];
+
+    const canvas = document.createElement("canvas");
+    canvas.width = this.foliaLayer.clientWidth;
+    canvas.height = this.foliaLayer.clientHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    const textRect = ctx.measureText(text);
+    this.minWidth = textRect.width;
+    this.minHeight = textRect.fontBoundingBoxAscent + textRect.fontBoundingBoxDescent;
+    // console.log("textRect", textRect, this.minWidth, this.minHeight);
   }
 
   adjustHeight() {
-    if (this.textArea.clientHeight < this.textArea.scrollHeight) {
-      this.textArea.style.height = "auto";
-      const height = this.textArea.scrollHeight;
-      this.textArea.style.height = height - 4 + "px";
-      this.annotationDIV.style.height = height + "px";
-      this.updateRects();
-    }
+    this.editorEl.style.height = "auto";
+    const height = this.editorEl.scrollHeight;
+    this.editorEl.style.height = height + "px";
+    this.annotationDIV.style.height = height + "px";
   }
 
   getRawData() {
@@ -100,52 +117,33 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
   }
 
   updateRects() {
-    this.textArea.style.width = `${this.annotationDIV.clientWidth}px`;
-    this.textArea.style.height = `${this.annotationDIV.clientHeight}px`;
+    // console.log("updateRects");
+    this.adjustHeight();
+    this.editorEl.style.width = `${this.annotationDIV.clientWidth}px`;
+    this.editorEl.style.height = `${this.annotationDIV.clientHeight}px`;
   }
 
   render() {
     super.render();
-    this.textArea.value = this.annotationRawData.text;
+    this.editorEl.innerText = this.annotationRawData.text;
 
-    this.textArea.style.left = "0px";
-    this.textArea.style.top = "0px";
-    this.textArea.style.width = `${this.annotationDIV.clientWidth}px`;
-    this.textArea.style.height = `${this.annotationDIV.clientHeight}px`;
+    this.editorEl.style.left = "0px";
+    this.editorEl.style.top = "0px";
+    this.editorEl.style.width = `${this.annotationDIV.clientWidth}px`;
+    this.editorEl.style.height = `${this.annotationDIV.clientHeight}px`;
 
-    this.textArea.style.color = hexColor2RGBA(this.annotationRawData.color);
+    this.editorEl.style.setProperty("--annotation-color", hexColor2RGBA(this.annotationRawData.color));
+    this.editorEl.style.color = hexColor2RGBA(this.annotationRawData.color);
     const fontSize = this.annotationRawData.fontSize * this.viewport.scale;
-    this.textArea.style.fontSize = `${fontSize}px`;
-    this.textArea.style.textAlign = TEXT_ALIGNMENT[this.annotationRawData.textAlignment];
-    this.textArea.style.fontWeight = FONT_WEIGHT[this.annotationRawData.fontWeight];
-    this.textArea.style.fontFamily = FONT_FAMILY[this.annotationRawData.fontFamily];
+    this.editorEl.style.fontSize = `${fontSize}px`;
+    this.editorEl.style.textAlign = TEXT_ALIGNMENT[this.annotationRawData.textAlignment];
+    this.editorEl.style.fontWeight = FONT_WEIGHT[this.annotationRawData.fontWeight];
+    this.editorEl.style.fontFamily = FONT_FAMILY[this.annotationRawData.fontFamily];
     this.adjustHeight();
   }
 
-  startEditMode() {
-    if (!this.canManage) return;
-    this.inEditMode = true;
-    this.textArea.removeAttribute("disabled");
-    this.textArea.focus();
-    this.prevState = this.getRawData();
-    this.lid.style.display = "none";
-    // this.lid.remove();
-  }
-  stopEditMode() {
-    // this.annotationDIV.appendChild(this.lid);
-    this.lid.style.display = "block";
-    this.inEditMode = false;
-    this.textArea.blur();
-    this.textArea.setAttribute("disabled", "disabled");
-    if (!this.prevState) return;
-    if (!this.canManage) return;
-    this.newState = this.getRawData();
-    this.foliaPageLayer.undoRedoManager.updatingObject(this.prevState, this.newState);
-    this.prevState = null;
-    this.newState = null;
-  }
   get isFocused() {
-    return document.activeElement === this.textArea;
+    return document.activeElement === this.editorEl;
   }
 }
 

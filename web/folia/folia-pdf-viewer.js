@@ -38,15 +38,15 @@ const promisedTimeout = (timeout) => {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 };
 
-function onClickHandler(e) {
-  if (e.target.id === "viewer") {
-    // console.log('onClickHandler', e.target)
-    this.pdfViewer._pages.map((_page) => {
-      if (!_page.foliaPageLayer) return;
-      _page.foliaPageLayer.clickByViewerContainer();
-    });
-  }
-}
+// function onClickHandler(e) {
+//   if (e.target.id === "viewer") {
+//     // console.log('onClickHandler', e.target)
+//     this.pdfViewer._pages.map((_page) => {
+//       if (!_page.foliaPageLayer) return;
+//       _page.foliaPageLayer.clickByViewerContainer();
+//     });
+//   }
+// }
 function keyDownHandler(e) {
   const { key, keyCode, altKey, ctrlKey, metaKey, shiftKey, target, currentTarget } = e;
   // console.log("foliaPdfViewer -> keyDownHandler", target.nodeName);
@@ -136,7 +136,7 @@ export class FoliaPDFViewer {
   constructor() {
     window.PDFJSDev = new PDFJSDev();
     this.keyDownHandler = keyDownHandler.bind(this);
-    this.onClickHandler = onClickHandler.bind(this);
+    // this.onClickHandler = onClickHandler.bind(this);
   }
 
   async init(uiConfig, dataProxy) {
@@ -209,14 +209,14 @@ export class FoliaPDFViewer {
     this.eventBus.on("pagechanging", this.webViewerPageChanging.bind(this));
 
     window.addEventListener("keydown", this.keyDownHandler, true);
-    window.addEventListener("click", this.onClickHandler, true);
+    // window.addEventListener("click", this.onClickHandler, true);
 
     console.log("foliaPdfViewer has been initialized");
   }
 
   deinit() {
     window.removeEventListener("keydown", this.keyDownHandler, true);
-    window.removeEventListener("click", this.onClickHandler, true);
+    // window.removeEventListener("click", this.onClickHandler, true);
   }
 
   webViewerUpdateViewarea({ location }) {

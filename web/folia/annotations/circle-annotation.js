@@ -68,16 +68,20 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
   }
 
   generateCircleImage() {
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
+    const width = this.annotationDIV.clientWidth * window.devicePixelRatio;
+    const height = this.annotationDIV.clientHeight * window.devicePixelRatio;
+    const x = width / 2;
+    const y = height / 2;
+    const radiusX = x - lineWidth / 2;
+    const radiusY = y - lineWidth / 2;
+
     const canvas = document.createElement("canvas");
-    canvas.width = this.annotationDIV.clientWidth;
-    canvas.height = this.annotationDIV.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
-    const x = this.annotationDIV.clientWidth / 2;
-    const y = this.annotationDIV.clientHeight / 2;
-    const radiusX = x - ctx.lineWidth / 2;
-    const radiusY = y - ctx.lineWidth / 2;
+    ctx.lineWidth = lineWidth;
     ctx.ellipse(x, y, radiusX, radiusY, 0, 0, 180);
     ctx.stroke();
     return canvas.toDataURL("png");

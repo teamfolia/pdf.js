@@ -4,20 +4,28 @@
   top: 0;
   right: 0;
   bottom: 0;
-  /* background-color: rgba(0, 0, 0, 0.05); */
-  /* z-index: 3; */
+  /* background-color: rgba(255, 196, 201, 0.251); */
 }
 
-.typewriter-builder {
+.annotation-builder-container.text-box {
   cursor: text;
 }
 
-.typewriter-builder textarea {
+.text-box-editor {
   position: absolute;
+  margin: 0;
+  padding: 2px;
   outline: none;
   resize: none;
+  border: dashed 2px silver;
+  --annotation-color: gray;
 }
 
+.text-box-editor:empty::after {
+  content: attr(text-box-placeholder);
+  color: var(--annotation-color);
+  opacity: 0.5;
+}
 .high-lighted-anno {
   border: dashed 2px gray;
 }

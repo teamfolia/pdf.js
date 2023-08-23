@@ -42,7 +42,6 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
 
   render() {
     // console.time("render square");
-    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     const [left, top, width, height] = fromPdfRect(
       this.annotationRawData.rect,
       this.viewport.width,

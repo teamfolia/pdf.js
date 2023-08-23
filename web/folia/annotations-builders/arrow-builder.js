@@ -1,4 +1,4 @@
-import { toPdfPoint } from "../folia-util";
+import { toPdfPoint, hexColor2RGBA } from "../folia-util";
 import BaseBuilder from "./base-builder";
 import { ANNOTATION_TYPES } from "../constants";
 
@@ -38,12 +38,12 @@ class ArrowBuilder extends BaseBuilder {
       const sourceDeltaX = ((lineWidth * this.viewport.scale) / 2) * Math.sin(angleX);
       const sourceDeltaY = ((lineWidth * this.viewport.scale) / 2) * Math.sin(angleY);
       const sp = {
-        x: sourcePoint.x - sourceDeltaX,
-        y: sourcePoint.y - sourceDeltaY,
+        x: sourcePoint.x /** - sourceDeltaX, */,
+        y: sourcePoint.y /** - sourceDeltaY, */,
       };
       const tp = {
-        x: targetPoint.x + sourceDeltaX,
-        y: targetPoint.y + sourceDeltaY,
+        x: targetPoint.x /** + sourceDeltaX, */,
+        y: targetPoint.y /** + sourceDeltaY, */,
       };
       return {
         __typename: ANNOTATION_TYPES.ARROW,
@@ -133,36 +133,78 @@ class ArrowBuilder extends BaseBuilder {
   draw() {
     const ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.arrows.forEach((arrow) => {
-      const { color, lineWidth, sourcePoint, targetPoint } = arrow;
-      const _lineWidth = lineWidth * this.viewport.scale;
-      ctx.save();
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.strokeStyle = color;
-      const arrowheadFactor = 1.3;
-      let dx = targetPoint.x - sourcePoint.x;
-      let dy = targetPoint.y - sourcePoint.y;
-      const dlen = Math.sqrt(dx * dx + dy * dy);
-      dx = dx / dlen;
-      dy = dy / dlen;
-      const headLen = arrowheadFactor * _lineWidth;
-      const hpx0 = targetPoint.x + headLen * dy - headLen * dx;
-      const hpy0 = targetPoint.y - headLen * dx - headLen * dy;
-      const hpx1 = targetPoint.x - headLen * dy - headLen * dx;
-      const hpy1 = targetPoint.y + headLen * dx - headLen * dy;
+    this.arrows.forEach((arrow) => this.drawArrow(ctx, arrow));
+    // this.arrows.forEach((arrow) => {
+    //   const { color, lineWidth, sourcePoint, targetPoint } = arrow;
+    //   const _lineWidth = lineWidth * this.viewport.scale;
+    //   ctx.save();
+    //   ctx.lineCap = "round";
+    //   ctx.lineJoin = "round";
+    //   ctx.strokeStyle = color;
+    //   const arrowheadFactor = 1.3;
+    //   let dx = targetPoint.x - sourcePoint.x;
+    //   let dy = targetPoint.y - sourcePoint.y;
+    //   const dlen = Math.sqrt(dx * dx + dy * dy);
+    //   dx = dx / dlen;
+    //   dy = dy / dlen;
+    //   const headLen = arrowheadFactor * _lineWidth;
+    //   const hpx0 = targetPoint.x + headLen * dy - headLen * dx;
+    //   const hpy0 = targetPoint.y - headLen * dx - headLen * dy;
+    //   const hpx1 = targetPoint.x - headLen * dy - headLen * dx;
+    //   const hpy1 = targetPoint.y + headLen * dx - headLen * dy;
 
-      ctx.beginPath();
-      ctx.lineWidth = _lineWidth;
-      ctx.moveTo(sourcePoint.x, sourcePoint.y);
-      ctx.lineTo(targetPoint.x, targetPoint.y);
-      ctx.moveTo(hpx0, hpy0);
-      ctx.lineTo(targetPoint.x, targetPoint.y);
-      ctx.lineTo(hpx1, hpy1);
-      ctx.stroke();
-      ctx.restore();
-      ctx.closePath();
-    });
+    //   ctx.beginPath();
+    //   ctx.lineWidth = _lineWidth;
+    //   ctx.moveTo(sourcePoint.x, sourcePoint.y);
+    //   ctx.lineTo(targetPoint.x, targetPoint.y);
+    //   ctx.moveTo(hpx0, hpy0);
+    //   ctx.lineTo(targetPoint.x, targetPoint.y);
+    //   ctx.lineTo(hpx1, hpy1);
+    //   ctx.stroke();
+    //   ctx.restore();
+    //   ctx.closePath();
+    // });
+  }
+
+  drawArrow(ctx, arrowData) {
+    const lineWidth = arrowData.lineWidth * this.viewport.scale;
+    const annotationWidth = Math.abs(arrowData.sourcePoint.x - arrowData.targetPoint.x);
+    const annotationHeight = Math.abs(arrowData.sourcePoint.y - arrowData.targetPoint.y);
+    const arrowLength = Math.sqrt(Math.pow(annotationWidth, 2) + Math.pow(annotationHeight, 2));
+
+    // prepare arrow head
+    const capLength = arrowLength / 4;
+    let lineAngle = Math.atan2(
+      arrowData.sourcePoint.y - arrowData.targetPoint.y,
+      arrowData.sourcePoint.x - arrowData.targetPoint.x
+    );
+    let deltaAngle = Math.PI / 6;
+
+    let sourceX = arrowData.sourcePoint.x;
+    let sourceY = arrowData.sourcePoint.y;
+    let targetX = arrowData.targetPoint.x;
+    let targetY = arrowData.targetPoint.y;
+    let arrowLeftCapX = targetX + capLength * Math.cos(lineAngle + deltaAngle);
+    let arrowLeftCapY = targetY + capLength * Math.sin(lineAngle + deltaAngle);
+    let arrowRightCapX = targetX + capLength * Math.cos(lineAngle - deltaAngle);
+    let arrowRightCapY = targetY + capLength * Math.sin(lineAngle - deltaAngle);
+
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = hexColor2RGBA(arrowData.color);
+    ctx.lineWidth = lineWidth;
+
+    ctx.beginPath();
+    ctx.moveTo(sourceX, sourceY);
+    ctx.lineTo(targetX, targetY);
+    ctx.lineTo(arrowLeftCapX, arrowLeftCapY);
+    ctx.lineTo(targetX, targetY);
+    ctx.lineTo(arrowRightCapX, arrowRightCapY);
+
+    ctx.stroke();
+    ctx.restore();
+    ctx.closePath();
   }
 }
 

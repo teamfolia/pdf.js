@@ -79,7 +79,7 @@ class BaseBuilder {
     };
     reference = e.currentTarget.offsetParent;
     do {
-      offset.left += reference.offsetLeft;
+      offset.left += reference.offsetLeft - reference.scrollLeft;
       offset.top += reference.offsetTop - reference.scrollTop;
       reference = reference.offsetParent;
     } while (reference);

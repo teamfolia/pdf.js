@@ -2,9 +2,10 @@ class MultipleSelect {
   #objects = new Set();
   lastBounds;
 
-  constructor(viewport, eventBus) {
+  constructor(viewport, eventBus, pageNumber) {
     this.viewport = viewport;
     this.eventBus = eventBus;
+    this.pageNumber = pageNumber;
   }
   getObjects() {
     return Array.from(this.#objects);
@@ -91,20 +92,13 @@ class MultipleSelect {
       this.showFloatingBar();
     }
   }
-  // updateObjectsDrawingProperties(data) {
-  //   // TODO: move this functionality into FoliaPageLayer
-  //   const promises = [];
-  //   for (const obj of this.#objects) {
-  //     promises.push(obj.editableProperties.set(data));
-  //   }
-
-  //   return promises;
-  // }
   hideFloatingBar() {
     this.eventBus.dispatch("floatingbarhide");
   }
   showFloatingBar() {
-    this.eventBus.dispatch("floatingbarshow", { objects: this.getObjects() });
+    const objects = this.getObjects();
+    if (objects.length === 0) return;
+    this.eventBus.dispatch("floatingbarshow", { objects, pageNumber: this.pageNumber });
   }
   get bounds() {
     let left = this.viewport.width,

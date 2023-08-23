@@ -1,4 +1,4 @@
-import { view } from "paper/dist/paper-core";
+// import { view } from "paper/dist/paper-core";
 
 export const hexColor2pdf = (hexColor = "#F04E23DC") => {
   const hex = hexColor.toLowerCase().split("").slice(1).join("");

@@ -1,5 +1,5 @@
 import { v4 as uuid } from "uuid";
-import { cloneDeep } from "lodash";
+import { cloneDeep, differenceWith } from "lodash";
 import {
   fromPdfRect,
   toPdfRect,
@@ -17,6 +17,7 @@ import { ANNOTATION_TYPES, ANNOTATION_WEIGHT, PERMISSIONS } from "../constants";
 class FoliaBaseAnnotation {
   isSelected = false;
   annotationRawData = {};
+  safeArea = 10;
 
   constructor(foliaPageLayer, annotationRawData) {
     this.foliaPageLayer = foliaPageLayer;
@@ -31,6 +32,7 @@ class FoliaBaseAnnotation {
     annotationDIV.setAttribute("data-id", `${this.id}`);
     annotationDIV.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
     annotationDIV.className = `folia-annotation ${this.annotationRawData.__typename}`;
+    annotationDIV.classList.toggle("no-permission", !this.canManage);
     annotationDIV.classList.toggle("error", Boolean(this.annotationRawData.error));
     this.annotationDIV = annotationDIV;
 
@@ -142,14 +144,14 @@ class FoliaBaseAnnotation {
     const updateByErrorChanges = Boolean(annotationRawData.error) !== Boolean(this.annotationRawData.error);
     const roleHasBeenChanged = annotationRawData.userRole !== this.annotationRawData.userRole;
     if (force || newDate > currDate || updateByErrorChanges || roleHasBeenChanged) {
-      console.log("update", { new: annotationRawData.addedAt, curr: this.annotationRawData.addedAt });
+      // console.log("update", { new: annotationRawData.addedAt, curr: this.annotationRawData.addedAt });
       for (const [key, value] of Object.entries(annotationRawData)) {
         // console.log("anno update", { [key]: value });
         this.annotationRawData[key] = value;
       }
       this.render();
     } else {
-      console.log("not update", { new: annotationRawData, curr: this.annotationRawData.addedAt });
+      // console.log("not update", { new: annotationRawData, curr: this.annotationRawData.addedAt });
     }
   }
 
@@ -209,6 +211,12 @@ class FoliaBaseAnnotation {
         x: startPoint.x,
         y: startPoint.y,
       },
+      startRect: [
+        this.annotationDIV.offsetLeft,
+        this.annotationDIV.offsetTop,
+        this.annotationDIV.offsetLeft + this.annotationDIV.clientWidth,
+        this.annotationDIV.offsetTop + this.annotationDIV.clientHeight,
+      ],
       dimensions: {
         left: this.annotationDIV.offsetLeft,
         top: this.annotationDIV.offsetTop,
@@ -270,19 +278,121 @@ class FoliaBaseAnnotation {
   moveTo(point) {
     if (!this.canManage) return;
     if (!point) return;
-    const left = this._startMoving.offset.x + point.x;
-    const top = this._startMoving.offset.y + point.y;
-    this.annotationDIV.style.left = left + "px";
-    this.annotationDIV.style.top = top + "px";
 
-    this.pointTo(point, FOLIA_LAYER_ROLES.ARROW_CORNERS.BEGIN);
-    this.pointTo(point, FOLIA_LAYER_ROLES.ARROW_CORNERS.END);
+    if (this.annotationRawData.__typename === ANNOTATION_TYPES.ARROW) {
+      // arrow
+      const arrowRect = [
+        Math.min(this._startMoving.sourcePoint.x, this._startMoving.targetPoint.x),
+        Math.min(this._startMoving.sourcePoint.y, this._startMoving.targetPoint.y),
+        Math.max(this._startMoving.sourcePoint.x, this._startMoving.targetPoint.x) -
+          Math.min(this._startMoving.sourcePoint.x, this._startMoving.targetPoint.x),
+        Math.max(this._startMoving.sourcePoint.y, this._startMoving.targetPoint.y) -
+          Math.min(this._startMoving.sourcePoint.y, this._startMoving.targetPoint.y),
+      ];
+      const directionX = Math.sign(this.targetPoint.x - this.sourcePoint.x);
+      const directionY = Math.sign(this.targetPoint.y - this.sourcePoint.y);
+
+      const deltaX = this._startMoving.startPoint.x - point.x;
+      const deltaY = this._startMoving.startPoint.y - point.y;
+
+      const newArrowRect = [
+        Math.min(
+          Math.max(arrowRect[0] - deltaX, this.safeArea),
+          this.viewport.width - arrowRect[2] - this.safeArea
+        ),
+        Math.min(
+          Math.max(arrowRect[1] - deltaY, this.safeArea),
+          this.viewport.height - arrowRect[3] - this.safeArea
+        ),
+        arrowRect[2],
+        arrowRect[3],
+      ];
+
+      this.sourcePoint.x = directionX === 1 ? newArrowRect[0] : newArrowRect[0] + arrowRect[2];
+      this.sourcePoint.y = directionY === 1 ? newArrowRect[1] : newArrowRect[1] + arrowRect[3];
+      this.targetPoint.x = directionX === 1 ? newArrowRect[0] + arrowRect[2] : newArrowRect[0];
+      this.targetPoint.y = directionY === 1 ? newArrowRect[1] + arrowRect[3] : newArrowRect[1];
+
+      // console.log("move arrow", this.sourcePoint, this.targetPoint);
+    } else {
+      // other
+      const left = Math.min(
+        Math.max(this._startMoving.offset.x + point.x, this.safeArea),
+        this.viewport.width - this.annotationDIV.clientWidth - this.safeArea
+      );
+      const top = Math.min(
+        Math.max(this._startMoving.offset.y + point.y, this.safeArea),
+        this.viewport.height - this.annotationDIV.clientHeight - this.safeArea
+      );
+
+      this.annotationDIV.style.left = left + "px";
+      this.annotationDIV.style.top = top + "px";
+      //
+    }
 
     this.markAsChanged();
     this.updateRects();
   }
 
   resizeTo(point, corner, withAlt) {
+    if (!this.canManage) return;
+    if (!point || !corner) return;
+
+    const fixedAspectRatio = this.fixedAspectRatio && !withAlt;
+    const { startPoint, startRect, aspectRatioH, aspectRatioW, dimensions } = this._startMoving;
+    let deltaX = startPoint.x - point.x;
+    let deltaY = startPoint.y - point.y;
+    let left = startRect[0],
+      top = startRect[1],
+      width = startRect[2] - startRect[0],
+      height = startRect[3] - startRect[1];
+
+    switch (corner) {
+      case FOLIA_LAYER_ROLES.RECT_CORNERS.LT:
+        left = Math.min(Math.max(startRect[0] - deltaX, this.safeArea), startRect[2] - this.safeArea * 3);
+        top = Math.min(Math.max(startRect[1] - deltaY, this.safeArea), startRect[3] - this.safeArea * 3);
+        width = startRect[2] - left;
+        height = startRect[3] - top;
+        break;
+      case FOLIA_LAYER_ROLES.RECT_CORNERS.RT:
+        top = Math.min(Math.max(startRect[1] - deltaY, this.safeArea), startRect[3] - this.safeArea * 3);
+        width = Math.min(
+          Math.max(startRect[2] - left - deltaX, this.safeArea * 3),
+          this.viewport.width - left - this.safeArea
+        );
+        height = startRect[3] - top;
+        break;
+      case FOLIA_LAYER_ROLES.RECT_CORNERS.RB:
+        width = Math.min(
+          Math.max(startRect[2] - left - deltaX, this.safeArea * 3),
+          this.viewport.width - left - this.safeArea
+        );
+        height = Math.min(
+          Math.max(startRect[3] - top - deltaY, this.safeArea * 3),
+          this.viewport.height - top - this.safeArea
+        );
+        break;
+      case FOLIA_LAYER_ROLES.RECT_CORNERS.LB:
+        left = Math.min(Math.max(startRect[0] - deltaX, this.safeArea), startRect[2] - this.safeArea * 3);
+        width = startRect[2] - left;
+        height = Math.min(
+          Math.max(startRect[3] - top - deltaY, this.safeArea * 3),
+          this.viewport.height - top - this.safeArea
+        );
+        break;
+      default:
+        break;
+    }
+    this.annotationDIV.style.left = left + "px";
+    this.annotationDIV.style.top = top + "px";
+    this.annotationDIV.style.width = width + "px";
+    this.annotationDIV.style.height = height + "px";
+
+    this.markAsChanged();
+    this.updateRects();
+  }
+
+  _resizeTo(point, corner, withAlt) {
     if (!this.canManage) return;
     if (!point || !corner) return;
 
@@ -383,11 +493,23 @@ class FoliaBaseAnnotation {
     const deltaY = this._startMoving.startPoint.y - point.y;
 
     if (corner === FOLIA_LAYER_ROLES.ARROW_CORNERS.BEGIN && this.sourcePoint) {
-      this.sourcePoint.x = this._startMoving.sourcePoint.x - deltaX;
-      this.sourcePoint.y = this._startMoving.sourcePoint.y - deltaY;
+      this.sourcePoint.x = Math.min(
+        Math.max(this._startMoving.sourcePoint.x - deltaX, this.safeArea),
+        this.viewport.width - this.safeArea
+      );
+      this.sourcePoint.y = Math.min(
+        Math.max(this._startMoving.sourcePoint.y - deltaY, this.safeArea),
+        this.viewport.height - this.safeArea
+      );
     } else if (corner === FOLIA_LAYER_ROLES.ARROW_CORNERS.END && this.targetPoint) {
-      this.targetPoint.x = this._startMoving.targetPoint.x - deltaX;
-      this.targetPoint.y = this._startMoving.targetPoint.y - deltaY;
+      this.targetPoint.x = Math.min(
+        Math.max(this._startMoving.targetPoint.x - deltaX, this.safeArea),
+        this.viewport.width - this.safeArea
+      );
+      this.targetPoint.y = Math.min(
+        Math.max(this._startMoving.targetPoint.y - deltaY, this.safeArea),
+        this.viewport.height - this.safeArea
+      );
     }
 
     this.markAsChanged();
@@ -482,7 +604,10 @@ class FoliaBaseAnnotation {
   get canManage() {
     const { permissions } = this.foliaPageLayer.dataProxy;
     if (this.annotationRawData.__typename === ANNOTATION_TYPES.COMMENT) {
-      return this.annotationRawData.collaboratorEmail === this.dataProxy.userEmail;
+      return (
+        permissions.includes(PERMISSIONS.MANAGE_ANNOTATION) &&
+        this.annotationRawData.collaboratorEmail === this.dataProxy.userEmail
+      );
     }
     return permissions.includes(PERMISSIONS.MANAGE_ANNOTATION);
   }

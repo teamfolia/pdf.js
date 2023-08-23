@@ -34,7 +34,10 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     const { offsetLeft, offsetTop } = this.annotationDIV;
     const paths = this.relativePaths.map((path) => {
       const viewportPath = path.map((point) => {
-        return { x: point.x + offsetLeft, y: point.y + offsetTop };
+        return {
+          x: point.x / window.devicePixelRatio + offsetLeft,
+          y: point.y / window.devicePixelRatio + offsetTop,
+        };
       });
       return toPdfPath(viewportPath, this.viewport.width, this.viewport.height);
     });
@@ -74,16 +77,19 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     const { offsetLeft, offsetTop } = this.annotationDIV;
     this.relativePaths = this.annotationRawData.paths.map((path) => {
       return fromPdfPath(path, this.viewport.width, this.viewport.height).map((point) => {
-        return { x: point.x - offsetLeft, y: point.y - offsetTop };
+        return {
+          x: (point.x - offsetLeft) * window.devicePixelRatio,
+          y: (point.y - offsetTop) * window.devicePixelRatio,
+        };
       });
     });
 
     const canvas = document.createElement("canvas");
-    canvas.width = this.annotationDIV.clientWidth;
-    canvas.height = this.annotationDIV.clientHeight;
+    canvas.width = this.annotationDIV.clientWidth * window.devicePixelRatio;
+    canvas.height = this.annotationDIV.clientHeight * window.devicePixelRatio;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
+    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
 
     this.relativePaths.forEach((viewportPath) => {
       ctx.save();

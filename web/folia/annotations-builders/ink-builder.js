@@ -17,8 +17,10 @@ class InkBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
       this.canvas.className = "annotation-builder-container";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight;
+      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
+      this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
+      this.canvas.style.height = this.foliaPageLayer.pageDiv.clientHeight + "px";
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
@@ -65,7 +67,16 @@ class InkBuilder extends BaseBuilder {
         addedAt: anno.addedAt,
         lineWidth: anno.lineWidth,
         color: anno.color,
-        paths: anno.paths.map((path) => toPdfPath(path, this.viewport.width, this.viewport.height)),
+        paths: anno.paths.map((path) => {
+          return toPdfPath(
+            path.map((point) => ({
+              x: point.x / window.devicePixelRatio,
+              y: point.y / window.devicePixelRatio,
+            })),
+            this.viewport.width,
+            this.viewport.height
+          );
+        }),
       };
     });
   }
@@ -90,7 +101,7 @@ class InkBuilder extends BaseBuilder {
     this.drawingPath = {
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
-      path: [point],
+      path: [{ x: point.x * window.devicePixelRatio, y: point.y * window.devicePixelRatio }],
     };
   }
   onMouseMove(e) {
@@ -99,7 +110,10 @@ class InkBuilder extends BaseBuilder {
     if (!this.drawingPath) return;
 
     const point = this.getRelativePoint(e);
-    this.drawingPath.path.push(point);
+    this.drawingPath.path.push({
+      x: point.x * window.devicePixelRatio,
+      y: point.y * window.devicePixelRatio,
+    });
 
     // window.requestAnimationFrame(() => this.drawAll());
     this.drawAll();
@@ -134,7 +148,7 @@ class InkBuilder extends BaseBuilder {
     const ctx = this.canvas.getContext("2d");
     ctx.save();
     ctx.strokeStyle = hexColor2RGBA(color);
-    ctx.lineWidth = lineWidth * this.viewport.scale;
+    ctx.lineWidth = lineWidth * this.viewport.scale * window.devicePixelRatio;
     let p1 = path[0];
     let p2 = path[1];
     ctx.lineCap = "round";

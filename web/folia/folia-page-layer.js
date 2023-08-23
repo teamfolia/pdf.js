@@ -23,7 +23,10 @@ const ANNOTATIONS_CLASSES = {
 };
 
 export const FOLIA_LAYER_ROLES = {
+  FOLIA_VIEWER: "folia-viewer",
   FOLIA_LAYER: "folia-layer",
+  FOLIA_BUILDER: "folia-builder",
+  ANNOTATION_EDITOR: "annotation-editor",
   ANNOTATION_OBJECT: "annotation-object",
   RECT_CORNERS: {
     LT: "corner-lt",
@@ -84,7 +87,115 @@ class FoliaPageLayer {
     this.pdfViewerScale = props.pdfViewerScale;
 
     this.pageNumber = props.pdfPage.pageNumber - 1;
-    this.multipleSelect = new MultipleSelect(this.viewport, props.eventBus);
+    this.multipleSelect = new MultipleSelect(this.viewport, props.eventBus, this.pageNumber);
+
+    props.pageDiv.parentNode.addEventListener("mousedown", (e) => this.viewerMouseDown(e));
+    props.pageDiv.parentNode.addEventListener("mousemove", (e) => this.viewerMouseMove(e));
+    props.pageDiv.parentNode.addEventListener("mouseup", (e) => this.viewerMouseUp(e));
+  }
+
+  viewerMouseDown(e) {
+    const { id, role } = e.target.dataset;
+    // if (e.target.tagName === "TEXTAREA") return;
+    // console.log("foliaLayer::MouseDown", role);
+    if (!role) return;
+    if (role === FOLIA_LAYER_ROLES.FOLIA_BUILDER || role === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
+      return;
+    }
+
+    if (role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
+      return this.multipleSelect.clear();
+    }
+
+    if (role === FOLIA_LAYER_ROLES.FOLIA_VIEWER) {
+      return this.eventBus.dispatch("stop-drawing");
+    }
+
+    this.isMouseDown = true;
+    this.startPoint = { x: e.clientX, y: e.clientY };
+    this.actionTarget = { id, role };
+    this.multipleSelect.prepare2moving(this.startPoint);
+    if (this.multipleSelect.isEmpty()) this.multipleSelect.hideFloatingBar();
+  }
+
+  viewerMouseMove(e) {
+    if (!this.isMouseDown) return;
+    const { id, role } = e.target.dataset;
+    // console.log("foliaLayer::MouseMove", role);
+    // if (e.target.tagName === "TEXTAREA") return;
+    if (role === FOLIA_LAYER_ROLES.FOLIA_BUILDER || role === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
+      return;
+    }
+
+    const annoObject = this.annotationObjects.get(this.actionTarget.id);
+    if (annoObject) {
+      // if (annoObject.editable && annoObject.isFocused) return;
+      if (annoObject.permanentPosition) return;
+      if (!annoObject.canManage) return;
+    }
+    // e.preventDefault();
+
+    // prettier-ignore
+    if (annoObject && this.actionTarget.role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
+      if (this.multipleSelect.isEmpty() && !this.multipleSelect.includes(annoObject)) {
+        this.multipleSelect.toggleObject(annoObject, e.shiftKey);
+        this.multipleSelect.prepare2moving(this.startPoint);
+      } else if (!this.multipleSelect.isEmpty() && !this.multipleSelect.includes(annoObject)) {
+        if (!e.shiftKey) this.multipleSelect.clear();
+        this.multipleSelect.toggleObject(annoObject, e.shiftKey);
+        this.multipleSelect.prepare2moving(this.startPoint);
+      }
+
+      if (this.multipleSelect.includes(annoObject)) {
+        this.multipleSelect.moveTo({ x: e.clientX, y: e.clientY });
+      }
+    } else if (annoObject && Object.values(FOLIA_LAYER_ROLES.RECT_CORNERS).includes(this.actionTarget.role)) {
+      if (this.multipleSelect.includes(annoObject)) {
+        this.multipleSelect.resizeTo({ x: e.clientX, y: e.clientY }, this.actionTarget.role, e.altKey);
+      }
+    } else if (annoObject && Object.values(FOLIA_LAYER_ROLES.ARROW_CORNERS).includes(this.actionTarget.role)) {
+      if (this.multipleSelect.includes(annoObject)) {
+        this.multipleSelect.pointTo({ x: e.clientX, y: e.clientY }, this.actionTarget.role, e.altKey);
+      }
+    }
+
+    this.isMouseMoved = true;
+  }
+
+  viewerMouseUp(e) {
+    const { id, role } = e.target.dataset;
+    // console.log("foliaLayer::MouseUp", role);
+    // if (e.target.tagName === "TEXTAREA") return;
+    if (role === FOLIA_LAYER_ROLES.FOLIA_BUILDER || role === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
+      return;
+    }
+
+    if (role === FOLIA_LAYER_ROLES.FOLIA_LAYER || role === FOLIA_LAYER_ROLES.FOLIA_VIEWER) {
+      this.multipleSelect.clear();
+    } else if (!this.isMouseMoved && role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
+      // not isMouseMoved
+      const annoObject = this.annotationObjects.get(this.actionTarget.id);
+      if (annoObject && !annoObject.editable) {
+        this.multipleSelect.toggleObject(annoObject, e.shiftKey);
+      } else if (annoObject && annoObject.editable) {
+        this.multipleSelect.includes(annoObject)
+          ? this.multipleSelect.startEditMode(annoObject, e.shiftKey)
+          : this.multipleSelect.toggleObject(annoObject, e.shiftKey);
+      }
+      this.multipleSelect.showFloatingBar();
+    } else if (this.isMouseMoved && role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
+      // isMouseMoved
+      this.multipleSelect.showFloatingBar();
+      const annoObject = this.annotationObjects.get(this.actionTarget.id);
+      if (annoObject) {
+        this.undoRedoManager.updatingObject(annoObject._startMoving.prevState, annoObject.getRawData());
+      }
+    }
+
+    // this.multipleSelect.checkForOutOfBounds(SAFE_MARGIN, this.actionTarget.role);
+    this.isMouseMoved = false;
+    this.isMouseDown = false;
+    this.actionTarget = {};
   }
 
   startDrawing = (BuilderClass) => {
@@ -177,7 +288,7 @@ class FoliaPageLayer {
       this.foliaLayer.setAttribute("data-role", FOLIA_LAYER_ROLES.FOLIA_LAYER);
       this.foliaLayer.setAttribute("data-page-number", `${this.pageNumber}`);
       this.foliaLayer.className = "folia-layer";
-      this.foliaLayer.onmousedown = this.onFoliaLayerMouseDown.bind(this);
+      // this.foliaLayer.onmousedown = this.onFoliaLayerMouseDown.bind(this);
       // this.foliaLayer.onclick = this.onFoliaLayerClick.bind(this);
     }
     this.foliaLayer.style.width = Math.floor(this.pageDiv.clientWidth) + "px";
@@ -188,8 +299,8 @@ class FoliaPageLayer {
 
     try {
       const annotations = this.dataProxy.getObjects(this.pageNumber).sort((a, b) => {
-        const addedAtA = new Date(a.addedAt);
-        const addedAtB = new Date(b.addedAt);
+        const addedAtA = new Date(a.addedAt).getTime();
+        const addedAtB = new Date(b.addedAt).getTime();
         return addedAtA - addedAtB;
       });
       // delete
@@ -243,113 +354,6 @@ class FoliaPageLayer {
   show() {
     console.log("FoliaPageLayer show ==>", this.pageNumber);
     this.foliaLayer.hidden = false;
-  }
-
-  clickByViewerContainer() {
-    // this.commit Changes()
-    this.multipleSelect.clear();
-  }
-  onFoliaLayerMouseDown(e) {
-    // console.log("onFoliaLayerMouseDown", e.target, e.currentTarget);
-    if (e.target.tagName === "TEXTAREA") return;
-
-    const { role, id } = e.target.dataset;
-    if (!role) return;
-    // e.stopPropagation();
-    this.actionTarget = { role, id };
-    if (role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
-      return this.multipleSelect.clear();
-    }
-
-    this.foliaLayer.parentNode.parentNode.onmouseup = this.onFoliaLayerMouseUp.bind(this);
-    this.foliaLayer.onmouseup = this.onFoliaLayerMouseUp.bind(this);
-    this.foliaLayer.onmousemove = this.onFoliaLayerMouseMove.bind(this);
-    this.isMouseDown = true;
-    this.startPoint = { x: e.clientX, y: e.clientY };
-    this.multipleSelect.prepare2moving(this.startPoint);
-
-    if (!this.multipleSelect.isEmpty()) this.multipleSelect.hideFloatingBar();
-    // e.preventDefault();
-  }
-  onFoliaLayerMouseMove(e) {
-    // e.stopPropagation();
-    if (!this.isMouseDown) return;
-    // console.log("onFoliaLayerMouseMove", e.target.tagName, e.currentTarget.tagName);
-    if (e.target.tagName === "TEXTAREA") return;
-
-    const annoObject = this.annotationObjects.get(this.actionTarget.id);
-    if (annoObject) {
-      // if (annoObject.editable && annoObject.isFocused) return;
-      if (annoObject.permanentPosition) return;
-      if (!annoObject.canManage) return;
-    }
-    // e.preventDefault();
-
-    if (annoObject && this.actionTarget.role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
-      if (this.multipleSelect.isEmpty() && !this.multipleSelect.includes(annoObject)) {
-        this.multipleSelect.toggleObject(annoObject, e.shiftKey);
-        this.multipleSelect.prepare2moving(this.startPoint);
-      } else if (!this.multipleSelect.isEmpty() && !this.multipleSelect.includes(annoObject)) {
-        if (!e.shiftKey) this.multipleSelect.clear();
-        this.multipleSelect.toggleObject(annoObject, e.shiftKey);
-        this.multipleSelect.prepare2moving(this.startPoint);
-      }
-
-      if (this.multipleSelect.includes(annoObject)) {
-        this.multipleSelect.moveTo({ x: e.clientX, y: e.clientY });
-      }
-    } else if (annoObject && Object.values(FOLIA_LAYER_ROLES.RECT_CORNERS).includes(this.actionTarget.role)) {
-      if (this.multipleSelect.includes(annoObject)) {
-        this.multipleSelect.resizeTo({ x: e.clientX, y: e.clientY }, this.actionTarget.role, e.altKey);
-      }
-    } else if (
-      annoObject &&
-      Object.values(FOLIA_LAYER_ROLES.ARROW_CORNERS).includes(this.actionTarget.role)
-    ) {
-      if (this.multipleSelect.includes(annoObject)) {
-        this.multipleSelect.pointTo({ x: e.clientX, y: e.clientY }, this.actionTarget.role, e.altKey);
-      }
-    }
-
-    this.isMouseMoved = true;
-  }
-  onFoliaLayerMouseUp(e) {
-    // e.stopPropagation();
-    // e.preventDefault();
-    this.foliaLayer.onmouseup = null;
-    this.foliaLayer.onmousemove = null;
-    // console.log("onFoliaLayerMouseUp", e.target.tagName, e.currentTarget.tagName);
-    if (e.target.tagName === "TEXTAREA") return;
-
-    if (e.target.dataset.role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
-      return this.multipleSelect.clear();
-    }
-
-    if (this.actionTarget.role === FOLIA_LAYER_ROLES.FOLIA_LAYER) {
-      this.multipleSelect.clear();
-    } else if (!this.isMouseMoved && this.actionTarget.role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
-      const annoObject = this.annotationObjects.get(this.actionTarget.id);
-      if (annoObject && !annoObject.editable) {
-        this.multipleSelect.toggleObject(annoObject, e.shiftKey);
-      } else if (annoObject && annoObject.editable) {
-        this.multipleSelect.includes(annoObject)
-          ? this.multipleSelect.startEditMode(annoObject, e.shiftKey)
-          : this.multipleSelect.toggleObject(annoObject, e.shiftKey);
-      }
-      this.multipleSelect.showFloatingBar();
-    } else if (this.isMouseMoved) {
-      this.multipleSelect.showFloatingBar();
-
-      const annoObject = this.annotationObjects.get(this.actionTarget.id);
-      if (annoObject) {
-        this.undoRedoManager.updatingObject(annoObject._startMoving.prevState, annoObject.getRawData());
-      }
-    }
-
-    this.multipleSelect.checkForOutOfBounds(SAFE_MARGIN, this.actionTarget.role);
-    this.isMouseMoved = false;
-    this.isMouseDown = false;
-    this.actionTarget = {};
   }
 }
 

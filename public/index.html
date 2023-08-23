@@ -163,9 +163,45 @@ See https://github.com/adobe-type-tools/cmap-resources
       #zoomOutBtn {
         cursor: pointer;
       }
+
+      .font-preloader {
+        position: absolute;
+        left: -10000px;
+        right: -10000px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        background-color: blue;
+        color: yellow;
+        opacity: 0;
+        z-index: 1000;
+      }
+      .font-preloader > .sans-serif {
+        font-family: Source Sans Pro, sans-serif;
+      }
+      .font-preloader > .serif {
+        font-family: Lora, serif;
+      }
+      .font-preloader > .monospace {
+        font-family: Courier Prime, monospace;
+      }
+      .font-preloader > .script {
+        font-family: Cookie, fantasy;
+      }
+      .font-preloader > .fantasy {
+        font-family: Eagle Lake, fantasy;
+      }
     </style>
   </head>
   <body tabindex="1">
+    <div class="font-preloader">
+      <span class="sans-serif">sans-serif has been preloaded</span>
+      <span class="serif">serif has been preloaded</span>
+      <span class="monospace">monospace has been preloaded</span>
+      <span class="script">script has been preloaded</span>
+      <span class="fantasy">fantazy has been preloaded</span>
+    </div>
     <div class="folia-app">
       <!-- toolbar -->
       <div class="app-toolbar">
@@ -457,7 +493,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 
       <!-- pdf viewer -->
       <div class="viewer-container" id="viewerContainer">
-        <div class="viewer" id="viewer"></div>
+        <div class="viewer" id="viewer" data-role="folia-viewer"></div>
       </div>
       <!-- end of pdf viewer-->
 
@@ -478,5 +514,6 @@ See https://github.com/adobe-type-tools/cmap-resources
         <span id="currentPage">0</span>&nbsp;/&nbsp;<span id="totalPages">0</span>
       </div>
     </div>
+    <p style="font-family: Lora, sans-serif">Lora</p>
   </body>
 </html>

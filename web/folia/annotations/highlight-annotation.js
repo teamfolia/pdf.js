@@ -73,11 +73,16 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
       tmpCtx.fillStyle = hexColor2RGBA(this.annotationRawData.color);
 
       this.annotationRawData.rects.forEach((areaPdfRect) => {
-        const areaRect = fromPdfRect(areaPdfRect, this.viewport.width, this.viewport.height).map(
-          (n) => n * window.devicePixelRatio
-        );
+        const areaRect = fromPdfRect(areaPdfRect, this.viewport.width, this.viewport.height);
+        areaRect[0] = areaRect[0] * window.devicePixelRatio - 2;
+        areaRect[1] = areaRect[1] * window.devicePixelRatio - 2;
+        areaRect[2] = areaRect[2] * window.devicePixelRatio + 2;
+        areaRect[3] = areaRect[3] * window.devicePixelRatio + 2;
+        // .map(
+        //   (n) => n * window.devicePixelRatio + 1.5
+        // );
 
-        const lineWidth = 4 * this.viewport.scale;
+        const lineWidth = 2 * this.viewport.scale;
         if (this.annotationRawData.kind === HighlightKind.CROSSLINE) {
           tmpCtx.fillRect(areaRect[0], areaRect[1] + areaRect[3] / 2, areaRect[2], lineWidth);
         } else if (this.annotationRawData.kind === HighlightKind.UNDERLINE) {

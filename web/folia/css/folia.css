@@ -36,15 +36,28 @@ body {
 .folia-annotation {
   box-sizing: content-box;
   position: absolute;
-  cursor: grabbing;
+  cursor: grab;
   background-repeat: no-repeat;
   background-repeat: no-repeat;
   background-position: center;
   background-size: 100% 100%;
   --annotation-border-color: silver;
+  --line-width: 0px;
 }
 
-.folia-annotation.selected:not(.TextBoxAnnotation):not(.CommentAnnotation)::before {
+.folia-annotation.no-permission {
+  cursor: not-allowed;
+}
+
+.folia-annotation:not(.no-permission):active {
+  cursor: grabbing !important;
+}
+
+.folia-annotation.selected {
+  z-index: 1000;
+}
+
+.folia-annotation.selected:not(.TextBoxAnnotation):not(.CommentAnnotation):not(.ArrowAnnotation)::before {
   display: block;
   content: "";
   border: dashed 2px var(--annotation-border-color);
@@ -58,22 +71,58 @@ body {
 .folia-annotation.TextBoxAnnotation {
   border: dashed 2px transparent;
 }
-.folia-annotation.selected.TextBoxAnnotation {
+.folia-annotation.TextBoxAnnotation.selected {
   border: dashed 2px var(--annotation-border-color);
 }
 
-/* .folia-annotation.arrow.selected {
-  display: flex;
-  align-items: center;
-} */
 .folia-annotation.ArrowAnnotation {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: transparent;
+}
+
+.folia-annotation.ArrowAnnotation::before {
+  content: "";
+  position: absolute;
+  width: var(--arrow-width);
+  height: var(--arrow-height);
+
+  background-image: var(--arrow-image);
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
+}
+
+.folia-annotation.ArrowAnnotation.selected::before {
+  box-sizing: content-box;
+  border: dashed 2px var(--annotation-border-color);
+}
+
+.folia-annotation.TextBoxAnnotation.selected {
+  border: dashed 2px var(--annotation-border-color);
+}
+
+.TextBoxAnnotation > .text-box {
+  outline: none;
+  border: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  --annotation-color: gray;
+}
+
+.TextBoxAnnotation > .text-box:empty::after {
+  content: attr(text-box-placeholder);
+  color: var(--annotation-color);
+  opacity: 0.5;
+}
+
+.text-box[data-role="annotation-object"] {
+  user-select: none;
+}
+
+.text-box[data-role="annotation-editor"] {
+  cursor: text !important;
 }
 
 .typewriter {
@@ -116,6 +165,24 @@ body {
   z-index: 2;
 }
 
+.corner-begin {
+  left: calc(var(--line-width) - 5px);
+  cursor: move;
+}
+.corner-end {
+  right: calc(var(--line-width) - 5px);
+  cursor: move;
+}
+
+.arrow-begin {
+  cursor: move !important;
+}
+
+.arrow-end {
+  cursor: move !important;
+  /* background-color: blue; */
+}
+
 .corner-lt {
   left: -6px;
   top: -6px;
@@ -135,16 +202,6 @@ body {
   right: -6px;
   bottom: -6px;
   cursor: nwse-resize;
-}
-.corner-begin {
-  left: -6px;
-  /* top: -2.5px; */
-  cursor: move;
-}
-.corner-end {
-  right: -6px;
-  /* bottom: -2.5px; */
-  cursor: move;
 }
 
 .folia-annotation.InkAnnotation.error::after,
@@ -166,6 +223,7 @@ body {
   background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxyZWN0IHg9IjAuNSIgeT0iMC41IiB3aWR0aD0iMjMiIGhlaWdodD0iMjMiIHJ4PSIxMS41IiBmaWxsPSIjRkNEQ0QzIi8+CiAgICA8cGF0aCBkPSJNMTkuOTA4NyAxNi45OTE3TDEyLjU4MzYgNC4zMzYwOUMxMi4zMjQzIDMuODg3OTcgMTEuNjc1OCAzLjg4Nzk3IDExLjQxNjQgNC4zMzYwOUw0LjA5MTMxIDE2Ljk5MTdDMy44MzE5IDE3LjQzOTggNC4xNTYxMiAxOCA0LjY3NDg3IDE4SDE5LjMyNTFDMTkuODQzOCAxOCAyMC4xNjgxIDE3LjQzOTggMTkuOTA4NyAxNi45OTE3Wk0xMi42NTczIDE2LjIyNTVDMTIuNjU3MyAxNi4zMDkgMTIuMzYzIDE2LjM3NjcgMTIuMDAwMSAxNi4zNzY3QzExLjYzNyAxNi4zNzY3IDExLjM0MjcgMTYuMzA5IDExLjM0MjcgMTYuMjI1NVYxNS4xNzY0QzExLjM0MjcgMTUuMDkyOCAxMS42MzcgMTUuMDI1MSAxMi4wMDAxIDE1LjAyNTFDMTIuMzYzIDE1LjAyNTEgMTIuNjU3MyAxNS4wOTI5IDEyLjY1NzMgMTUuMTc2NFYxNi4yMjU1Wk0xMi41NDc4IDEzLjc3NzdDMTIuNTQ4IDEzLjc4MDggMTIuNTQ5OCAxMy43ODM4IDEyLjU0OTggMTMuNzg3QzEyLjU0OTggMTMuOTIyNSAxMi4zMDM2IDE0LjAzMjIgMTIgMTQuMDMyMkMxMS42OTYyIDE0LjAzMjIgMTEuNDUwMiAxMy45MjI1IDExLjQ1MDIgMTMuNzg3QzExLjQ1MDIgMTMuNzgzOSAxMS40NTE5IDEzLjc4MDkgMTEuNDUyMiAxMy43Nzc3TDExLjExMDUgOS4zOTgxQzExLjExMDUgOS4yNjI2OSAxMS41MDg3IDkuMTUyOSAxMiA5LjE1MjlDMTIuNDkxMyA5LjE1MjkgMTIuODg5NSA5LjI2MjY5IDEyLjg4OTUgOS4zOTgxTDEyLjU0NzggMTMuNzc3N1oiIGZpbGw9IiNGMDRFMjMiLz4KICAgIDxyZWN0IHg9IjAuNSIgeT0iMC41IiB3aWR0aD0iMjMiIGhlaWdodD0iMjMiIHJ4PSIxMS41IiBzdHJva2U9IiNGMDRFMjMiLz4KPC9zdmc+Cg==");
   background-repeat: no-repeat;
   background-position: center;
+  user-select: none;
 }
 .folia-annotation.CommentAnnotation.error::after {
   content: "";
@@ -188,7 +246,7 @@ body {
   border-radius: 50% 50% 50% 0;
   border: solid 2px #e2e8f0;
   box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.1);
-  cursor: auto;
+  cursor: pointer;
 
   display: flex;
   align-items: center;

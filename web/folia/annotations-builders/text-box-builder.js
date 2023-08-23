@@ -1,7 +1,7 @@
 import { toPdfRect } from "../folia-util";
 import BaseBuilder from "./base-builder";
 import { ANNOTATION_TYPES, FONT_FAMILY, FONT_WEIGHT, TEXT_ALIGNMENT } from "../constants";
-import { doc } from "prettier";
+import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 
 class TextBoxBuilder extends BaseBuilder {
   defaultPreset = { color: "#000000", lineWidth: 5, singleCreating: false };
@@ -9,9 +9,9 @@ class TextBoxBuilder extends BaseBuilder {
   mouseIsMove = false;
   text = "";
   rect = [];
+  rectIsCustom = false;
 
-  static MIN_WIDTH = 250;
-  static MIN_HEIGHT = 150;
+  static placeholderText = "Type something";
 
   constructor(...props) {
     super(...props);
@@ -21,6 +21,7 @@ class TextBoxBuilder extends BaseBuilder {
     if (!this.builderContainer) {
       this.builderContainer = document.createElement("div");
       this.builderContainer.className = "annotation-builder-container";
+      this.builderContainer.setAttribute("data-role", FOLIA_LAYER_ROLES.FOLIA_BUILDER);
       this.builderContainer.style.position = "absolute";
       this.builderContainer.style.left = "0px";
       this.builderContainer.style.top = "0px";
@@ -29,18 +30,22 @@ class TextBoxBuilder extends BaseBuilder {
       this.builderContainer.onmousedown = this.onMouseDown.bind(this);
       this.builderContainer.onmousemove = this.onMouseMove.bind(this);
       this.builderContainer.onmouseup = this.onMouseUp.bind(this);
+      // console.log();
     }
     this.foliaPageLayer.pageDiv.appendChild(this.builderContainer);
+    this.calculateMinTextHeight(TextBoxBuilder.placeholderText);
   }
 
   prepareAnnotations2save() {
     if (!this.text) return [];
-    this.rect[2] = this.textArea.clientWidth;
-    this.rect[3] = this.textArea.clientHeight;
+    this.rect[0] += 2;
+    this.rect[1] += 2;
+    this.rect[2] = this.editor.clientWidth;
+    this.rect[3] = this.editor.clientHeight;
     return [
       {
         __typename: ANNOTATION_TYPES.TEXT_BOX,
-        text: this.textArea.value,
+        text: this.editor.innerText,
         color: this.preset.color,
         fontFamily: this.preset.fontFamily || FONT_FAMILY.MONOSPACE,
         fontSize: this.preset.fontSize,
@@ -52,9 +57,7 @@ class TextBoxBuilder extends BaseBuilder {
   }
 
   stop() {
-    if (this.textArea) {
-      this.text = this.textArea.value;
-    }
+    if (this.editor) this.text = this.editor.innerText;
     super.stop();
   }
 
@@ -65,112 +68,103 @@ class TextBoxBuilder extends BaseBuilder {
       this.preset[propName] = preset[propName];
     }
 
-    if (!this.textArea) return;
-    this.textArea.style.color = this.preset.color;
-    this.textArea.style.fontFamily = FONT_FAMILY[this.preset.fontFamily];
+    if (!this.editor) return;
+    this.editor.style.setProperty("--annotation-color", this.preset.color);
+    this.editor.style.color = this.preset.color;
+    this.editor.style.fontFamily = FONT_FAMILY[this.preset.fontFamily];
     const fontSize = this.preset.fontSize * this.viewport.scale;
-    this.textArea.style.fontSize = `${fontSize}px`;
-    this.textArea.style.fontWeight = FONT_WEIGHT[this.preset.fontWeight];
-    this.textArea.style.textAlign = TEXT_ALIGNMENT[this.preset.textAlignment];
+    this.editor.style.fontSize = `${fontSize}px`;
+    this.editor.style.fontWeight = FONT_WEIGHT[this.preset.fontWeight];
+    this.editor.style.textAlign = TEXT_ALIGNMENT[this.preset.textAlignment];
 
-    this.calculateMinTextHeight();
+    this.calculateMinTextHeight(TextBoxBuilder.placeholderText);
   }
 
-  calculateMinTextHeight() {
+  calculateMinTextHeight(text) {
     const fontSize = this.preset.fontSize * this.viewport.scale;
-    const textArea = document.createElement("textarea");
-    textArea.rows = 1;
-    textArea.style.border = " dashed 5px silver";
-    textArea.style.overflow = "hidden";
-    textArea.rows = 1;
-    textArea.style.outline = "none";
-    textArea.style.visibility = "hidden";
-    textArea.style.fontFamily = FONT_FAMILY[this.preset.fontFamily];
-    textArea.style.fontSize = `${fontSize}px`;
-    textArea.style.fontWeight = FONT_WEIGHT[this.preset.fontWeight];
-    textArea.style.height = "1em";
-    this.builderContainer.appendChild(textArea);
-    TextBoxBuilder.MIN_HEIGHT = textArea.getBoundingClientRect().height;
+    const fontFamily = FONT_FAMILY[this.preset.fontFamily];
+    const fontWeight = FONT_WEIGHT[this.preset.fontWeight];
+
+    const canvas = document.createElement("canvas");
+    canvas.width = this.builderContainer.clientWidth;
+    canvas.height = this.builderContainer.clientHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    const textRect = ctx.measureText(text);
+    this.minWidth = textRect.width + 8;
+    this.minHeight = textRect.fontBoundingBoxAscent + textRect.fontBoundingBoxDescent;
+    // console.log("textRect", this.preset.fontSize, this.minWidth, textRect);
   }
 
   adjustHeight() {
-    if (!this.textArea) return;
+    if (!this.editor) return;
     if (this.heightIsCustom) return;
-    this.textArea.style.height = "auto";
-    const height = Math.max(this.textArea.scrollHeight, TextBoxBuilder.MIN_HEIGHT);
-    this.textArea.style.height = height + "px";
+    this.editor.style.height = "auto";
+    const height = Math.max(this.editor.scrollHeight, this.minHeight);
+    this.editor.style.height = height + "px";
+    this.rect[3] = height;
+    // console.log("adjustHeight", height + "px");
   }
 
-  addTextArea() {
-    this.textArea = document.createElement("textarea");
-    this.textArea.placeholder = "Type something";
-    if (this.text) this.textArea.value = this.text;
-    this.textArea.style.border = "dashed 2px silver";
-    this.textArea.style.overflow = "hidden";
-    this.textArea.rows = 1;
-    this.textArea.style.outline = "none";
-    this.textArea.style.background = "transparent";
-    this.textArea.style.resize = "none";
-    this.textArea.oninput = () => this.adjustHeight();
-    this.textArea.style.position = "absolute";
+  createEditor() {
+    if (this.editor) return;
+    const width = Math.max(Math.abs(this.stopPoint.x - this.startPoint.x), this.minWidth);
+    const height = Math.max(Math.abs(this.stopPoint.y - this.startPoint.y), this.minHeight);
+    const left = Math.min(this.startPoint.x, this.stopPoint.x);
+    const right = Math.min(this.startPoint.y, this.stopPoint.y);
+    const leftCorrection = Math.max(0, left + width - (this.builderContainer.clientWidth - 10));
+    this.rect = [left - leftCorrection, right, width, height];
 
-    const width = Math.abs(this.stopPoint.x - this.startPoint.x);
-    const height = Math.abs(this.stopPoint.y - this.startPoint.y);
-    this.rect = [
-      Math.min(this.startPoint.x, this.stopPoint.x),
-      Math.min(this.startPoint.y, this.stopPoint.y),
-      Math.max(width, TextBoxBuilder.MIN_WIDTH),
-      Math.max(height, TextBoxBuilder.MIN_HEIGHT),
-    ];
+    this.editor = document.createElement("div");
+    this.editor.setAttribute("contenteditable", "");
+    this.editor.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_EDITOR);
+    this.editor.className = "text-box-editor";
+    this.editor.setAttribute("text-box-placeholder", TextBoxBuilder.placeholderText);
+    // if (this.text) this.editor.innerText = this.text;
+    this.editor.oninput = () => this.adjustHeight();
 
-    this.textArea.style.left = this.rect[0] + "px";
-    this.textArea.style.top = this.rect[1] + "px";
-    this.textArea.style.width = Math.max(TextBoxBuilder.MIN_WIDTH, this.rect[2]) + "px";
-    if (height <= TextBoxBuilder.MIN_HEIGHT) {
-      this.heightIsCustom = false;
-      this.textArea.style.height = "auto";
-    } else {
-      this.heightIsCustom = true;
-      this.textArea.style.height = `${height}px`;
-    }
+    this.editor.style.left = this.rect[0] + "px";
+    this.editor.style.top = this.rect[1] + "px";
+    this.editor.style.width = this.rect[2] + "px";
+    // this.editor.style.height = this.rect[3] + "px";
 
     this.applyPreset();
-    this.builderContainer.appendChild(this.textArea);
-    setTimeout(() => this.textArea.focus(), 10);
+    this.builderContainer.appendChild(this.editor);
+    setTimeout(() => {
+      this.adjustHeight();
+      this.editor.focus();
+    }, 10);
   }
 
   onMouseDown(e) {
-    if (this.textArea) return;
-    e.preventDefault();
     e.stopPropagation();
+    if (this.editor || e.target.dataset["role"] === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
+      return;
+    }
     this.mouseIsDown = true;
     this.startPoint = this.getRelativePoint(e);
   }
 
   onMouseMove(e) {
-    if (!this.mouseIsDown) return;
-    e.preventDefault();
     e.stopPropagation();
-    this.mouseIsMove = true;
+    if (this.editor || e.target.dataset["role"] === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
+      return;
+    }
+    if (!this.mouseIsDown) return;
+    this.rectIsCustom = true;
     this.stopPoint = this.getRelativePoint(e);
     requestAnimationFrame(() => this.draw());
   }
 
   onMouseUp(e) {
-    if (this.textArea && e.target.tagName === "TEXTAREA") return;
-    if (this.textArea) {
-      this.text = this.textArea.value;
-      this.foliaPageLayer.eventBus.dispatch("stop-drawing");
-      return;
+    e.stopPropagation();
+    if (this.editor && e.target.dataset["role"] === FOLIA_LAYER_ROLES.FOLIA_BUILDER) {
+      return this.foliaPageLayer.eventBus.dispatch("stop-drawing");
     }
 
-    e.preventDefault();
-    e.stopPropagation();
     this.mouseIsDown = false;
-    this.mouseIsMove = false;
-
     this.stopPoint = this.getRelativePoint(e);
-    this.addTextArea();
+    this.createEditor();
     requestAnimationFrame(() => (this.builderContainer.style.backgroundImage = ""));
   }
 
@@ -189,7 +183,7 @@ class TextBoxBuilder extends BaseBuilder {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.beginPath();
-    ctx.strokeStyle = "#999999";
+    ctx.strokeStyle = "silver";
     ctx.lineWidth = 1 * this.viewport.scale;
     ctx.setLineDash([2, 2]);
     ctx.strokeRect(...this.rect);
