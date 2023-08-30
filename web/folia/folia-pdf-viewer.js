@@ -29,6 +29,7 @@ import "./css/folia.css";
 import { UndoRedo } from "./undo-redo";
 import ObjectEraser from "./annotations-builders/object-eraser";
 import CommentBuilder from "./annotations-builders/comment-builder";
+import StampsBuilder from "./annotations-builders/stamps-builder";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -545,15 +546,18 @@ export class FoliaPDFViewer {
     } else if (toolType === TOOLS.COMMENT) {
       const BuilderClass = CommentBuilder;
       this.continueStartDrawing(BuilderClass, {});
+    } else if (toolType === TOOLS.STAMPS) {
+      const BuilderClass = StampsBuilder;
+      this.continueStartDrawing(BuilderClass, preset.stamp, preset.preview);
     } else {
-      console.warn(`${toolType} does not exist yet`);
+      console.log(`${toolType} does not exist yet`);
     }
   }
   continueStartDrawing(BuilderClass, preset, asset) {
-    // console.log("continueStartDrawing 1", { BuilderClass, preset, asset });
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
     this.pdfViewer.annotationBuilderClass = BuilderClass;
+    console.log("continueStartDrawing 1", { BuilderClass, preset, asset });
 
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;

@@ -206,7 +206,7 @@ class FoliaPageLayer {
   updateToolDrawingProperties(preset) {
     this.annotationBuilder.applyPreset(preset);
   }
-  stopDrawing(payload) {
+  stopDrawing() {
     if (!this.annotationBuilder) return;
     this.annotationBuilder.stop();
     this.annotationBuilder = null;

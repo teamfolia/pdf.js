@@ -4,7 +4,6 @@ import { UndoRedo } from "../undo-redo";
 import { ANNOTATION_TYPES } from "../constants";
 
 class BaseBuilder {
-  viewport;
   pageDiv;
   pageNumber;
 

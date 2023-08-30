@@ -61,19 +61,14 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
   }
 
   generateSquareImage() {
-    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const canvas = document.createElement("canvas");
-    canvas.width = this.annotationDIV.clientWidth;
-    canvas.height = this.annotationDIV.clientHeight;
+    canvas.width = this.annotationDIV.clientWidth * window.devicePixelRatio;
+    canvas.height = this.annotationDIV.clientHeight * window.devicePixelRatio;
     const ctx = canvas.getContext("2d");
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
     ctx.lineWidth = lineWidth;
-    ctx.strokeRect(
-      lineWidth / 2,
-      lineWidth / 2,
-      this.annotationDIV.clientWidth - lineWidth,
-      this.annotationDIV.clientHeight - lineWidth
-    );
+    ctx.strokeRect(lineWidth / 2, lineWidth / 2, canvas.width - lineWidth, canvas.height - lineWidth);
     return canvas.toDataURL("png");
   }
 }

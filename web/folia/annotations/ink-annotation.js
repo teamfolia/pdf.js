@@ -1,5 +1,4 @@
 import { ANNOTATION_TYPES } from "../constants";
-import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import { hexColor2RGBA, fromPdfPoint, toPdfPath, fromPdfPath } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";
 
@@ -13,18 +12,16 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     this.buildBaseCorners();
   }
   getRawData() {
-    const { id, addedAt, deletedAt, collaboratorEmail, page, paths, color, lineWidth } =
-      this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.INK,
-      id,
-      addedAt: this.isDirty || addedAt,
-      deletedAt,
-      collaboratorEmail,
-      page,
-      color,
-      lineWidth,
-      paths,
+      id: this.annotationRawData.id,
+      addedAt: this.isDirty || this.annotationRawData.addedAt,
+      deletedAt: this.annotationRawData.deletedAt,
+      collaboratorEmail: this.annotationRawData.collaboratorEmail,
+      page: this.annotationRawData.page,
+      color: this.annotationRawData.color,
+      lineWidth: this.annotationRawData.lineWidth,
+      paths: this.annotationRawData.paths,
     };
   }
 

@@ -20,8 +20,10 @@ class SquareBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
       this.canvas.className = "annotation-builder-container";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight;
+      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
+      this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
+      this.canvas.style.height = this.foliaPageLayer.pageDiv.clientHeight + "px";
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
@@ -116,14 +118,22 @@ class SquareBuilder extends BaseBuilder {
 
   draw() {
     const ctx = this.canvas.getContext("2d");
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // ctx.clearRect(
+    //   0,`¡
+    //   0,
+    //   this.canvas.width * window.devicePixelRatio,
+    //   this.canvas.height * window.devicePixelRatio
+    // );
+    this.canvas.width = this.canvas.width;
+    this.canvas.height = this.canvas.height;
+
     this.squares.forEach((square) => {
-      const lineWidth = square.lineWidth * this.viewport.scale;
+      const lineWidth = square.lineWidth * this.viewport.scale * window.devicePixelRatio;
       ctx.save();
       ctx.beginPath();
       ctx.strokeStyle = hexColor2RGBA(square.color);
       ctx.lineWidth = lineWidth;
-      ctx.strokeRect(...square.rect);
+      ctx.strokeRect(...square.rect.map((side) => side * window.devicePixelRatio));
       ctx.closePath();
       ctx.restore();
     });

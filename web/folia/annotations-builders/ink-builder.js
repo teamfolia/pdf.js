@@ -162,7 +162,7 @@ class InkBuilder extends BaseBuilder {
     }
     ctx.lineTo(p1.x, p1.y);
     ctx.stroke();
-    // ctx.closePath();
+    ctx.closePath();
   }
 
   drawAll() {
@@ -175,6 +175,7 @@ class InkBuilder extends BaseBuilder {
       this.drawSegment(color, lineWidth, path);
     });
     if (this.drawingPath) {
+      console.log("PATH", this.drawingPath);
       this.drawSegment(this.preset.color, this.preset.lineWidth, this.simplifyPath(this.drawingPath.path));
     }
   }

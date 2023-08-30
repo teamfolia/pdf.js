@@ -38,8 +38,8 @@ class TextBoxBuilder extends BaseBuilder {
 
   prepareAnnotations2save() {
     if (!this.text) return [];
-    this.rect[0] += 2;
-    this.rect[1] += 2;
+    this.rect[0] -= 1;
+    this.rect[1] -= 1;
     this.rect[2] = this.editor.clientWidth;
     this.rect[3] = this.editor.clientHeight;
     return [
@@ -69,14 +69,13 @@ class TextBoxBuilder extends BaseBuilder {
     }
 
     if (!this.editor) return;
-    this.editor.style.setProperty("--annotation-color", this.preset.color);
+    const fontSize = this.preset.fontSize * this.viewport.scale;
     this.editor.style.color = this.preset.color;
     this.editor.style.fontFamily = FONT_FAMILY[this.preset.fontFamily];
-    const fontSize = this.preset.fontSize * this.viewport.scale;
     this.editor.style.fontSize = `${fontSize}px`;
     this.editor.style.fontWeight = FONT_WEIGHT[this.preset.fontWeight];
     this.editor.style.textAlign = TEXT_ALIGNMENT[this.preset.textAlignment];
-
+    // this.editor.style.setProperty("--annotation-color", this.preset.color);
     this.calculateMinTextHeight(TextBoxBuilder.placeholderText);
   }
 
@@ -91,7 +90,7 @@ class TextBoxBuilder extends BaseBuilder {
     const ctx = canvas.getContext("2d");
     ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
     const textRect = ctx.measureText(text);
-    this.minWidth = textRect.width + 8;
+    this.minWidth = textRect.width * 1.5;
     this.minHeight = textRect.fontBoundingBoxAscent + textRect.fontBoundingBoxDescent;
     // console.log("textRect", this.preset.fontSize, this.minWidth, textRect);
   }

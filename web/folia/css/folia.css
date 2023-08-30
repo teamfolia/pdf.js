@@ -41,8 +41,9 @@ body {
   background-repeat: no-repeat;
   background-position: center;
   background-size: 100% 100%;
-  --annotation-border-color: silver;
+  --annotation-border-color: #2990ff;
   --line-width: 0px;
+  border: solid 1px transparent;
 }
 
 .folia-annotation.no-permission {
@@ -57,22 +58,15 @@ body {
   z-index: 1000;
 }
 
-.folia-annotation.selected:not(.TextBoxAnnotation):not(.CommentAnnotation):not(.ArrowAnnotation)::before {
+.folia-annotation.selected:not(.CommentAnnotation):not(.ArrowAnnotation)::before {
   display: block;
   content: "";
-  border: dashed 2px var(--annotation-border-color);
+  border: solid 1px var(--annotation-border-color);
   position: absolute;
-  left: -3px;
-  top: -3px;
-  right: -3px;
-  bottom: -3px;
-}
-
-.folia-annotation.TextBoxAnnotation {
-  border: dashed 2px transparent;
-}
-.folia-annotation.TextBoxAnnotation.selected {
-  border: dashed 2px var(--annotation-border-color);
+  left: -6px;
+  top: -4px;
+  right: -6px;
+  bottom: -4px;
 }
 
 .folia-annotation.ArrowAnnotation {
@@ -95,11 +89,14 @@ body {
 
 .folia-annotation.ArrowAnnotation.selected::before {
   box-sizing: content-box;
-  border: dashed 2px var(--annotation-border-color);
+  border: solid 1px var(--annotation-border-color);
+}
+
+.folia-annotation.TextBoxAnnotation {
 }
 
 .folia-annotation.TextBoxAnnotation.selected {
-  border: dashed 2px var(--annotation-border-color);
+  /* border: solid 1px var(--annotation-border-color); */
 }
 
 .TextBoxAnnotation > .text-box {
@@ -108,12 +105,15 @@ body {
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow: hidden;
-  --annotation-color: gray;
+  /* background-color: rgba(0, 255, 255, 0.14); */
+  line-height: 140%;
+  /* --annotation-color: #2990ff; */
 }
 
 .TextBoxAnnotation > .text-box:empty::after {
   content: attr(text-box-placeholder);
-  color: var(--annotation-color);
+  /* color: var(--annotation-color); */
+  color: #0f172a;
   opacity: 0.5;
 }
 
@@ -123,20 +123,6 @@ body {
 
 .text-box[data-role="annotation-editor"] {
   cursor: text !important;
-}
-
-.typewriter {
-  resize: none;
-  background-color: transparent;
-  cursor: move;
-  outline: none;
-  border: none;
-  overflow: hidden;
-}
-
-.typewriter:focus {
-  background-color: white;
-  cursor: text;
 }
 
 .image-stamp {
@@ -149,9 +135,30 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-size: 24px !important;
-  border: dashed 1px silver !important;
+  border: solid 1px var(--annotation-border-color) !important;
 }
 
+/* .typewriter {
+  resize: none;
+  background-color: transparent;
+  cursor: move;
+  outline: none;
+  border: none;
+  overflow: hidden;
+}
+.typewriter:focus {
+  background-color: white;
+  cursor: text;
+}
+
+.arrow-begin {
+  cursor: move !important;
+}
+
+.arrow-end {
+  cursor: move !important;
+}
+*/
 /* @import url("./comments/conversation.scss"); */
 
 .corner-div {
@@ -174,33 +181,24 @@ body {
   cursor: move;
 }
 
-.arrow-begin {
-  cursor: move !important;
-}
-
-.arrow-end {
-  cursor: move !important;
-  /* background-color: blue; */
-}
-
 .corner-lt {
-  left: -6px;
-  top: -6px;
+  left: -10px;
+  top: -9px;
   cursor: nwse-resize;
 }
 .corner-rt {
-  right: -6px;
-  top: -6px;
+  right: -10px;
+  top: -9px;
   cursor: nesw-resize;
 }
 .corner-lb {
-  left: -6px;
-  bottom: -6px;
+  left: -10px;
+  bottom: -9px;
   cursor: nesw-resize;
 }
 .corner-rb {
-  right: -6px;
-  bottom: -6px;
+  right: -10px;
+  bottom: -9px;
   cursor: nwse-resize;
 }
 

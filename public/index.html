@@ -99,6 +99,15 @@ See https://github.com/adobe-type-tools/cmap-resources
         background-color: rgb(255, 255, 95);
       }
 
+      .tool-button#STAMPS-tool {
+        width: 28px;
+        height: 28px;
+        background-image: url("data:image/svg+xml, %3Csvg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16 33H32V35H16V33Z' fill='%2364748B' /%3E%3Cpath d='M34 31H14V29H34V31Z' fill='%2364748B' /%3E%3Cpath d='M27.4297 27H20.5715C21.5328 27 22.2861 26.1427 22.2861 25.0484V24.7068C22.2861 23.1385 21.7705 21.5558 20.7536 20.0027C20.2606 19.25 20 18.3593 20 17.4274C20 14.6758 22.2449 12.5706 24.7478 13.075C26.3442 13.3967 27.6209 14.8191 27.9238 16.5481C28.1585 17.8858 27.845 19.2398 27.0635 20.2629C26.1941 21.4015 25.7151 23.0288 25.7151 24.8455V25.1023C25.7151 26.1486 26.4844 27 27.4297 27Z' fill='%2364748B' /%3E%3C/svg%3E%0A");
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 28px;
+      }
+
       .viewer-container {
         flex-grow: 1;
         /* border: solid 5px red; */
@@ -440,6 +449,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             />
           </svg>
         </button>
+        <button id="STAMPS-tool" class="tool-button"></button>
         <span class="tool-divider">•</span>
         <input type="color" id="preset-color" class="preset-button" />
         <input type="range" id="preset-width" min="1" max="20" aria-haspopup="true" class="preset-button" />
@@ -514,6 +524,5 @@ See https://github.com/adobe-type-tools/cmap-resources
         <span id="currentPage">0</span>&nbsp;/&nbsp;<span id="totalPages">0</span>
       </div>
     </div>
-    <p style="font-family: Lora, sans-serif">Lora</p>
   </body>
 </html>

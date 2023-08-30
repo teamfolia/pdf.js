@@ -11,21 +11,37 @@
   cursor: text;
 }
 
+.annotation-builder-container.stamps-builder {
+  cursor: crosshair;
+}
+
 .text-box-editor {
   position: absolute;
   margin: 0;
-  padding: 2px;
   outline: none;
   resize: none;
-  border: dashed 2px silver;
-  --annotation-color: gray;
+  line-height: 140%;
+  --annotation-border-color: #2990ff;
+  /* --annotation-placeholder-color: gray; */
+}
+
+.text-box-editor::before {
+  display: block;
+  content: "";
+  border: solid 1px var(--annotation-border-color);
+  position: absolute;
+  left: -6px;
+  top: -4px;
+  right: -6px;
+  bottom: -4px;
 }
 
 .text-box-editor:empty::after {
   content: attr(text-box-placeholder);
-  color: var(--annotation-color);
+  /* color: var(--annotation-placeholder-color); */
+  color: #0f172a;
   opacity: 0.5;
 }
 .high-lighted-anno {
-  border: dashed 2px gray;
+  border: solid 1px #2990ff;
 }
