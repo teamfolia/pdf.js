@@ -29,12 +29,23 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       this.adjustHeight();
       this.markAsChanged();
     };
+    this.editorEl.onpaste = (e) => {
+      e.preventDefault();
+      e.target.innerText = e.clipboardData.getData("text/plain");
+      this.adjustHeight();
+      this.markAsChanged();
+    };
 
     this.annotationDIV.appendChild(this.editorEl);
     this.buildBaseCorners();
     this.calculateMinTextHeight(FoliaTextBoxAnnotation.placeholderText);
+    this.adjustHeight();
+  }
 
-    this.updateRects();
+  stopPropagationEvent(e) {
+    // console.log(e.type);
+    // e.preventDefault();
+    // e.stopPropagation();
   }
 
   onKeyDown(e) {
@@ -46,13 +57,26 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
 
     this.editorEl.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_EDITOR);
     this.editorEl.toggleAttribute("contenteditable", true);
+    this.editorEl.addEventListener("mousedown", this.stopPropagationEvent, true);
+    this.editorEl.addEventListener("mousemove", this.stopPropagationEvent, true);
+    this.editorEl.addEventListener("mouseup", this.stopPropagationEvent, true);
     this.editorEl.addEventListener("keydown", this.onKeyDownBinded, true);
 
     this.prevState = this.getRawData();
     this.editorEl.focus();
   }
 
+  handleOnPast(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    // console.log("{ pastedData }");
+    // const pastedData = (e.clipboardData || window.clipboardData).getData("Text");
+  }
+
   stopEditMode() {
+    this.editorEl.removeEventListener("mousedown", this.stopPropagationEvent, true);
+    this.editorEl.removeEventListener("mousemove", this.stopPropagationEvent, true);
+    this.editorEl.removeEventListener("mouseup", this.stopPropagationEvent, true);
     this.editorEl.removeEventListener("keydown", this.onKeyDownBinded, true);
 
     this.editorEl.toggleAttribute("contenteditable", false);
@@ -132,13 +156,13 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
     this.editorEl.style.width = `${this.annotationDIV.clientWidth}px`;
     this.editorEl.style.height = `${this.annotationDIV.clientHeight}px`;
 
-    this.editorEl.style.setProperty("--annotation-color", hexColor2RGBA(this.annotationRawData.color));
     this.editorEl.style.color = hexColor2RGBA(this.annotationRawData.color);
     const fontSize = this.annotationRawData.fontSize * this.viewport.scale;
     this.editorEl.style.fontSize = `${fontSize}px`;
     this.editorEl.style.textAlign = TEXT_ALIGNMENT[this.annotationRawData.textAlignment];
     this.editorEl.style.fontWeight = FONT_WEIGHT[this.annotationRawData.fontWeight];
     this.editorEl.style.fontFamily = FONT_FAMILY[this.annotationRawData.fontFamily];
+    this.editorEl.style.lineHeight = "140%";
     this.adjustHeight();
   }
 

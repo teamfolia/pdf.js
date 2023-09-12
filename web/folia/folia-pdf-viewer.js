@@ -557,7 +557,7 @@ export class FoliaPDFViewer {
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
     this.pdfViewer.annotationBuilderClass = BuilderClass;
-    console.log("continueStartDrawing 1", { BuilderClass, preset, asset });
+    // console.log("continueStartDrawing 1", { BuilderClass, preset, asset });
 
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;

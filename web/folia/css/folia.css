@@ -43,7 +43,8 @@ body {
   background-size: 100% 100%;
   --annotation-border-color: #2990ff;
   --line-width: 0px;
-  border: solid 1px transparent;
+  /* border: solid 1px transparent; */
+  /* background-color: rgba(0, 0, 0, 1); */
 }
 
 .folia-annotation.no-permission {
@@ -67,6 +68,7 @@ body {
   top: -4px;
   right: -6px;
   bottom: -4px;
+  z-index: -1;
 }
 
 .folia-annotation.ArrowAnnotation {
@@ -92,27 +94,19 @@ body {
   border: solid 1px var(--annotation-border-color);
 }
 
-.folia-annotation.TextBoxAnnotation {
-}
-
-.folia-annotation.TextBoxAnnotation.selected {
-  /* border: solid 1px var(--annotation-border-color); */
-}
-
-.TextBoxAnnotation > .text-box {
+.folia-annotation.TextBoxAnnotation > .text-box {
   outline: none;
   border: none;
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow: hidden;
-  /* background-color: rgba(0, 255, 255, 0.14); */
-  line-height: 140%;
-  /* --annotation-color: #2990ff; */
+  /* background-color: rgba(255, 0, 255, 0.14); */
+  /* --annotation-placeholder-color: #2990ff; */
 }
 
 .TextBoxAnnotation > .text-box:empty::after {
   content: attr(text-box-placeholder);
-  /* color: var(--annotation-color); */
+  /* color: var(--annotation-placeholder-color); */
   color: #0f172a;
   opacity: 0.5;
 }
@@ -138,35 +132,14 @@ body {
   border: solid 1px var(--annotation-border-color) !important;
 }
 
-/* .typewriter {
-  resize: none;
-  background-color: transparent;
-  cursor: move;
-  outline: none;
-  border: none;
-  overflow: hidden;
-}
-.typewriter:focus {
-  background-color: white;
-  cursor: text;
-}
-
-.arrow-begin {
-  cursor: move !important;
-}
-
-.arrow-end {
-  cursor: move !important;
-}
-*/
-/* @import url("./comments/conversation.scss"); */
-
 .corner-div {
   display: none;
   position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 8px;
+  min-width: 6px;
+  max-width: 6px;
+  min-height: 6px;
+  max-height: 6px;
+  border-radius: 6px;
   background-color: rgba(255, 255, 255);
   border: solid 1px black;
   z-index: 2;
@@ -177,30 +150,51 @@ body {
   cursor: move;
 }
 .corner-end {
-  right: calc(var(--line-width) - 5px);
+  right: calc(var(--line-width) - 3px);
   cursor: move;
 }
 
-.corner-lt {
-  left: -10px;
-  top: -9px;
+.folia-annotation > .corner-lt {
+  left: -9px;
+  top: -7px;
   cursor: nwse-resize;
 }
-.corner-rt {
-  right: -10px;
-  top: -9px;
+.folia-annotation > .corner-rt {
+  right: -9px;
+  top: -7px;
   cursor: nesw-resize;
 }
-.corner-lb {
-  left: -10px;
-  bottom: -9px;
+.folia-annotation > .corner-lb {
+  left: -9px;
+  bottom: -7px;
   cursor: nesw-resize;
 }
-.corner-rb {
-  right: -10px;
-  bottom: -9px;
+.folia-annotation > .corner-rb {
+  right: -9px;
+  bottom: -7px;
   cursor: nwse-resize;
 }
+
+/* .folia-annotation.TextBoxAnnotation > .corner-lt {
+  left: -4px;
+  top: -4px;
+  cursor: nwse-resize;
+}
+.folia-annotation.TextBoxAnnotation > .corner-rt {
+  right: -4px;
+  top: -4px;
+  cursor: nesw-resize;
+}
+.folia-annotation.TextBoxAnnotation > .corner-lb {
+  left: -4px;
+  bottom: -4px;
+  cursor: nesw-resize;
+}
+.folia-annotation.TextBoxAnnotation > .corner-rb {
+  right: -4px;
+  bottom: -4px;
+  cursor: nwse-resize;
+} */
 
 .folia-annotation.InkAnnotation.error::after,
 .folia-annotation.CircleAnnotation.error::after,
@@ -230,7 +224,8 @@ body {
   bottom: -6px;
   width: 20px;
   height: 20px;
-  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M17.9087 14.9917L10.5836 2.33609C10.3243 1.88797 9.67578 1.88797 9.41637 2.33609L2.09131 14.9917C1.8319 15.4398 2.15612 16 2.67487 16H17.3251C17.8438 16 18.1681 15.4398 17.9087 14.9917ZM10.6573 14.2255C10.6573 14.309 10.363 14.3767 10.0001 14.3767C9.63696 14.3767 9.34265 14.309 9.34265 14.2255V13.1764C9.34265 13.0928 9.63696 13.0251 10.0001 13.0251C10.363 13.0251 10.6573 13.0929 10.6573 13.1764V14.2255ZM10.5478 11.7777C10.548 11.7808 10.5498 11.7838 10.5498 11.787C10.5498 11.9225 10.3036 12.0322 10 12.0322C9.69625 12.0322 9.45015 11.9225 9.45015 11.787C9.45015 11.7839 9.4519 11.7809 9.45221 11.7777L9.11046 7.3981C9.11046 7.26269 9.50871 7.1529 10 7.1529C10.4913 7.1529 10.8895 7.26269 10.8895 7.3981L10.5478 11.7777Z' fill='%23F04E23'/%3E%3C/svg%3E%0A");
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='8' y='6' width='3' height='9' fill='white'/%3E%3Cpath d='M17.9087 14.9917L10.5836 2.33609C10.3243 1.88797 9.67578 1.88797 9.41637 2.33609L2.09131 14.9917C1.8319 15.4398 2.15612 16 2.67487 16H17.3251C17.8438 16 18.1681 15.4398 17.9087 14.9917ZM10.6573 14.2255C10.6573 14.309 10.363 14.3767 10.0001 14.3767C9.63696 14.3767 9.34265 14.309 9.34265 14.2255V13.1764C9.34265 13.0928 9.63696 13.0251 10.0001 13.0251C10.363 13.0251 10.6573 13.0929 10.6573 13.1764V14.2255ZM10.5478 11.7777C10.548 11.7808 10.5498 11.7838 10.5498 11.787C10.5498 11.9225 10.3036 12.0322 10 12.0322C9.69625 12.0322 9.45015 11.9225 9.45015 11.787C9.45015 11.7839 9.4519 11.7809 9.45221 11.7777L9.11046 7.3981C9.11046 7.26269 9.50871 7.1529 10 7.1529C10.4913 7.1529 10.8895 7.26269 10.8895 7.3981L10.5478 11.7777Z' fill='%23F04E23' /%3E%3C/svg%3E");
+  /* background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M17.9087 14.9917L10.5836 2.33609C10.3243 1.88797 9.67578 1.88797 9.41637 2.33609L2.09131 14.9917C1.8319 15.4398 2.15612 16 2.67487 16H17.3251C17.8438 16 18.1681 15.4398 17.9087 14.9917ZM10.6573 14.2255C10.6573 14.309 10.363 14.3767 10.0001 14.3767C9.63696 14.3767 9.34265 14.309 9.34265 14.2255V13.1764C9.34265 13.0928 9.63696 13.0251 10.0001 13.0251C10.363 13.0251 10.6573 13.0929 10.6573 13.1764V14.2255ZM10.5478 11.7777C10.548 11.7808 10.5498 11.7838 10.5498 11.787C10.5498 11.9225 10.3036 12.0322 10 12.0322C9.69625 12.0322 9.45015 11.9225 9.45015 11.787C9.45015 11.7839 9.4519 11.7809 9.45221 11.7777L9.11046 7.3981C9.11046 7.26269 9.50871 7.1529 10 7.1529C10.4913 7.1529 10.8895 7.26269 10.8895 7.3981L10.5478 11.7777Z' fill='%23F04E23'/%3E%3C/svg%3E%0A"); */
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;

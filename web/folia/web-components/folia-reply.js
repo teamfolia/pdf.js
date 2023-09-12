@@ -31,7 +31,6 @@ class FoliaReply extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    // console.log("REPLY attributeChangedCallback", { name, oldValue, newValue });
     switch (name) {
       case "author": {
         const userName = this.shadowRoot.querySelector(".folia-reply-title-info-username");
@@ -64,8 +63,8 @@ class FoliaReply extends HTMLElement {
     optionEdit.addEventListener("click", this.editReplyBinded, true);
     optionDelete.addEventListener("click", this.deleteReplyBinded, true);
 
-    const editor = this.shadowRoot.querySelector(".folia-reply-text");
-    setTimeout(() => setTextAreaDynamicHeight(editor), 0);
+    const editor = this.shadowRoot.querySelector(".folia-reply-editor");
+    // setTimeout(() => setTextAreaDynamicHeight(editor), 0);
   }
 
   disconnectedCallback() {
@@ -87,11 +86,11 @@ class FoliaReply extends HTMLElement {
   }
 
   get text() {
-    return this.shadowRoot.querySelector(".folia-reply-text").innerHTML;
+    return this.shadowRoot.querySelector(".folia-reply-editor").innerText;
   }
 
   set text(text) {
-    this.shadowRoot.querySelector(".folia-reply-text").innerHTML = text;
+    this.shadowRoot.querySelector(".folia-reply-editor").innerText = text;
     this.#initialText = text;
   }
 
@@ -117,13 +116,9 @@ class FoliaReply extends HTMLElement {
     optionDelete.classList.toggle("disabled", !canDeleteStatus);
   }
 
-  set addedAt(date) {
-    // console.log("reply addedAt is", date);
-  }
+  set addedAt(date) {}
 
-  set editedStatus(status) {
-    // console.log("reply editedStatus is", status);
-  }
+  set editedStatus(status) {}
 
   get authorEmail() {
     return this.#authorEmail;
@@ -134,7 +129,6 @@ class FoliaReply extends HTMLElement {
   }
 
   #toggleMenuVisibility() {
-    // console.log("open Menu", this.id);
     const options = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-options");
     const optionsOverlay = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-options-overlay");
     options.classList.toggle("hidden");
@@ -144,7 +138,6 @@ class FoliaReply extends HTMLElement {
   optionsOverlayClick(e) {
     e.stopPropagation();
     e.preventDefault();
-    // console.log("Overlay Click", this.id);
     this.#toggleMenuVisibility();
   }
 
@@ -153,7 +146,7 @@ class FoliaReply extends HTMLElement {
     e.preventDefault();
     if (e.target.classList.contains("disabled")) return;
 
-    const editor = this.shadowRoot.querySelector(".folia-reply-text");
+    const editor = this.shadowRoot.querySelector(".folia-reply-editor");
     const buttonsBox = this.shadowRoot.querySelector(".folia-reply-message-buttons");
     const doneButton = this.shadowRoot.querySelector(".folia-reply-done");
     const cancelButton = this.shadowRoot.querySelector(".folia-reply-cancel");
@@ -162,29 +155,29 @@ class FoliaReply extends HTMLElement {
 
     cancelButton.onclick = (e) => {
       doneButton.toggleAttribute("disabled", true);
-      editor.value = this.#initialText;
+      editor.innerText = this.#initialText;
       window.getSelection().removeAllRanges();
-      setTextAreaDynamicHeight(editor);
-      editor.toggleAttribute("readonly", true);
+      // setTextAreaDynamicHeight(editor);
+      editor.toggleAttribute("contenteditable", false);
       buttonsBox.classList.toggle("hidden", true);
     };
 
     doneButton.onclick = (e) => {
       doneButton.toggleAttribute("disabled", true);
       buttonsBox.classList.toggle("hidden", true);
-      editor.toggleAttribute("readonly", true);
+      editor.toggleAttribute("contenteditable", false);
 
-      setTextAreaDynamicHeight(editor);
-      const text = editor.value;
+      // setTextAreaDynamicHeight(editor);
+      const text = editor.innerText;
       if (this.#initialText === text) return;
       if (typeof this.onChange === "function") this.onChange(this.id, text);
       this.#initialText = text;
     };
 
-    editor.toggleAttribute("readonly", false);
+    editor.toggleAttribute("contenteditable", true);
     editor.oninput = (e) => {
-      setTextAreaDynamicHeight(editor);
-      doneButton.toggleAttribute("disabled", editor.value.length === 0);
+      // setTextAreaDynamicHeight(editor);
+      doneButton.toggleAttribute("disabled", editor.innerText.length === 0);
     };
     editor.onkeydown = (e) => {
       if (!e.shiftKey && e.key === "Enter") {
@@ -195,11 +188,27 @@ class FoliaReply extends HTMLElement {
       }
     };
 
+    editor.onpaste = (e) => {
+      // Stop data actually being pasted into div
+      e.preventDefault();
+      // Get pasted data via clipboard API
+      const pastedText = (e.clipboardData || window.clipboardData).getData("text");
+      // Insert the value on cursor position
+      window.document.execCommand("insertText", false, pastedText);
+    };
+
     this.#toggleMenuVisibility();
     setTimeout(() => {
       setTextAreaDynamicHeight(editor);
       editor.focus();
-      editor.setSelectionRange(0, editor.value.length);
+
+      // editor.setSelectionRange(editor.innerText.length, editor.innerText.length);
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
     }, 100);
   }
 

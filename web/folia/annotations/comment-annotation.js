@@ -46,7 +46,7 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
 
   update(annotationRawData, viewport, force = false) {
     super.update(annotationRawData, viewport, force);
-    // console.log("afer update", this.annotationRawData);
+    console.log("afer update", this.annotationRawData);
     const commentEl = this.annotationDIV.querySelector("folia-comment");
     if (commentEl) {
       commentEl.initialComment = this.annotationRawData;

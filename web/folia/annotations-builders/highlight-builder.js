@@ -201,12 +201,12 @@ class HighlightBuilder extends BaseBuilder {
         ctx.fillStyle = hexColor2RGBA(color);
         ctx.globalCompositeOperation = "darken";
 
-        const lineWidth = 2 * this.foliaPageLayer.pdfViewerScale;
+        const lineWidth = 2 * this.viewport.scale;
         switch (this.kind) {
           case HighlightKind.CROSSLINE: {
             ctx.fillRect(
               left * pixelRatio,
-              (top + height / 2) * pixelRatio,
+              (top + height / 2 - lineWidth / 2) * pixelRatio,
               width * pixelRatio,
               lineWidth * pixelRatio
             );

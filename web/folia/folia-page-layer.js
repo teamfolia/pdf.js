@@ -92,6 +92,7 @@ class FoliaPageLayer {
     props.pageDiv.parentNode.addEventListener("mousedown", (e) => this.viewerMouseDown(e));
     props.pageDiv.parentNode.addEventListener("mousemove", (e) => this.viewerMouseMove(e));
     props.pageDiv.parentNode.addEventListener("mouseup", (e) => this.viewerMouseUp(e));
+    // console.log("FoliaLayer constructor");
   }
 
   viewerMouseDown(e) {
@@ -186,10 +187,14 @@ class FoliaPageLayer {
     } else if (this.isMouseMoved && role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
       // isMouseMoved
       this.multipleSelect.showFloatingBar();
-      const annoObject = this.annotationObjects.get(this.actionTarget.id);
-      if (annoObject) {
+      for (const annoObject of this.multipleSelect.getObjects()) {
         this.undoRedoManager.updatingObject(annoObject._startMoving.prevState, annoObject.getRawData());
+        this.commitObjectChanges(annoObject.getRawData());
       }
+      // const annoObject = this.annotationObjects.get(this.actionTarget.id);
+      // if (annoObject) {
+      //   this.undoRedoManager.updatingObject(annoObject._startMoving.prevState, annoObject.getRawData());
+      // }
     }
 
     // this.multipleSelect.checkForOutOfBounds(SAFE_MARGIN, this.actionTarget.role);
@@ -198,11 +203,11 @@ class FoliaPageLayer {
     this.actionTarget = {};
   }
 
-  startDrawing = (BuilderClass) => {
+  startDrawing(BuilderClass) {
     this.stopDrawing();
     this.annotationBuilderClass = BuilderClass;
     this.annotationBuilder = new BuilderClass(this, BuilderClass, this.undoRedoManager);
-  };
+  }
   updateToolDrawingProperties(preset) {
     this.annotationBuilder.applyPreset(preset);
   }
@@ -214,10 +219,11 @@ class FoliaPageLayer {
   }
 
   updateObjectsDrawingProperties(preset) {
-    for (const obj of this.multipleSelect.getObjects()) {
-      obj.editableProperties.set(preset);
+    for (const annoObject of this.multipleSelect.getObjects()) {
+      annoObject.editableProperties.set(preset);
+      this.commitObjectChanges(annoObject.getRawData());
     }
-    // return this.multipleSelect.updateObjectsDrawingProperties(preset);
+    // console.log("updateObjectsDrawingProperties");
   }
   makeSelectedAnnotation(id, scrollIntoView = false) {
     const obj = this.annotationObjects.get(id);
@@ -343,9 +349,12 @@ class FoliaPageLayer {
     this.render(this.viewport);
   }
   cancel() {
-    // console.log("FoliaPageLayer cancel ==>", this.pageNumber);
     this._cancelled = true;
     if (this.annotationBuilder) this.annotationBuilder.stop();
+    for (const annoObject of this.multipleSelect.getObjects()) {
+      // console.log("FoliaPageLayer cancel ==>", this.pageNumber);
+      if (annoObject.isDirty) this.commitObjectChanges(annoObject.getRawData());
+    }
   }
   hide() {
     console.log("FoliaPageLayer hide ==>", this.pageNumber);

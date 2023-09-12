@@ -32,7 +32,6 @@ class FoliaComment extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log("connectedCallback");
     this.className = "folia-comment";
 
     const deleteDialogOverlay = this.shadowRoot.querySelector(".folia-comment-dialog-overlay");
@@ -102,7 +101,6 @@ class FoliaComment extends HTMLElement {
     const conversationBox = this.shadowRoot.querySelector(".folia-commnet-conversation");
 
     for (const reply of sortedRepliesList) {
-      // console.log("setup reply", reply);
       let replyEl = this.shadowRoot.getElementById(reply.id);
       if (!replyEl) {
         const el = document.createElement("folia-reply");
@@ -126,17 +124,18 @@ class FoliaComment extends HTMLElement {
         );
       };
       replyEl.onChange = (id, text) => {
-        this.dispatchEvent(
-          new CustomEvent("submit-replay", {
-            detail: { id, text, edited: true },
-          })
-        );
+        this.dispatchEvent(new CustomEvent("submit-replay", { detail: { id, text, edited: true } }));
       };
     }
 
     this.#replies = repliesList.slice();
     this.#applyPermissions();
-    setTimeout(() => (conversationBox.scrollTop = conversationBox.scrollHeight), 0);
+    setTimeout(() => {
+      conversationBox.scrollTo({
+        top: conversationBox.scrollHeight,
+        behavior: "smooth",
+      });
+    }, 100);
   }
 
   setPermissions(permissions = [], userEmail, userRole) {
@@ -198,7 +197,10 @@ class FoliaComment extends HTMLElement {
 
     editor.value = "";
     setTextAreaDynamicHeight(editor);
-    conversationBox.scrollTop = conversationBox.scrollHeight;
+    conversationBox.scrollTo({
+      top: conversationBox.scrollHeight,
+      behavior: "smooth",
+    });
     sendReplyBtn.toggleAttribute("disabled", true);
   }
 

@@ -114,7 +114,7 @@ class StampsBuilder extends BaseBuilder {
         this.repositionArrowPoints(restData.sourcePoint, restData.targetPoint, restData.lineWidth)
       );
     }
-    console.log(annoData);
+    // console.log(annoData);
     return [annoData];
   }
 

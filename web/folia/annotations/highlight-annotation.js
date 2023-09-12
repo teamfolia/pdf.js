@@ -10,10 +10,8 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
-    this.image = document.createElement("img");
-    this.image.setAttribute("data-id", `${this.id}`);
-    this.image.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
-    this.annotationDIV.appendChild(this.image);
+    this.parentCanvas = this.foliaLayer.parentNode.querySelector("div.canvasWrapper>canvas");
+    this.parentCtx = this.parentCanvas && this.parentCanvas.getContext("2d");
   }
 
   getRawData() {
@@ -32,7 +30,73 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
       rects,
     };
   }
+
   render() {
+    const annotationBounds = this.annotationRawData.rects.reduce(
+      (acc, pdfRect) => {
+        const rect = fromPdfRect(pdfRect, this.viewport.width, this.viewport.height);
+        return {
+          left: Math.min(acc.left, rect[0]),
+          top: Math.min(acc.top, rect[1]),
+          right: Math.max(acc.right, rect[0] + rect[2]),
+          bottom: Math.max(acc.bottom, rect[1] + rect[3]),
+        };
+      },
+      { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
+    );
+
+    const { left, top, right, bottom } = annotationBounds;
+    const width = right - left;
+    const height = bottom - top;
+    this.annotationDIV.style.left = `${left}px`;
+    this.annotationDIV.style.top = `${top}px`;
+    this.annotationDIV.style.width = `${width}px`;
+    this.annotationDIV.style.height = `${height}px`;
+
+    const annotationCanvas = document.createElement("canvas");
+    annotationCanvas.width = this.parentCanvas.width;
+    annotationCanvas.height = this.parentCanvas.height;
+    annotationCanvas.setAttribute("data-id", `${this.id}`);
+    annotationCanvas.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+
+    annotationCanvas.style.position = "absolute";
+    annotationCanvas.style.left = "0px";
+    annotationCanvas.style.top = "0px";
+    annotationCanvas.style.width = `${this.parentCanvas.clientWidth}px`;
+    annotationCanvas.style.height = `${this.parentCanvas.clientHeight}px`;
+    const ctx = annotationCanvas.getContext("2d");
+    const lineWidth = 2 * this.viewport.scale * window.devicePixelRatio;
+    this.annotationRawData.rects.forEach((pdfRect) => {
+      const rect = fromPdfRect(pdfRect, this.viewport.width, this.viewport.height).map(
+        (item) => item * window.devicePixelRatio
+      );
+      if (rect[2] === 0 && rect[3] === 0) return;
+
+      ctx.fillStyle = hexColor2RGBA(this.annotationRawData.color);
+      if (this.annotationRawData.kind === HighlightKind.CROSSLINE) {
+        ctx.fillRect(rect[0], rect[1] + rect[3] / 2 - lineWidth / 2, rect[2], lineWidth);
+      } else if (this.annotationRawData.kind === HighlightKind.UNDERLINE) {
+        ctx.fillRect(rect[0], rect[1] + rect[3] - lineWidth, rect[2], lineWidth);
+      } else if (this.annotationRawData.kind === HighlightKind.MARKER) {
+        ctx.globalCompositeOperation = "darken";
+        const imageData = this.parentCtx.getImageData(...rect);
+        ctx.putImageData(imageData, rect[0], rect[1]);
+        ctx.fillRect(...rect);
+      }
+    });
+
+    const tmpCanvas = document.createElement("canvas");
+    tmpCanvas.width = width * window.devicePixelRatio;
+    tmpCanvas.height = height * window.devicePixelRatio;
+    const tmpCtx = tmpCanvas.getContext("2d");
+    const tmpImageData = ctx.getImageData(
+      ...[left, top, width, height].map((a) => a * window.devicePixelRatio)
+    );
+    tmpCtx.putImageData(tmpImageData, 0, 0);
+    this.annotationDIV.style.backgroundImage = `url(${tmpCanvas.toDataURL()})`;
+  }
+
+  _render() {
     try {
       const dimension = this.annotationRawData.rects.reduce(
         (acc, pdfRect) => {
@@ -55,16 +119,6 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
       this.image.width = dimension.right - dimension.left;
       this.image.height = dimension.bottom - dimension.top;
 
-      // console.log(!!this.image.src && !this.needToReRender);
-      clearTimeout(this.reRenderTImer);
-      if (!!this.image.src && !this.needToReRender) {
-        this.reRenderTImer = setTimeout(() => {
-          this.needToReRender = true;
-          this.render();
-        }, 500);
-        return;
-      }
-
       const pdfCanvas = this.foliaPageLayer.pageDiv.querySelector("div.canvasWrapper>canvas");
       const tmpCanvas = document.createElement("canvas");
       tmpCanvas.width = pdfCanvas.width;
@@ -74,10 +128,10 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
 
       this.annotationRawData.rects.forEach((areaPdfRect) => {
         const areaRect = fromPdfRect(areaPdfRect, this.viewport.width, this.viewport.height);
-        areaRect[0] = areaRect[0] * window.devicePixelRatio - 2;
-        areaRect[1] = areaRect[1] * window.devicePixelRatio - 2;
-        areaRect[2] = areaRect[2] * window.devicePixelRatio + 2;
-        areaRect[3] = areaRect[3] * window.devicePixelRatio + 2;
+        areaRect[0] = areaRect[0] * window.devicePixelRatio;
+        areaRect[1] = areaRect[1] * window.devicePixelRatio;
+        areaRect[2] = areaRect[2] * window.devicePixelRatio;
+        areaRect[3] = areaRect[3] * window.devicePixelRatio;
         // .map(
         //   (n) => n * window.devicePixelRatio + 1.5
         // );

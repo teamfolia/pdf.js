@@ -77,6 +77,11 @@ class TextBoxBuilder extends BaseBuilder {
     this.editor.style.textAlign = TEXT_ALIGNMENT[this.preset.textAlignment];
     // this.editor.style.setProperty("--annotation-color", this.preset.color);
     this.calculateMinTextHeight(TextBoxBuilder.placeholderText);
+    if (!this.editor.innerText) {
+      const width = Math.min(this.minWidth, this.builderContainer.clientWidth - this.rect[0] - 10);
+      this.editor.style.width = width + "px";
+    }
+    this.adjustHeight();
   }
 
   calculateMinTextHeight(text) {
@@ -121,6 +126,10 @@ class TextBoxBuilder extends BaseBuilder {
     this.editor.setAttribute("text-box-placeholder", TextBoxBuilder.placeholderText);
     // if (this.text) this.editor.innerText = this.text;
     this.editor.oninput = () => this.adjustHeight();
+    this.editor.onpaste = (e) => {
+      e.preventDefault();
+      e.target.innerText = e.clipboardData.getData("text/plain");
+    };
 
     this.editor.style.left = this.rect[0] + "px";
     this.editor.style.top = this.rect[1] + "px";

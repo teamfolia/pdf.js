@@ -196,11 +196,11 @@ export const foliaDateFormat = (isoDate) => {
 };
 
 export const setTextAreaDynamicHeight = (textArea) => {
-  if (!textArea) return;
-  textArea.style.height = "auto";
-  const textAreaStyles = window.getComputedStyle(textArea);
-  const paddingTop = parseInt(textAreaStyles.getPropertyValue("padding-top"), 10);
-  const paddingBottom = parseInt(textAreaStyles.getPropertyValue("padding-bottom"), 10);
-  const height = textArea.scrollHeight - paddingTop - paddingBottom;
-  textArea.style.height = height + "px";
+  // if (!textArea) return;
+  // textArea.style.height = "auto";
+  // const textAreaStyles = window.getComputedStyle(textArea);
+  // const paddingTop = parseInt(textAreaStyles.getPropertyValue("padding-top"), 10);
+  // const paddingBottom = parseInt(textAreaStyles.getPropertyValue("padding-bottom"), 10);
+  // const height = textArea.scrollHeight - paddingTop - paddingBottom;
+  // textArea.style.height = height + "px";
 };

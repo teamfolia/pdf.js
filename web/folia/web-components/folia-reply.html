@@ -33,7 +33,8 @@
   </button>
 </div>
 
-<textarea rows="1" class="folia-reply-text" readonly></textarea>
+<!-- <textarea rows="1" class="folia-reply-text-area" readonly></textarea> -->
+<div class="folia-reply-editor"></div>
 
 <div class="folia-reply-message-buttons hidden">
   <button class="folia-reply-done" disabled>✔︎</button>
@@ -211,7 +212,7 @@
     display: none;
   }
 
-  .folia-reply-text {
+  .folia-reply-text-area {
     flex-grow: 1;
     display: flex;
     align-items: center;
@@ -229,7 +230,32 @@
     user-select: none;
   }
 
-  .folia-reply-text:not([readonly]) {
+  .folia-reply-text-area:not([readonly]) {
+    border: solid 1px silver;
+    user-select: all;
+    background-color: #f1f5f9;
+  }
+
+  .folia-reply-editor {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    text-align: left;
+    color: #334155;
+    font-family: Inter, sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+    font-size: 14px;
+    padding: 6px 3px;
+    margin: 0;
+    outline: none;
+    resize: none;
+    border: none;
+    user-select: none;
+  }
+
+  .folia-reply-editor[contenteditable] {
     border: solid 1px silver;
     user-select: all;
     background-color: #f1f5f9;
