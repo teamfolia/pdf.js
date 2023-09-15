@@ -17,8 +17,10 @@ class ArrowBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
       this.canvas.className = "annotation-builder-container";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight;
+      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
+      this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
+      this.canvas.style.height = this.foliaPageLayer.pageDiv.clientHeight + "px";
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
@@ -193,7 +195,16 @@ class ArrowBuilder extends BaseBuilder {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = hexColor2RGBA(arrowData.color);
-    ctx.lineWidth = lineWidth;
+    ctx.lineWidth = lineWidth * window.devicePixelRatio;
+
+    sourceX *= window.devicePixelRatio;
+    sourceY *= window.devicePixelRatio;
+    targetX *= window.devicePixelRatio;
+    targetY *= window.devicePixelRatio;
+    arrowLeftCapX *= window.devicePixelRatio;
+    arrowLeftCapY *= window.devicePixelRatio;
+    arrowRightCapX *= window.devicePixelRatio;
+    arrowRightCapY *= window.devicePixelRatio;
 
     ctx.beginPath();
     ctx.moveTo(sourceX, sourceY);

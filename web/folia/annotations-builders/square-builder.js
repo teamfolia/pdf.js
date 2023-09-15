@@ -35,12 +35,7 @@ class SquareBuilder extends BaseBuilder {
   prepareAnnotations2save() {
     return this.squares.map(({ addedAt, color, lineWidth, rect }) => {
       const pdfRect = toPdfRect(
-        [
-          rect[0] - (lineWidth * this.viewport.scale) / 2,
-          rect[1] - (lineWidth * this.viewport.scale) / 2,
-          rect[2] + lineWidth * this.viewport.scale,
-          rect[3] + lineWidth * this.viewport.scale,
-        ],
+        [rect[0], rect[1], rect[2], rect[3]],
         this.viewport.width,
         this.viewport.height
       );
@@ -118,12 +113,6 @@ class SquareBuilder extends BaseBuilder {
 
   draw() {
     const ctx = this.canvas.getContext("2d");
-    // ctx.clearRect(
-    //   0,`¡
-    //   0,
-    //   this.canvas.width * window.devicePixelRatio,
-    //   this.canvas.height * window.devicePixelRatio
-    // );
     this.canvas.width = this.canvas.width;
     this.canvas.height = this.canvas.height;
 

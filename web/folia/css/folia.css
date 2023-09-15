@@ -33,8 +33,13 @@ body {
   bottom: 0;
 }
 
+.folia-annotation-canvas {
+  position: absolute;
+  inset: 0px;
+}
+
 .folia-annotation {
-  box-sizing: content-box;
+  box-sizing: border-box;
   position: absolute;
   cursor: grab;
   background-repeat: no-repeat;
@@ -65,9 +70,9 @@ body {
   border: solid 1px var(--annotation-border-color);
   position: absolute;
   left: -6px;
-  top: -4px;
+  top: -6px;
   right: -6px;
-  bottom: -4px;
+  bottom: -6px;
   z-index: -1;
 }
 
@@ -77,7 +82,7 @@ body {
   justify-content: center;
 }
 
-.folia-annotation.ArrowAnnotation::before {
+.folia-annotation.ArrowAnnotation::after {
   content: "";
   position: absolute;
   width: var(--arrow-width);
@@ -90,8 +95,12 @@ body {
 }
 
 .folia-annotation.ArrowAnnotation.selected::before {
-  box-sizing: content-box;
+  display: block;
+  content: "";
   border: solid 1px var(--annotation-border-color);
+  position: absolute;
+  width: calc(var(--arrow-width) + 6px);
+  height: calc(var(--arrow-height) + 6px);
 }
 
 .folia-annotation.TextBoxAnnotation > .text-box {
@@ -141,7 +150,7 @@ body {
   max-height: 6px;
   border-radius: 6px;
   background-color: rgba(255, 255, 255);
-  border: solid 1px black;
+  border: solid 1px #94a3b8;
   z-index: 2;
 }
 
@@ -155,23 +164,23 @@ body {
 }
 
 .folia-annotation > .corner-lt {
-  left: -9px;
-  top: -7px;
+  left: -8.5px;
+  top: -8.5px;
   cursor: nwse-resize;
 }
 .folia-annotation > .corner-rt {
-  right: -9px;
-  top: -7px;
+  right: -8.5px;
+  top: -8.5px;
   cursor: nesw-resize;
 }
 .folia-annotation > .corner-lb {
-  left: -9px;
-  bottom: -7px;
+  left: -8.5px;
+  bottom: -8.5px;
   cursor: nesw-resize;
 }
 .folia-annotation > .corner-rb {
-  right: -9px;
-  bottom: -7px;
+  right: -8.5px;
+  bottom: -8.5px;
   cursor: nwse-resize;
 }
 

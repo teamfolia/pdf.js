@@ -23,10 +23,11 @@ class FoliaBaseAnnotation {
     this.foliaPageLayer = foliaPageLayer;
     this.foliaLayer = foliaPageLayer.foliaLayer;
     this.dataProxy = foliaPageLayer.dataProxy;
-    this.annotationRawData = cloneDeep(annotationRawData);
+    this.annotationRawData = structuredClone(annotationRawData);
     this.viewport = foliaPageLayer.viewport.clone({ dontFlip: true });
     this.permissions = [];
     this.needToReRender = true;
+    this.pdfCanvas = this.foliaLayer.parentNode.querySelector("div.canvasWrapper>canvas");
 
     const annotationDIV = document.createElement("div");
     annotationDIV.setAttribute("data-id", `${this.id}`);
@@ -57,16 +58,21 @@ class FoliaBaseAnnotation {
       }
     }
     this.foliaLayer.appendChild(annotationDIV);
-
-    try {
-    } catch (e) {
-      console.error(e);
-      this.foliaLayer.appendChild(annotationDIV);
-    }
   }
 
-  appendAnnot2Layer(parent, child) {
-    ANNOTATION_WEIGHT;
+  // appendAnnot2Layer(parent, child) {
+  //   ANNOTATION_WEIGHT;
+  // }
+
+  render() {
+    const lineWidth = (this.annotationRawData.lineWidth || 0) * this.viewport.scale;
+    const { left, top, width, height } = this.getBoundingRect();
+    this.annotationDIV.style.left = `${left - lineWidth / 2}px`;
+    this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
+    this.annotationDIV.style.width = `${width + lineWidth}px`;
+    this.annotationDIV.style.height = `${height + lineWidth}px`;
+    // this.annotationDIV.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
+    // console.log("BASE RENDER", { left, top, width, height });
   }
 
   get editableProperties() {
@@ -117,19 +123,6 @@ class FoliaBaseAnnotation {
         }, {}),
     };
   }
-  render() {
-    // console.log("BASE RENDER");
-    const { width: viewportWidth, height: viewportHeight } = this.viewport;
-    const [left, top, width, height] = fromPdfRect(
-      this.annotationRawData.rect,
-      viewportWidth,
-      viewportHeight
-    );
-    this.annotationDIV.style.left = `${left}px`;
-    this.annotationDIV.style.top = `${top}px`;
-    this.annotationDIV.style.width = `${width}px`;
-    this.annotationDIV.style.height = `${height}px`;
-  }
 
   update(annotationRawData, viewport, force = false) {
     this.viewport = this.viewport || viewport;
@@ -160,6 +153,7 @@ class FoliaBaseAnnotation {
   }
   deleteFromCanvas() {
     this.annotationDIV.remove();
+    // this.canvas.remove();
   }
   buildBaseCorners() {
     if (!this.canManage) return;
@@ -335,8 +329,12 @@ class FoliaBaseAnnotation {
   }
 
   resizeTo(point, corner, withAlt) {
+    // console.log("resizeTo", point, corner, withAlt);
     if (!this.canManage) return;
     if (!point || !corner) return;
+
+    const lineWidth = (this.annotationRawData.lineWidth || 0) * this.viewport.scale;
+    this.safeArea = lineWidth * 1;
 
     const fixedAspectRatio = this.fixedAspectRatio && !withAlt;
     const { startPoint, startRect, aspectRatioH, aspectRatioW, dimensions } = this._startMoving;

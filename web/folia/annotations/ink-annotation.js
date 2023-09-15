@@ -1,5 +1,6 @@
+import { view } from "paper/dist/paper-core";
 import { ANNOTATION_TYPES } from "../constants";
-import { hexColor2RGBA, fromPdfPoint, toPdfPath, fromPdfPath } from "../folia-util";
+import { hexColor2RGBA, fromPdfPoint, toPdfPath, fromPdfPath, fromPdfRect } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";
 
 class FoliaInkAnnotation extends FoliaBaseAnnotation {
@@ -9,44 +10,9 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
-    this.buildBaseCorners();
-  }
-  getRawData() {
-    return {
-      __typename: ANNOTATION_TYPES.INK,
-      id: this.annotationRawData.id,
-      addedAt: this.isDirty || this.annotationRawData.addedAt,
-      deletedAt: this.annotationRawData.deletedAt,
-      collaboratorEmail: this.annotationRawData.collaboratorEmail,
-      page: this.annotationRawData.page,
-      color: this.annotationRawData.color,
-      lineWidth: this.annotationRawData.lineWidth,
-      paths: this.annotationRawData.paths,
-    };
   }
 
-  updateRects() {
-    if (!this.relativePaths) return this.render();
-
-    const { offsetLeft, offsetTop } = this.annotationDIV;
-    const paths = this.relativePaths.map((path) => {
-      const viewportPath = path.map((point) => {
-        return {
-          x: point.x / window.devicePixelRatio + offsetLeft,
-          y: point.y / window.devicePixelRatio + offsetTop,
-        };
-      });
-      return toPdfPath(viewportPath, this.viewport.width, this.viewport.height);
-    });
-
-    this.annotationRawData.paths = paths;
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.render(), 100);
-    super.updateRects();
-  }
-
-  render() {
-    // calc bounding rect
+  getBoundingRect() {
     const { left, top, right, bottom } = [].concat.apply([], this.annotationRawData.paths).reduce(
       (acc, path, index, arr) => {
         if (index % 2 !== 0) {
@@ -64,31 +30,64 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       },
       { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
     );
+    return { left, top, width: right - left, height: bottom - top };
+  }
 
+  getRawData() {
+    return {
+      __typename: ANNOTATION_TYPES.INK,
+      id: this.annotationRawData.id,
+      addedAt: this.isDirty || this.annotationRawData.addedAt,
+      deletedAt: this.annotationRawData.deletedAt,
+      collaboratorEmail: this.annotationRawData.collaboratorEmail,
+      page: this.annotationRawData.page,
+      color: this.annotationRawData.color,
+      lineWidth: this.annotationRawData.lineWidth,
+      paths: this.annotationRawData.paths,
+    };
+  }
+
+  updateRects() {
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
-    this.annotationDIV.style.left = `${left - lineWidth / 2}px`;
-    this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
-    this.annotationDIV.style.width = `${right - left + lineWidth}px`;
-    this.annotationDIV.style.height = `${bottom - top + lineWidth}px`;
+    const { left, top } = this.getBoundingRect();
+    const offsetLeft = this.annotationDIV.offsetLeft + lineWidth / 2 - left;
+    const offsetTop = this.annotationDIV.offsetTop + lineWidth / 2 - top;
 
-    const { offsetLeft, offsetTop } = this.annotationDIV;
-    this.relativePaths = this.annotationRawData.paths.map((path) => {
-      return fromPdfPath(path, this.viewport.width, this.viewport.height).map((point) => {
-        return {
-          x: (point.x - offsetLeft) * window.devicePixelRatio,
-          y: (point.y - offsetTop) * window.devicePixelRatio,
-        };
+    const paths = this.annotationRawData.paths
+      .map((pdfPath) => fromPdfPath(pdfPath, this.viewport.width, this.viewport.height))
+      .map((viewPath) => {
+        const viewportPath = viewPath.map((point) => {
+          return {
+            x: point.x + offsetLeft,
+            y: point.y + offsetTop,
+          };
+        });
+        return toPdfPath(viewportPath, this.viewport.width, this.viewport.height);
       });
-    });
+    this.annotationRawData.paths = paths;
 
+    if (this.updateRectsTimer) cancelAnimationFrame(this.updateRectsTimer);
+    this.updateRectsTimer = requestAnimationFrame(() => this.canvasRender());
+  }
+
+  canvasRender() {
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const canvas = document.createElement("canvas");
-    canvas.width = this.annotationDIV.clientWidth * window.devicePixelRatio;
-    canvas.height = this.annotationDIV.clientHeight * window.devicePixelRatio;
+    canvas.width = this.pdfCanvas.width;
+    canvas.height = this.pdfCanvas.height;
     const ctx = canvas.getContext("2d");
-    ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
+    const paths = this.annotationRawData.paths
+      .map((pdfPath) => fromPdfPath(pdfPath, this.viewport.width, this.viewport.height))
+      .map((path) =>
+        path.map((point) => ({
+          x: point.x * window.devicePixelRatio,
+          y: point.y * window.devicePixelRatio,
+        }))
+      );
 
-    this.relativePaths.forEach((viewportPath) => {
+    ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
+    ctx.lineWidth = lineWidth;
+    paths.forEach((viewportPath) => {
       ctx.save();
       let p1 = viewportPath[0];
       let p2 = viewportPath[1];
@@ -105,7 +104,34 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       ctx.stroke();
     });
 
-    this.annotationDIV.style.backgroundImage = `url("${canvas.toDataURL("png")}")`;
+    const annoBoundingRect = this.getBoundingRect();
+    const annoLeft = annoBoundingRect.left * window.devicePixelRatio;
+    const annoTop = annoBoundingRect.top * window.devicePixelRatio;
+    const annoWidth = annoBoundingRect.width * window.devicePixelRatio;
+    const annoHeight = annoBoundingRect.height * window.devicePixelRatio;
+
+    const annotationCanvas = document.createElement("canvas");
+    annotationCanvas.width = annoWidth + lineWidth;
+    annotationCanvas.height = annoHeight + lineWidth;
+    const annotationCtx = annotationCanvas.getContext("2d");
+    annotationCtx.putImageData(
+      ctx.getImageData(
+        annoLeft - lineWidth / 2,
+        annoTop - lineWidth / 2,
+        annoWidth + lineWidth,
+        annoHeight + lineWidth
+      ),
+      0,
+      0
+    );
+
+    this.annotationDIV.style.backgroundImage = `url("${annotationCanvas.toDataURL("png")}")`;
+  }
+
+  render() {
+    super.render();
+    if (this.updateRectsTimer) cancelAnimationFrame(this.updateRectsTimer);
+    this.updateRectsTimer = requestAnimationFrame(() => this.canvasRender());
   }
 }
 

@@ -22,8 +22,10 @@ class CircleBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
       this.canvas.className = "annotation-builder-container";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight;
+      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
+      this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
+      this.canvas.style.height = this.foliaPageLayer.pageDiv.clientHeight + "px";
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
@@ -35,12 +37,7 @@ class CircleBuilder extends BaseBuilder {
   prepareAnnotations2save() {
     return this.circles.map(({ addedAt, color, lineWidth, rect }) => {
       const pdfRect = toPdfRect(
-        [
-          rect[0] - (lineWidth * this.viewport.scale) / 2,
-          rect[1] - (lineWidth * this.viewport.scale) / 2,
-          rect[2] + lineWidth * this.viewport.scale,
-          rect[3] + lineWidth * this.viewport.scale,
-        ],
+        [rect[0], rect[1], rect[2], rect[3]],
         this.viewport.width,
         this.viewport.height
       );
@@ -113,7 +110,7 @@ class CircleBuilder extends BaseBuilder {
 
   applyUndoRedo(circles) {
     this.circles = circles.slice();
-    this.draw();
+    window.requestAnimationFrame(() => this.draw());
   }
 
   draw() {
@@ -123,12 +120,12 @@ class CircleBuilder extends BaseBuilder {
       const { color, lineWidth, rect } = circle;
       ctx.save();
       ctx.beginPath();
+      const x = rect[0] * window.devicePixelRatio + (rect[2] * window.devicePixelRatio) / 2;
+      const y = rect[1] * window.devicePixelRatio + (rect[3] * window.devicePixelRatio) / 2;
+      const radiusX = (rect[2] * window.devicePixelRatio) / 2;
+      const radiusY = (rect[3] * window.devicePixelRatio) / 2;
       ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth * this.viewport.scale;
-      const x = rect[0] + rect[2] / 2;
-      const y = rect[1] + rect[3] / 2;
-      const radiusX = rect[2] / 2;
-      const radiusY = rect[3] / 2;
+      ctx.lineWidth = lineWidth * this.viewport.scale * window.devicePixelRatio;
       ctx.ellipse(x, y, radiusX, radiusY, 0, 0, 180);
       ctx.stroke();
       ctx.closePath();

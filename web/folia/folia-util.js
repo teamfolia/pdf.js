@@ -52,13 +52,13 @@ export const hexColor2RGBA = (hexColor) => {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
-export const fromPdfRect = (pdfRect, viewportWidth, viewporHeight, borderSize = 0) => {
+export const fromPdfRect = (pdfRect, viewportWidth, viewporHeight) => {
   const [left, top, right, bottom] = pdfRect;
   return [
-    Math.round(left * viewportWidth - borderSize / 2),
-    Math.round(top * viewporHeight - borderSize / 2),
-    Math.round(right * viewportWidth - left * viewportWidth + borderSize),
-    Math.round(bottom * viewporHeight - top * viewporHeight + borderSize),
+    Math.round(left * viewportWidth),
+    Math.round(top * viewporHeight),
+    Math.round(right * viewportWidth - left * viewportWidth),
+    Math.round(bottom * viewporHeight - top * viewporHeight),
   ];
 };
 
@@ -71,30 +71,30 @@ export const toPdfRect = (rect, viewportWidth, viewporHeight) => {
   ];
 };
 
-export const fromPdfPoint = (point, viewportWidth, viewporHeight, offsetX = 0, offsetY = 0) => {
-  const x = Math.round(point[0] * viewportWidth) + offsetX;
-  const y = Math.round(point[1] * viewporHeight) + offsetY;
+export const fromPdfPoint = (point, viewportWidth, viewporHeight) => {
+  const x = Math.round(point[0] * viewportWidth);
+  const y = Math.round(point[1] * viewporHeight);
   return { x, y };
 };
 
-export const toPdfPoint = (point, viewportWidth, viewporHeight, offsetX = 0, offsetY = 0) => {
-  const x = 1 * ((point.x - offsetX) / viewportWidth).toFixed(8);
-  const y = 1 * ((point.y - offsetY) / viewporHeight).toFixed(8);
+export const toPdfPoint = (point, viewportWidth, viewporHeight) => {
+  const x = 1 * (point.x / viewportWidth).toFixed(8);
+  const y = 1 * (point.y / viewporHeight).toFixed(8);
   return [x, y];
 };
 
-export const fromPdfPath = (path, viewportWidth, viewporHeight, offsetX, offsetY) => {
+export const fromPdfPath = (path, viewportWidth, viewporHeight) => {
   return path.reduce((acc, num, index, arr) => {
     if (index % 2 === 0) return acc;
-    const point = fromPdfPoint([arr[index - 1], num], viewportWidth, viewporHeight, offsetX, offsetY);
+    const point = fromPdfPoint([arr[index - 1], num], viewportWidth, viewporHeight);
     acc.push(point);
     return acc;
   }, []);
 };
 
-export const toPdfPath = (path, viewportWidth, viewporHeight, offsetX, offsetY) => {
+export const toPdfPath = (path, viewportWidth, viewporHeight) => {
   return path.reduce((acc, point) => {
-    const pdfPoint = toPdfPoint(point, viewportWidth, viewporHeight, offsetX, offsetY);
+    const pdfPoint = toPdfPoint(point, viewportWidth, viewporHeight);
     return acc.concat(pdfPoint);
   }, []);
 };

@@ -12,79 +12,87 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
   }
 
   getRawData() {
-    const viewRect = [
-      this.annotationDIV.offsetLeft,
-      this.annotationDIV.offsetTop,
-      this.annotationDIV.clientWidth,
-      this.annotationDIV.clientHeight,
-    ];
-
-    const rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
-    const { id, addedAt, deletedAt, collaboratorEmail, page, color, lineWidth } = this.annotationRawData;
     return {
       __typename: ANNOTATION_TYPES.CIRCLE,
-      id,
-      addedAt: this.isDirty || addedAt,
-      deletedAt,
-      collaboratorEmail,
-      page,
-      color,
-      lineWidth,
-      rect,
+      id: this.annotationRawData.id,
+      addedAt: this.isDirty || this.annotationRawData.addedAt,
+      deletedAt: this.annotationRawData.deletedAt,
+      collaboratorEmail: this.annotationRawData.collaboratorEmail,
+      page: this.annotationRawData.page,
+      color: this.annotationRawData.color,
+      lineWidth: this.annotationRawData.lineWidth,
+      rect: this.annotationRawData.rect,
+    };
+  }
+
+  getBoundingRect() {
+    const rect = fromPdfRect(this.annotationRawData.rect, this.viewport.width, this.viewport.height);
+    return {
+      left: rect[0],
+      top: rect[1],
+      width: rect[2],
+      height: rect[3],
     };
   }
 
   updateRects() {
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     const viewRect = [
-      this.annotationDIV.offsetLeft,
-      this.annotationDIV.offsetTop,
-      this.annotationDIV.clientWidth,
-      this.annotationDIV.clientHeight,
+      this.annotationDIV.offsetLeft + lineWidth / 2,
+      this.annotationDIV.offsetTop + lineWidth / 2,
+      this.annotationDIV.clientWidth - lineWidth,
+      this.annotationDIV.clientHeight - lineWidth,
     ];
-
     this.annotationRawData.rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
-    this.render();
-    super.updateRects();
+    if (this.updateRectsTimer) cancelAnimationFrame(this.updateRectsTimer);
+    this.updateRectsTimer = requestAnimationFrame(() => this.canvasRender());
   }
 
-  render() {
-    // console.time("render circle");
-    const [left, top, width, height] = fromPdfRect(
-      this.annotationRawData.rect,
-      this.viewport.width,
-      this.viewport.height
-    );
-
-    this.annotationDIV.style.left = `${left}px`;
-    this.annotationDIV.style.top = `${top}px`;
-    this.annotationDIV.style.width = `${width}px`;
-    this.annotationDIV.style.height = `${height}px`;
-
-    this.annotationDIV.style.backgroundPosition = "center";
-    this.annotationDIV.style.backgroundSize = `${width}px ${height}px`;
-    this.annotationDIV.style.backgroundRepeat = "no-repeat";
-    this.annotationDIV.style.backgroundImage = `url("${this.generateCircleImage()}")`;
-    // console.timeEnd("render circle");
-  }
-
-  generateCircleImage() {
-    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
-    const width = this.annotationDIV.clientWidth * window.devicePixelRatio;
-    const height = this.annotationDIV.clientHeight * window.devicePixelRatio;
-    const x = width / 2;
-    const y = height / 2;
-    const radiusX = x - lineWidth / 2;
-    const radiusY = y - lineWidth / 2;
-
+  canvasRender() {
+    // console.log("render circle", [x, y], [radiusX, radiusY]);
     const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = this.pdfCanvas.width;
+    canvas.height = this.pdfCanvas.height;
+    const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const ctx = canvas.getContext("2d");
+    const annoBoundingRect = this.getBoundingRect();
+    const annoLeft = annoBoundingRect.left * window.devicePixelRatio;
+    const annoTop = annoBoundingRect.top * window.devicePixelRatio;
+    const annoWidth = annoBoundingRect.width * window.devicePixelRatio;
+    const annoHeight = annoBoundingRect.height * window.devicePixelRatio;
+    const x = annoLeft + annoWidth / 2;
+    const y = annoTop + annoHeight / 2;
+    const radiusX = annoWidth / 2;
+    const radiusY = annoHeight / 2;
+
+    ctx.beginPath();
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
     ctx.lineWidth = lineWidth;
     ctx.ellipse(x, y, radiusX, radiusY, 0, 0, 180);
     ctx.stroke();
-    return canvas.toDataURL("png");
+    ctx.closePath();
+
+    const annotationCanvas = document.createElement("canvas");
+    annotationCanvas.width = annoWidth + lineWidth;
+    annotationCanvas.height = annoHeight + lineWidth;
+    const annotationCtx = annotationCanvas.getContext("2d");
+    annotationCtx.putImageData(
+      ctx.getImageData(
+        annoLeft - lineWidth / 2,
+        annoTop - lineWidth / 2,
+        annoWidth + lineWidth,
+        annoHeight + lineWidth
+      ),
+      0,
+      0
+    );
+    this.annotationDIV.style.backgroundImage = `url("${annotationCanvas.toDataURL("png")}")`;
+  }
+
+  render() {
+    super.render();
+    if (this.updateRectsTimer) cancelAnimationFrame(this.updateRectsTimer);
+    this.updateRectsTimer = requestAnimationFrame(() => this.canvasRender());
   }
 }
 

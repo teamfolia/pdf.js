@@ -5,7 +5,6 @@ import { ANNOTATION_TYPES, FONT_FAMILY, FONT_WEIGHT, TEXT_ALIGNMENT } from "../c
 
 class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
   static placeholderText = "Type something";
-
   editablePropertiesList = ["color", "rect", "text", "fontSize", "fontFamily", "fontWeight", "textAlignment"];
   editable = true;
   editorEl;
@@ -42,10 +41,32 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
     this.adjustHeight();
   }
 
-  stopPropagationEvent(e) {
-    // console.log(e.type);
-    // e.preventDefault();
-    // e.stopPropagation();
+  getRawData() {
+    return {
+      __typename: ANNOTATION_TYPES.TEXT_BOX,
+      id: this.annotationRawData.id,
+      addedAt: this.isDirty || this.annotationRawData.addedAt,
+      deletedAt: this.annotationRawData.deletedAt,
+      collaboratorEmail: this.annotationRawData.collaboratorEmail,
+      page: this.annotationRawData.page,
+      color: this.annotationRawData.color,
+      text: this.annotationRawData.text,
+      fontFamily: this.annotationRawData.fontFamily,
+      fontSize: this.annotationRawData.fontSize,
+      fontWeight: this.annotationRawData.fontWeight,
+      textAlignment: this.annotationRawData.textAlignment,
+      rect: this.annotationRawData.rect,
+    };
+  }
+
+  getBoundingRect() {
+    const rect = fromPdfRect(this.annotationRawData.rect, this.viewport.width, this.viewport.height);
+    return {
+      left: rect[0],
+      top: rect[1],
+      width: rect[2],
+      height: rect[3],
+    };
   }
 
   onKeyDown(e) {
@@ -57,11 +78,7 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
 
     this.editorEl.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_EDITOR);
     this.editorEl.toggleAttribute("contenteditable", true);
-    this.editorEl.addEventListener("mousedown", this.stopPropagationEvent, true);
-    this.editorEl.addEventListener("mousemove", this.stopPropagationEvent, true);
-    this.editorEl.addEventListener("mouseup", this.stopPropagationEvent, true);
     this.editorEl.addEventListener("keydown", this.onKeyDownBinded, true);
-
     this.prevState = this.getRawData();
     this.editorEl.focus();
   }
@@ -69,16 +86,10 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
   handleOnPast(e) {
     e.stopPropagation();
     e.preventDefault();
-    // console.log("{ pastedData }");
-    // const pastedData = (e.clipboardData || window.clipboardData).getData("Text");
   }
 
   stopEditMode() {
-    this.editorEl.removeEventListener("mousedown", this.stopPropagationEvent, true);
-    this.editorEl.removeEventListener("mousemove", this.stopPropagationEvent, true);
-    this.editorEl.removeEventListener("mouseup", this.stopPropagationEvent, true);
     this.editorEl.removeEventListener("keydown", this.onKeyDownBinded, true);
-
     this.editorEl.toggleAttribute("contenteditable", false);
     this.editorEl.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
     if (!this.prevState) return;
@@ -112,7 +123,11 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.style.height = height + "px";
   }
 
-  getRawData() {
+  updateRects() {
+    // console.log("updateRects");
+    this.adjustHeight();
+    this.editorEl.style.width = `${this.annotationDIV.clientWidth}px`;
+    this.editorEl.style.height = `${this.annotationDIV.clientHeight}px`;
     const { width: viewportWidth, height: viewportHeight } = this.viewport;
     const viewRect = [
       this.annotationDIV.offsetLeft,
@@ -122,29 +137,6 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
     ];
     const pdfRect = toPdfRect(viewRect, viewportWidth, viewportHeight);
     this.annotationRawData.rect = pdfRect;
-
-    return {
-      __typename: ANNOTATION_TYPES.TEXT_BOX,
-      id: this.annotationRawData.id,
-      addedAt: this.isDirty || this.annotationRawData.addedAt,
-      deletedAt: this.annotationRawData.deletedAt,
-      collaboratorEmail: this.annotationRawData.collaboratorEmail,
-      page: this.annotationRawData.page,
-      color: this.annotationRawData.color,
-      text: this.annotationRawData.text,
-      fontFamily: this.annotationRawData.fontFamily,
-      fontSize: this.annotationRawData.fontSize,
-      fontWeight: this.annotationRawData.fontWeight,
-      textAlignment: this.annotationRawData.textAlignment,
-      rect: pdfRect,
-    };
-  }
-
-  updateRects() {
-    // console.log("updateRects");
-    this.adjustHeight();
-    this.editorEl.style.width = `${this.annotationDIV.clientWidth}px`;
-    this.editorEl.style.height = `${this.annotationDIV.clientHeight}px`;
   }
 
   render() {
