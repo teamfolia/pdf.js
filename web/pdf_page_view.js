@@ -342,6 +342,7 @@ class PDFPageView {
     div.style.width = Math.floor(this.viewport.width) + "px";
     div.style.height = Math.floor(this.viewport.height) + "px";
 
+    // console.log("page reset", this.foliaPageLayer);
     const childNodes = div.childNodes,
       foliaLayer = this.foliaPageLayer?.foliaLayer,
       zoomLayerNode = (keepZoomLayer && this.zoomLayer) || null,
@@ -525,6 +526,7 @@ class PDFPageView {
     }
     if (this.foliaPageLayer) {
       this.foliaPageLayer.cancel();
+      // console.log("foliaPageLayer.cancel");
       this.foliaPageLayer = null;
     }
     if (this.annotationLayer && (!keepAnnotationLayer || !this.annotationLayer.div)) {

@@ -121,7 +121,8 @@ class FoliaPageLayer {
 
   viewerMouseMove(e) {
     if (!this.isMouseDown) return;
-    const { id, role } = e.target.dataset;
+    // const { id, role } = e.target.dataset;
+    const { id, role } = this.actionTarget;
     // console.log("foliaLayer::MouseMove", role);
     // if (e.target.tagName === "TEXTAREA") return;
     if (role === FOLIA_LAYER_ROLES.FOLIA_BUILDER || role === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
@@ -164,7 +165,8 @@ class FoliaPageLayer {
   }
 
   viewerMouseUp(e) {
-    const { id, role } = e.target.dataset;
+    // const { id, role } = e.target.dataset;
+    const { id, role } = this.actionTarget;
     // console.log("foliaLayer::MouseUp", role);
     // if (e.target.tagName === "TEXTAREA") return;
     if (role === FOLIA_LAYER_ROLES.FOLIA_BUILDER || role === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
@@ -184,20 +186,19 @@ class FoliaPageLayer {
           : this.multipleSelect.toggleObject(annoObject, e.shiftKey);
       }
       this.multipleSelect.showFloatingBar();
-    } else if (this.isMouseMoved && role === FOLIA_LAYER_ROLES.ANNOTATION_OBJECT) {
+    } else if (
+      (this.isMouseMoved && FOLIA_LAYER_ROLES.ANNOTATION_OBJECT === role) ||
+      Object.values(FOLIA_LAYER_ROLES.RECT_CORNERS).includes(role) ||
+      Object.values(FOLIA_LAYER_ROLES.ARROW_CORNERS).includes(role)
+    ) {
       // isMouseMoved
       this.multipleSelect.showFloatingBar();
       for (const annoObject of this.multipleSelect.getObjects()) {
         this.undoRedoManager.updatingObject(annoObject._startMoving.prevState, annoObject.getRawData());
-        this.commitObjectChanges(annoObject.getRawData());
+        if (annoObject.isDirty) this.commitObjectChanges(annoObject.getRawData());
       }
-      // const annoObject = this.annotationObjects.get(this.actionTarget.id);
-      // if (annoObject) {
-      //   this.undoRedoManager.updatingObject(annoObject._startMoving.prevState, annoObject.getRawData());
-      // }
     }
 
-    // this.multipleSelect.checkForOutOfBounds(SAFE_MARGIN, this.actionTarget.role);
     this.isMouseMoved = false;
     this.isMouseDown = false;
     this.actionTarget = {};
@@ -252,12 +253,18 @@ class FoliaPageLayer {
 
   commitObjectChanges(objectData) {
     if (!objectData) return;
-    if (objectData.deletedAt) {
+    const obj = this.annotationObjects.get(objectData.id);
+    const { __typename, text } = objectData;
+    const shouldBeDeleted = __typename === ANNOTATION_TYPES.TEXT_BOX && !text && obj?.isDirty;
+    // console.log("commitObjectChanges", { shouldBeDeleted });
+
+    if (objectData.deletedAt || shouldBeDeleted) {
+      if (obj) this.annotationObjects.delete(obj.id);
       this.eventBus.dispatch("delete-object", objectData.id);
-    } else {
+    } else if (obj?.isDirty) {
       this.eventBus.dispatch("commit-object", objectData);
+      obj.markAsUnchanged();
     }
-    // this.eventBus.dispatch("findneedrefresh", {});
   }
 
   deleteSelectedAnnotations(object) {
@@ -279,13 +286,15 @@ class FoliaPageLayer {
       const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
       annotationObject = new AnnoClass(this, annotation);
       this.annotationObjects.set(annotation.id, annotationObject);
-      if (makeSelected) this.multipleSelect.toggleObject(annotationObject);
+      if (makeSelected) {
+        this.multipleSelect.toggleObject(annotationObject);
+        if (typeof annotationObject.startEditMode === "function") annotationObject.startEditMode();
+      }
     } else {
       annotationObject.update(annotation, this.viewport);
     }
   }
   render(viewport) {
-    // console.time("render");
     // console.log("render", this.pageNumber);
     if (this._cancelled) return;
     this.viewport = viewport;
@@ -294,8 +303,6 @@ class FoliaPageLayer {
       this.foliaLayer.setAttribute("data-role", FOLIA_LAYER_ROLES.FOLIA_LAYER);
       this.foliaLayer.setAttribute("data-page-number", `${this.pageNumber}`);
       this.foliaLayer.className = "folia-layer";
-      // this.foliaLayer.onmousedown = this.onFoliaLayerMouseDown.bind(this);
-      // this.foliaLayer.onclick = this.onFoliaLayerClick.bind(this);
     }
     this.foliaLayer.style.width = Math.floor(this.pageDiv.clientWidth) + "px";
     this.foliaLayer.style.height = Math.floor(this.pageDiv.clientHeight) + "px";
@@ -352,16 +359,16 @@ class FoliaPageLayer {
     this._cancelled = true;
     if (this.annotationBuilder) this.annotationBuilder.stop();
     for (const annoObject of this.multipleSelect.getObjects()) {
-      // console.log("FoliaPageLayer cancel ==>", this.pageNumber);
+      // console.log("FoliaPageLayer cancel ==>", this.pageNumber, annoObject.isDirty);
       if (annoObject.isDirty) this.commitObjectChanges(annoObject.getRawData());
     }
   }
   hide() {
-    console.log("FoliaPageLayer hide ==>", this.pageNumber);
+    // console.log("FoliaPageLayer hide ==>", this.pageNumber);
     this.foliaLayer.hidden = true;
   }
   show() {
-    console.log("FoliaPageLayer show ==>", this.pageNumber);
+    // console.log("FoliaPageLayer show ==>", this.pageNumber);
     this.foliaLayer.hidden = false;
   }
 }

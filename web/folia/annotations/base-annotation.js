@@ -18,6 +18,7 @@ class FoliaBaseAnnotation {
   isSelected = false;
   annotationRawData = {};
   safeArea = 10;
+  _isDirty;
 
   constructor(foliaPageLayer, annotationRawData) {
     this.foliaPageLayer = foliaPageLayer;
@@ -179,10 +180,8 @@ class FoliaBaseAnnotation {
     this.setCornersVisibility(false);
     this.annotationDIV.classList.remove("selected");
     this.isSelected = false;
-
-    if (this.isDirty) {
-      this.foliaPageLayer.commitObjectChanges(this.getRawData());
-    }
+    delete this.annotationRawData.doNotCommit;
+    this.foliaPageLayer.commitObjectChanges(this.getRawData());
   }
   markAsDeleted() {
     this.markAsChanged();
@@ -191,6 +190,9 @@ class FoliaBaseAnnotation {
   markAsChanged() {
     this.isDirty = new Date().toISOString();
     this.annotationRawData.addedAt = this.isDirty;
+  }
+  markAsUnchanged() {
+    this.isDirty = null;
   }
 
   saveRectsState(startPoint) {
@@ -576,6 +578,14 @@ class FoliaBaseAnnotation {
   startEditMode() {}
   stopEditMode() {}
 
+  get isDirty() {
+    // console.log("get isDirty, doNotCommit is", "doNotCommit" in this.annotationRawData);
+    if ("doNotCommit" in this.annotationRawData) return false;
+    return this._isDirty;
+  }
+  set isDirty(value) {
+    this._isDirty = value;
+  }
   get rect() {
     return {
       left: this.annotationDIV.offsetLeft,

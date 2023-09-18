@@ -15,6 +15,7 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
 
     if (this.annotationRawData.newbie) {
       delete this.annotationRawData.newbie;
+      this.markAsChanged();
     }
     this.editorEl = document.createElement("div");
     this.editorEl.className = "text-box";
@@ -27,12 +28,15 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       this.annotationRawData.text = e.target.innerText;
       this.adjustHeight();
       this.markAsChanged();
+      delete this.annotationRawData.doNotCommit;
     };
     this.editorEl.onpaste = (e) => {
       e.preventDefault();
       e.target.innerText = e.clipboardData.getData("text/plain");
+      this.annotationRawData.text = e.target.innerText;
       this.adjustHeight();
       this.markAsChanged();
+      delete this.annotationRawData.doNotCommit;
     };
 
     this.annotationDIV.appendChild(this.editorEl);
@@ -71,6 +75,14 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
 
   onKeyDown(e) {
     if (e.key === "Escape") this.stopEditMode();
+  }
+
+  markAsSelected() {
+    // if ("doNotCommit" in this.annotationRawData) {
+    //   delete this.annotationRawData.doNotCommit;
+    //   this.markAsChanged();
+    // }
+    super.markAsSelected();
   }
 
   startEditMode() {

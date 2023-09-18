@@ -46,9 +46,17 @@ class BaseBuilder {
         ...data,
       };
 
-      const makeSelected = [ANNOTATION_TYPES.COMMENT].includes(annotation.__typename);
+      const makeSelected = [ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.TEXT_BOX].includes(
+        annotation.__typename
+      );
+      const shouldBeCommitted = !("doNotCommit" in annotation);
+      // delete annotation["doNotCommit"];
+      // console.log(annotation);
+
       this.foliaPageLayer.addAnnotationObject(annotation, makeSelected);
-      this.foliaPageLayer.commitObjectChanges(annotation);
+      if (shouldBeCommitted) {
+        this.foliaPageLayer.commitObjectChanges(annotation);
+      }
       this.foliaPageLayer.undoRedoManager.creatingObject(annotation);
     }
 

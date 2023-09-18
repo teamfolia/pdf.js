@@ -503,12 +503,12 @@ export class FoliaPDFViewer {
       page.foliaPageLayer.refresh();
     });
   }
-  revertChanges(annotationId) {
-    this.pdfViewer._pages.map((page) => {
-      if (!page.foliaPageLayer) return;
-      page.foliaPageLayer.revertChanges(annotationId);
-    });
-  }
+  // revertChanges(annotationId) {
+  //   this.pdfViewer._pages.map((page) => {
+  //     if (!page.foliaPageLayer) return;
+  //     page.foliaPageLayer.revertChanges(annotationId);
+  //   });
+  // }
   loadImageAsset(completeCallback) {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
