@@ -1,5 +1,5 @@
 import { isEqual } from "lodash";
-import { ANNOTATION_TYPES } from "../constants";
+import { ANNOTATION_TYPES, ANNOTATION_WEIGHT } from "../constants";
 import { fromPdfRect, toPdfRect, hexColor2RGBA } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";
 
@@ -8,8 +8,13 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
-    this.annotationDIV.classList.add(this.annotationRawData.__typename);
+    super.createAndAppendCanvas();
     super.buildBaseCorners();
+  }
+
+  deleteFromCanvas() {
+    this.canvas.remove();
+    super.deleteFromCanvas();
   }
 
   getRawData() {
@@ -51,11 +56,9 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
   }
 
   canvasRender() {
-    const canvas = document.createElement("canvas");
-    canvas.width = this.pdfCanvas.width;
-    canvas.height = this.pdfCanvas.height;
+    this.canvas.width = this.canvas.width;
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
-    const ctx = canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d");
     const annoBoundingRect = this.getBoundingRect();
     const annoLeft = annoBoundingRect.left * window.devicePixelRatio;
     const annoTop = annoBoundingRect.top * window.devicePixelRatio;
@@ -65,22 +68,6 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
     ctx.lineWidth = lineWidth;
     ctx.strokeRect(annoLeft, annoTop, annoWidth, annoHeight);
-
-    const annotationCanvas = document.createElement("canvas");
-    annotationCanvas.width = annoWidth + lineWidth;
-    annotationCanvas.height = annoHeight + lineWidth;
-    const annotationCtx = annotationCanvas.getContext("2d");
-    annotationCtx.putImageData(
-      ctx.getImageData(
-        annoLeft - lineWidth / 2,
-        annoTop - lineWidth / 2,
-        annoWidth + lineWidth,
-        annoHeight + lineWidth
-      ),
-      0,
-      0
-    );
-    this.annotationDIV.style.backgroundImage = `url("${annotationCanvas.toDataURL("png")}")`;
   }
 
   render() {

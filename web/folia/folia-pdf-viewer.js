@@ -16,7 +16,7 @@ import {
   isValidScrollMode,
   isValidSpreadMode,
 } from "../ui_utils";
-import { TOOLS } from "./constants";
+import { ANNOTATION_TYPES, TOOLS } from "./constants";
 import ArrowBuilder from "./annotations-builders/arrow-builder";
 import BaseBuilder from "./annotations-builders/base-builder";
 import CircleBuilder from "./annotations-builders/circle-builder";
@@ -30,6 +30,12 @@ import { UndoRedo } from "./undo-redo";
 import ObjectEraser from "./annotations-builders/object-eraser";
 import CommentBuilder from "./annotations-builders/comment-builder";
 import StampsBuilder from "./annotations-builders/stamps-builder";
+import FoliaArrowAnnotation from "./annotations/arrow-annotation";
+import FoliaCircleAnnotation from "./annotations/circle-annotation";
+import FoliaImageAnnotation from "./annotations/image-annotation";
+import FoliaInkAnnotation from "./annotations/ink-annotation";
+import FoliaSquareAnnotation from "./annotations/square-annotation";
+import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -112,9 +118,26 @@ function keyDownHandler(e) {
       if (ctrlKey || metaKey) {
         e.preventDefault();
         e.stopPropagation();
-        console.log("pressed Ctrl + F");
+        // console.log("pressed Ctrl + F");
         this.eventBus.dispatch("open-search-bar");
       }
+      break;
+    }
+    case "c":
+    case "C": {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("pressed Ctrl + C");
+      this.copySelectedAnnotations2Clipboard();
+      break;
+    }
+    case "x":
+    case "X": {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("pressed Ctrl + X");
+      this.copySelectedAnnotations2Clipboard();
+      this.deleteSelectedAnnotations();
       break;
     }
     default:
@@ -137,7 +160,7 @@ export class FoliaPDFViewer {
   constructor() {
     window.PDFJSDev = new PDFJSDev();
     this.keyDownHandler = keyDownHandler.bind(this);
-    // this.onClickHandler = onClickHandler.bind(this);
+    this.pasteIntoFoliaBinded = this.pasteIntoFolia.bind(this);
   }
 
   async init(uiConfig, dataProxy) {
@@ -209,14 +232,16 @@ export class FoliaPDFViewer {
     this.eventBus.on("pagerendered", this.webViewerPageRendered.bind(this));
     this.eventBus.on("pagechanging", this.webViewerPageChanging.bind(this));
 
-    window.addEventListener("keydown", this.keyDownHandler, true);
+    window.addEventListener("keydown", this.keyDownHandler, { passive: false });
+    window.addEventListener("paste", this.pasteIntoFoliaBinded, { passive: false });
     // window.addEventListener("click", this.onClickHandler, true);
 
     console.log("foliaPdfViewer has been initialized");
   }
 
   deinit() {
-    window.removeEventListener("keydown", this.keyDownHandler, true);
+    window.removeEventListener("paste", this.pasteIntoFoliaBinded, { passive: false });
+    window.removeEventListener("keydown", this.keyDownHandler, { passive: false });
     // window.removeEventListener("click", this.onClickHandler, true);
   }
 
@@ -533,7 +558,6 @@ export class FoliaPDFViewer {
       this.continueStartDrawing(TextBoxBuilder, preset);
     } else if (toolType === TOOLS.IMAGE) {
       this.loadImageAsset((asset) => {
-        const BuilderClass = ImageBuilder;
         this.continueStartDrawing(ImageBuilder, preset, asset);
       });
     } else if (toolType === TOOLS.MARKER || toolType === TOOLS.UNDERLINE || toolType === TOOLS.CROSSLINE) {
@@ -550,7 +574,7 @@ export class FoliaPDFViewer {
       const BuilderClass = StampsBuilder;
       this.continueStartDrawing(BuilderClass, preset.stamp, preset.preview);
     } else {
-      console.log(`${toolType} does not exist yet`);
+      console.log(`Tool ${toolType} does not exist yet`);
     }
   }
   continueStartDrawing(BuilderClass, preset, asset) {
@@ -623,6 +647,116 @@ export class FoliaPDFViewer {
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
       page.foliaPageLayer.duplicateSelectedAnnotations();
+    });
+  }
+
+  copySelectedAnnotations2Clipboard() {
+    const selectedAnnotations = this.pdfViewer._pages
+      .map((page) => {
+        if (!page.foliaPageLayer) return [];
+        return page.foliaPageLayer.multipleSelect.getObjects();
+      })
+      .flat();
+
+    const selectedAnno = selectedAnnotations[selectedAnnotations.length - 1];
+    if (!selectedAnno) return;
+
+    const canCopy =
+      selectedAnno instanceof FoliaInkAnnotation ||
+      selectedAnno instanceof FoliaArrowAnnotation ||
+      selectedAnno instanceof FoliaCircleAnnotation ||
+      selectedAnno instanceof FoliaSquareAnnotation ||
+      selectedAnno instanceof FoliaTextBoxAnnotation ||
+      selectedAnno instanceof FoliaImageAnnotation;
+
+    if (canCopy) {
+      const type = "text/plain";
+      const annoData = selectedAnno.getRawData();
+      annoData.id = "";
+      annoData.collaboratorEmail = "";
+      annoData.addedAt = "";
+      annoData.page = -1;
+      const clipboardData = [
+        new ClipboardItem({
+          [type]: new Blob([JSON.stringify(annoData)], { type }),
+        }),
+      ];
+
+      // console.log("copyFolia", annoData);
+      navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
+        if (result.state === "granted" || result.state === "prompt") {
+          return (
+            navigator.clipboard
+              .write(clipboardData)
+              // .then(() => console.log("selected annotation has been copied"))
+              .catch(console.error)
+          );
+        } else {
+          return Promise.reject("clipboard is not accessible");
+        }
+      });
+    } else {
+      console.log("This data is not supported to copy into clipboard");
+    }
+  }
+
+  pasteIntoFolia(e) {
+    if (
+      e.target.hasAttribute("contenteditable") ||
+      e.target.nodeName === "INPUT" ||
+      e.target.nodeName === "TEXTAREA"
+    )
+      return;
+
+    navigator.clipboard
+      .read()
+      .then((clipboardItems) => {
+        const promises = [];
+        for (const item of clipboardItems) {
+          for (const type of item.types) {
+            promises.push(item.getType(type));
+          }
+        }
+        return Promise.all(promises);
+      })
+      .then(([blob]) => {
+        // continueStartDrawing
+        if (blob.type === "text/plain") {
+          return blob.text().then((text) => {
+            let annoData = text;
+            try {
+              annoData = JSON.parse(text);
+            } catch (e) {}
+            if (annoData.hasOwnProperty("__typename")) {
+              this.pasteAsAnnotationIntoHoveredPage(annoData.__typename, annoData);
+            } else {
+              this.pasteAsAnnotationIntoHoveredPage(ANNOTATION_TYPES.TEXT_BOX, { text: annoData });
+            }
+          });
+        } else if (blob.type === "image/png") {
+          const fr = new FileReader();
+          fr.onload = () => {
+            const image = new Image();
+            image.onload = () => {
+              this.pasteAsAnnotationIntoHoveredPage(ANNOTATION_TYPES.IMAGE, {
+                filename: "from clipboard",
+                image: fr.result,
+                imageWidth: image.naturalWidth,
+                imageHeight: image.naturalHeight,
+              });
+            };
+            image.src = fr.result;
+          };
+          fr.readAsDataURL(blob);
+        }
+      })
+      .catch(console.error);
+  }
+
+  pasteAsAnnotationIntoHoveredPage(annoType, annotationData) {
+    this.pdfViewer._pages.map((page) => {
+      if (!page.foliaPageLayer) return;
+      page.foliaPageLayer.pasteAsAnnotation(annoType, annotationData);
     });
   }
 

@@ -2,7 +2,6 @@ import { fromPdfRect, hexColor2RGBA } from "../folia-util";
 import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import FoliaBaseAnnotation from "./base-annotation";
 import { ANNOTATION_TYPES, HighlightKind } from "../constants";
-import { doc } from "prettier";
 
 class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
   editablePropertiesList = ["kind", "text", "color", "rects"];
@@ -10,8 +9,10 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
-    this.parentCanvas = this.foliaLayer.parentNode.querySelector("div.canvasWrapper>canvas");
-    this.parentCtx = this.parentCanvas && this.parentCanvas.getContext("2d");
+    this.parentCanvas = this.foliaLayer.parentNode.querySelector(
+      'div.canvasWrapper>canvas[role="presentation"]'
+    );
+    super.createAndAppendCanvas();
   }
 
   getRawData() {
@@ -53,18 +54,19 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.style.width = `${width}px`;
     this.annotationDIV.style.height = `${height}px`;
 
-    const annotationCanvas = document.createElement("canvas");
-    annotationCanvas.width = this.parentCanvas.width;
-    annotationCanvas.height = this.parentCanvas.height;
-    annotationCanvas.setAttribute("data-id", `${this.id}`);
-    annotationCanvas.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+    // const annotationCanvas = document.createElement("canvas");
+    // annotationCanvas.width = this.parentCanvas.width;
+    // annotationCanvas.height = this.parentCanvas.height;
+    // annotationCanvas.setAttribute("data-id", `${this.id}`);
+    // annotationCanvas.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
 
-    annotationCanvas.style.position = "absolute";
-    annotationCanvas.style.left = "0px";
-    annotationCanvas.style.top = "0px";
-    annotationCanvas.style.width = `${this.parentCanvas.clientWidth}px`;
-    annotationCanvas.style.height = `${this.parentCanvas.clientHeight}px`;
-    const ctx = annotationCanvas.getContext("2d");
+    // annotationCanvas.style.position = "absolute";
+    // annotationCanvas.style.left = "0px";
+    // annotationCanvas.style.top = "0px";
+    // annotationCanvas.style.width = `${this.parentCanvas.clientWidth}px`;
+    // annotationCanvas.style.height = `${this.parentCanvas.clientHeight}px`;
+    const parentCtx = this.parentCanvas && this.parentCanvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d");
     const lineWidth = 2 * this.viewport.scale * window.devicePixelRatio;
     this.annotationRawData.rects.forEach((pdfRect) => {
       const rect = fromPdfRect(pdfRect, this.viewport.width, this.viewport.height).map(
@@ -79,21 +81,21 @@ class FoliaHighlightAnnotation extends FoliaBaseAnnotation {
         ctx.fillRect(rect[0], rect[1] + rect[3] - lineWidth, rect[2], lineWidth);
       } else if (this.annotationRawData.kind === HighlightKind.MARKER) {
         ctx.globalCompositeOperation = "darken";
-        const imageData = this.parentCtx.getImageData(...rect);
+        const imageData = parentCtx.getImageData(...rect);
         ctx.putImageData(imageData, rect[0], rect[1]);
         ctx.fillRect(...rect);
       }
     });
 
-    const tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width = width * window.devicePixelRatio;
-    tmpCanvas.height = height * window.devicePixelRatio;
-    const tmpCtx = tmpCanvas.getContext("2d");
-    const tmpImageData = ctx.getImageData(
-      ...[left, top, width, height].map((a) => a * window.devicePixelRatio)
-    );
-    tmpCtx.putImageData(tmpImageData, 0, 0);
-    this.annotationDIV.style.backgroundImage = `url(${tmpCanvas.toDataURL()})`;
+    // const tmpCanvas = document.createElement("canvas");
+    // tmpCanvas.width = width * window.devicePixelRatio;
+    // tmpCanvas.height = height * window.devicePixelRatio;
+    // const tmpCtx = tmpCanvas.getContext("2d");
+    // const tmpImageData = ctx.getImageData(
+    //   ...[left, top, width, height].map((a) => a * window.devicePixelRatio)
+    // );
+    // tmpCtx.putImageData(tmpImageData, 0, 0);
+    // this.annotationDIV.style.backgroundImage = `url(${tmpCanvas.toDataURL()})`;
   }
 
   _render() {

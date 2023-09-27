@@ -11,17 +11,17 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
-    super.createAndAppendCanvas();
-    super.buildBaseCorners();
-    this.image = new Image();
-    this.image.src = `data:image/png;base64,${this.annotationRawData.content}`;
-  }
+    // const image = document.createElement("img");
+    // image.setAttribute("data-id", `${this.id}`);
+    // image.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+    // image.classList.add("image-stamp");
+    // this.image = image;
+    // this.image.src = `data:image/png;base64,${this.annotationRawData.content}`;
+    // this.annotationDIV.appendChild(image);
 
-  deleteFromCanvas() {
-    this.canvas.remove();
-    super.deleteFromCanvas();
+    this.annotationDIV.style.backgroundImage = `url("data:image/png;base64,${this.annotationRawData.content}")`;
+    this.buildBaseCorners();
   }
-
   getRawData() {
     const { id, addedAt, deletedAt, collaboratorEmail, rect, page, filename, content } =
       this.annotationRawData;
@@ -51,16 +51,6 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     this.render();
   }
 
-  getBoundingRect() {
-    const rect = fromPdfRect(this.annotationRawData.rect, this.viewport.width, this.viewport.height);
-    return {
-      left: rect[0],
-      top: rect[1],
-      width: rect[2],
-      height: rect[3],
-    };
-  }
-
   render() {
     const { width: viewportWidth, height: viewportHeight } = this.viewport;
     const [left, top, width, height] = fromPdfRect(
@@ -72,21 +62,6 @@ class FoliaImageAnnotation extends FoliaBaseAnnotation {
     this.annotationDIV.style.top = `${top}px`;
     this.annotationDIV.style.width = `${width}px`;
     this.annotationDIV.style.height = `${height}px`;
-
-    if (this.updateRectsTimer) cancelAnimationFrame(this.updateRectsTimer);
-    this.updateRectsTimer = requestAnimationFrame(() => this.canvasRender());
-  }
-
-  canvasRender() {
-    this.canvas.width = this.canvas.width;
-    const ctx = this.canvas.getContext("2d");
-    const annoBoundingRect = this.getBoundingRect();
-    const annoLeft = annoBoundingRect.left * window.devicePixelRatio;
-    const annoTop = annoBoundingRect.top * window.devicePixelRatio;
-    const annoWidth = annoBoundingRect.width * window.devicePixelRatio;
-    const annoHeight = annoBoundingRect.height * window.devicePixelRatio;
-
-    ctx.drawImage(this.image, annoLeft, annoTop, annoWidth, annoHeight);
   }
 }
 

@@ -97,6 +97,7 @@
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
+    "npm": "^10.1.0",
     "paper": "^0.12.17",
     "querystring-es3": "^0.2.1",
     "stream-browserify": "^3.0.0",

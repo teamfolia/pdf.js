@@ -68,6 +68,7 @@ export const ANNOTATION_WEIGHT = [
   ANNOTATION_TYPES.COMMENT,
   ANNOTATION_TYPES.IMAGE,
   ANNOTATION_TYPES.HIGHLIGHT,
+  "pdf-canvas",
 ];
 
 export const HighlightKind = {

@@ -1,3 +1,5 @@
+import { ANNOTATION_WEIGHT } from "./constants";
+
 export const hexColor2pdf = (hexColor = "#F04E23DC") => {
   const hex = hexColor.toLowerCase().split("").slice(1).join("");
   if (hex.length % 2 !== 0) console.warn(`wrong hex string "${hexColor}"`);
@@ -203,4 +205,27 @@ export const setTextAreaDynamicHeight = (textArea) => {
   // const paddingBottom = parseInt(textAreaStyles.getPropertyValue("padding-bottom"), 10);
   // const height = textArea.scrollHeight - paddingTop - paddingBottom;
   // textArea.style.height = height + "px";
+};
+
+export const addAnnotationEl = (containerEl, annotationEl) => {
+  const annoWeight = Array.from(annotationEl.classList).reduce((acc, className) => {
+    return Math.max(acc, ANNOTATION_WEIGHT.indexOf(className));
+  }, -1);
+  const children = containerEl.children;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    const childWeight = Array.from(child.classList).reduce((acc, className) => {
+      return Math.max(acc, ANNOTATION_WEIGHT.indexOf(className));
+    }, -1);
+    if (childWeight < annoWeight) {
+      return containerEl.insertBefore(annotationEl, child);
+    } else if (childWeight === annoWeight) {
+      const childAddedAt = parseInt(child.dataset["timestamp"], 10);
+      const annoAddedAt = parseInt(annotationEl.dataset["timestamp"], 10);
+      if (childAddedAt > annoAddedAt) {
+        return containerEl.insertBefore(annotationEl, child);
+      }
+    }
+  }
+  return containerEl.appendChild(annotationEl);
 };

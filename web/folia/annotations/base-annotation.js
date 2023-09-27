@@ -10,6 +10,7 @@ import {
   shiftRect,
   shiftArrow,
   shiftInk,
+  addAnnotationEl,
 } from "../folia-util";
 import { RECT_MIN_SIZE, FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import { ANNOTATION_TYPES, ANNOTATION_WEIGHT, PERMISSIONS } from "../constants";
@@ -17,7 +18,7 @@ import { ANNOTATION_TYPES, ANNOTATION_WEIGHT, PERMISSIONS } from "../constants";
 class FoliaBaseAnnotation {
   isSelected = false;
   annotationRawData = {};
-  safeArea = 10;
+  safeArea = 0;
   _isDirty;
 
   constructor(foliaPageLayer, annotationRawData) {
@@ -33,37 +34,27 @@ class FoliaBaseAnnotation {
     const annotationDIV = document.createElement("div");
     annotationDIV.setAttribute("data-id", `${this.id}`);
     annotationDIV.setAttribute("data-role", FOLIA_LAYER_ROLES.ANNOTATION_OBJECT);
+    annotationDIV.setAttribute("data-timestamp", new Date(this.annotationRawData.addedAt).getTime());
     annotationDIV.className = `folia-annotation ${this.annotationRawData.__typename}`;
     annotationDIV.classList.toggle("no-permission", !this.canManage);
     annotationDIV.classList.toggle("error", Boolean(this.annotationRawData.error));
-    this.annotationDIV = annotationDIV;
+    annotationDIV.classList.toggle(this.annotationRawData.__typename, true);
 
-    const annoWeight = ANNOTATION_WEIGHT.indexOf(this.annotationRawData.__typename);
-    const children = this.foliaLayer.children;
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const childWeight = Array.from(child.classList).reduce((acc, className) => {
-        return Math.max(acc, ANNOTATION_WEIGHT.indexOf(className));
-      }, -1);
-      if (childWeight < annoWeight) {
-        this.foliaLayer.insertBefore(annotationDIV, child);
-        return;
-      } else if (childWeight === annoWeight) {
-        const childAnno = this.foliaPageLayer.annotationObjects.get(child.dataset?.id);
-        const childAddedTime = new Date(childAnno.annotationRawData.addedAt);
-        const annoAddedTime = new Date(this.annotationRawData.addedAt);
-        if (childAddedTime.getTime() > annoAddedTime.getTime()) {
-          this.foliaLayer.insertBefore(annotationDIV, child);
-          return;
-        }
-      }
-    }
-    this.foliaLayer.appendChild(annotationDIV);
+    this.annotationDIV = addAnnotationEl(this.foliaLayer, annotationDIV);
+    // console.log("BASE ANNO CONSTRUCTOR", this.annotationRawData.__typename);
   }
 
-  // appendAnnot2Layer(parent, child) {
-  //   ANNOTATION_WEIGHT;
-  // }
+  createAndAppendCanvas() {
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("data-id", `${this.id}`);
+    canvas.setAttribute("data-timestamp", new Date(this.annotationRawData.addedAt).getTime());
+    canvas.width = this.pdfCanvas.width;
+    canvas.height = this.pdfCanvas.height;
+    canvas.className = "folia-annotation-canvas " + this.annotationRawData.__typename;
+    canvas.style.width = this.pdfCanvas.clientWidth + "px";
+    canvas.style.height = this.pdfCanvas.clientHeight + "px";
+    this.canvas = addAnnotationEl(this.pdfCanvas.parentNode, canvas);
+  }
 
   render() {
     const lineWidth = (this.annotationRawData.lineWidth || 0) * this.viewport.scale;
@@ -72,8 +63,6 @@ class FoliaBaseAnnotation {
     this.annotationDIV.style.top = `${top - lineWidth / 2}px`;
     this.annotationDIV.style.width = `${width + lineWidth}px`;
     this.annotationDIV.style.height = `${height + lineWidth}px`;
-    // this.annotationDIV.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
-    // console.log("BASE RENDER", { left, top, width, height });
   }
 
   get editableProperties() {
@@ -152,10 +141,12 @@ class FoliaBaseAnnotation {
   updateErrorStatus() {
     this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
   }
+
   deleteFromCanvas() {
     this.annotationDIV.remove();
-    // this.canvas.remove();
+    this.canvas?.remove();
   }
+
   buildBaseCorners() {
     if (!this.canManage) return;
     Object.keys(FOLIA_LAYER_ROLES.RECT_CORNERS).forEach((corner) => {
@@ -166,31 +157,42 @@ class FoliaBaseAnnotation {
       this.annotationDIV.appendChild(cornerDiv);
     });
   }
+
   setCornersVisibility(visibility) {
     this.annotationDIV.querySelectorAll(".corner-div").forEach((cornerEl) => {
       cornerEl.style.display = visibility ? "block" : "none";
     });
   }
+
   markAsSelected() {
     this.setCornersVisibility(this.canManage);
+    this.foliaLayer.classList.add("selected");
     this.annotationDIV.classList.add("selected");
+    this.canvas?.classList.add("selected");
+    // this.canvas && this.canvas.classList.add("selected");
     this.isSelected = true;
   }
   markAsUnselected() {
     this.setCornersVisibility(false);
+    this.foliaLayer.classList.remove("selected");
     this.annotationDIV.classList.remove("selected");
+    this.canvas?.classList.remove("selected");
+
     this.isSelected = false;
     delete this.annotationRawData.doNotCommit;
     this.foliaPageLayer.commitObjectChanges(this.getRawData());
   }
+
   markAsDeleted() {
     this.markAsChanged();
     this.annotationRawData.deletedAt = this.isDirty;
   }
+
   markAsChanged() {
     this.isDirty = new Date().toISOString();
     this.annotationRawData.addedAt = this.isDirty;
   }
+
   markAsUnchanged() {
     this.isDirty = null;
   }
@@ -575,6 +577,7 @@ class FoliaBaseAnnotation {
         break;
     }
   }
+
   startEditMode() {}
   stopEditMode() {}
 

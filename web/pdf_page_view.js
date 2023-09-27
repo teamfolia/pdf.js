@@ -895,6 +895,7 @@ class PDFPageView {
     const viewport = this.viewport;
     const canvas = document.createElement("canvas");
     canvas.setAttribute("role", "presentation");
+    canvas.className = "pdf-canvas";
 
     // Keep the canvas hidden until the first draw callback, or until drawing
     // is complete when `!this.renderingQueue`, to prevent black flickering.

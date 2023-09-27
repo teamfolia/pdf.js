@@ -136,39 +136,64 @@ class ArrowBuilder extends BaseBuilder {
     const ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.arrows.forEach((arrow) => this.drawArrow(ctx, arrow));
-    // this.arrows.forEach((arrow) => {
-    //   const { color, lineWidth, sourcePoint, targetPoint } = arrow;
-    //   const _lineWidth = lineWidth * this.viewport.scale;
-    //   ctx.save();
-    //   ctx.lineCap = "round";
-    //   ctx.lineJoin = "round";
-    //   ctx.strokeStyle = color;
-    //   const arrowheadFactor = 1.3;
-    //   let dx = targetPoint.x - sourcePoint.x;
-    //   let dy = targetPoint.y - sourcePoint.y;
-    //   const dlen = Math.sqrt(dx * dx + dy * dy);
-    //   dx = dx / dlen;
-    //   dy = dy / dlen;
-    //   const headLen = arrowheadFactor * _lineWidth;
-    //   const hpx0 = targetPoint.x + headLen * dy - headLen * dx;
-    //   const hpy0 = targetPoint.y - headLen * dx - headLen * dy;
-    //   const hpx1 = targetPoint.x - headLen * dy - headLen * dx;
-    //   const hpy1 = targetPoint.y + headLen * dx - headLen * dy;
-
-    //   ctx.beginPath();
-    //   ctx.lineWidth = _lineWidth;
-    //   ctx.moveTo(sourcePoint.x, sourcePoint.y);
-    //   ctx.lineTo(targetPoint.x, targetPoint.y);
-    //   ctx.moveTo(hpx0, hpy0);
-    //   ctx.lineTo(targetPoint.x, targetPoint.y);
-    //   ctx.lineTo(hpx1, hpy1);
-    //   ctx.stroke();
-    //   ctx.restore();
-    //   ctx.closePath();
-    // });
   }
 
   drawArrow(ctx, arrowData) {
+    const lineWidth = arrowData.lineWidth * this.viewport.scale * window.devicePixelRatio;
+    const sourceX = arrowData.sourcePoint.x * window.devicePixelRatio;
+    const sourceY = arrowData.sourcePoint.y * window.devicePixelRatio;
+    const targetX = arrowData.targetPoint.x * window.devicePixelRatio;
+    const targetY = arrowData.targetPoint.y * window.devicePixelRatio;
+    const dirX = Math.sign(targetX - sourceX);
+    const dirY = -Math.sign(targetY - sourceY);
+    const annotationWidth = Math.abs(targetX - sourceX);
+    const annotationHeight = Math.abs(targetY - sourceY);
+    const annotationAgle = Math.atan(annotationHeight / annotationWidth);
+    const arrowLength = Math.sqrt(Math.pow(annotationWidth, 2) + Math.pow(annotationHeight, 2));
+
+    const lineFactor = Math.max(lineWidth, 5);
+    const arrowHeight = lineFactor * 3.7;
+    const arrowLeavesHeight = arrowHeight / 6.5;
+    const arrowAngle = (63 * Math.PI) / 180;
+    const cornersRadius = lineFactor / 6;
+
+    const outSideLine = arrowHeight / Math.cos(arrowAngle / 2);
+    const x1 = targetX - dirX * outSideLine * Math.cos(annotationAgle - arrowAngle / 2);
+    const y1 = targetY + dirY * outSideLine * Math.sin(annotationAgle - arrowAngle / 2);
+    const x2 = targetX - dirX * outSideLine * Math.cos(annotationAgle + arrowAngle / 2);
+    const y2 = targetY + dirY * outSideLine * Math.sin(annotationAgle + arrowAngle / 2);
+    const x3 = targetX - dirX * (arrowHeight - arrowLeavesHeight) * Math.cos(annotationAgle);
+    const y3 = targetY + dirY * (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle);
+
+    if (new Set([x3, x2, targetX, x1]).size > 1 && new Set([y3, y2, targetY, y1]).size > 1) {
+      ctx.strokeStyle = hexColor2RGBA(arrowData.color);
+      ctx.fillStyle = hexColor2RGBA(arrowData.color);
+      ctx.lineWidth = lineWidth;
+
+      ctx.beginPath();
+      ctx.moveTo(x3, y3);
+      ctx.arcTo(x2, y2, targetX, targetY, cornersRadius);
+      ctx.arcTo(targetX, targetY, x1, y1, cornersRadius);
+      ctx.arcTo(x1, y1, x3, y3, cornersRadius);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.lineCap = "butt";
+      ctx.moveTo(x3, y3);
+      ctx.lineTo(sourceX, sourceY);
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    const arrowBase = Math.sqrt(Math.pow(outSideLine, 2) - Math.pow(arrowHeight, 2));
+    return {
+      arrowLength: arrowLength / window.devicePixelRatio,
+      arrowWidth: arrowBase + arrowData.lineWidth / 2,
+    };
+  }
+
+  drawArrow2(ctx, arrowData) {
     const lineWidth = arrowData.lineWidth * this.viewport.scale;
     const annotationWidth = Math.abs(arrowData.sourcePoint.x - arrowData.targetPoint.x);
     const annotationHeight = Math.abs(arrowData.sourcePoint.y - arrowData.targetPoint.y);

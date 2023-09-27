@@ -57,8 +57,15 @@ See https://github.com/adobe-type-tools/cmap-resources
 
       .projects-list,
       .documents-list {
-        width: 150px;
-        margin-right: 10px;
+        width: 50px;
+        margin-right: 5px;
+      }
+
+      #refresh {
+        background-image: url("data:image/svg+xml, %3Csvg xmlns='http://www.w3.org/2000/svg' style='width: 24px; height: 24px' viewBox='0 0 24 24'%3E%3Cpath fill='currentColor' d='M19,8L15,12H18A6,6 0 0,1 12,18C11,18 10.03,17.75 9.2,17.3L7.74,18.76C8.97,19.54 10.43,20 12,20A8,8 0 0,0 20,12H23M6,12A6,6 0 0,1 12,6C13,6 13.97,6.25 14.8,6.7L16.26,5.24C15.03,4.46 13.57,4 12,4A8,8 0 0,0 4,12H1L5,16L9,12' /%3E%3C/svg%3E%0A");
+        background-size: 16px;
+        background-position: center;
+        background-repeat: no-repeat;
       }
 
       .tool-divider {
@@ -69,8 +76,10 @@ See https://github.com/adobe-type-tools/cmap-resources
       }
       .tool-button {
         margin-right: 10px;
-        width: 26px;
-        height: 26px;
+        min-width: 26px;
+        min-height: 26px;
+        max-width: 26px;
+        max-height: 26px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -214,23 +223,15 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div class="folia-app">
       <!-- toolbar -->
       <div class="app-toolbar">
-        <button id="refresh">
-          <svg style="width: 24px; height: 24px" viewBox="0 0 24 24">
-            <path
-              fill="currentColor"
-              d="M19,8L15,12H18A6,6 0 0,1 12,18C11,18 10.03,17.75 9.2,17.3L7.74,18.76C8.97,19.54 10.43,20 12,20A8,8 0 0,0 20,12H23M6,12A6,6 0 0,1 12,6C13,6 13.97,6.25 14.8,6.7L16.26,5.24C15.03,4.46 13.57,4 12,4A8,8 0 0,0 4,12H1L5,16L9,12"
-            />
-          </svg>
-        </button>
-        &nbsp;
         <select id="projects-list" class="projects-list">
           <option>select project</option>
         </select>
-
         <select id="documents-list" class="documents-list">
           <option>select document</option>
         </select>
-
+        &nbsp;
+        <button id="refresh" class="tool-button"></button>
+        &nbsp;
         <button id="clear-tool" class="tool-button">
           <svg
             width="12"

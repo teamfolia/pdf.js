@@ -19,7 +19,7 @@ class TextBoxBuilder extends BaseBuilder {
   resume() {
     if (!this.builderContainer) {
       this.builderContainer = document.createElement("div");
-      this.builderContainer.className = "annotation-builder-container";
+      this.builderContainer.className = "annotation-builder-container text-box";
       this.builderContainer.setAttribute("data-role", FOLIA_LAYER_ROLES.FOLIA_BUILDER);
       this.builderContainer.style.position = "absolute";
       this.builderContainer.style.left = "0px";
@@ -35,6 +35,8 @@ class TextBoxBuilder extends BaseBuilder {
   }
 
   prepareAnnotations2save() {
+    // console.log("prepareAnnotations2save", this.stopPoint, this.startPoint);
+    if (!this.stopPoint || !this.startPoint) return [];
     const rect = [
       this.startPoint.x,
       this.startPoint.y,

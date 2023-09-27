@@ -33,9 +33,17 @@ body {
   bottom: 0;
 }
 
+.folia-layer.selected {
+  z-index: 1001;
+}
+
 .folia-annotation-canvas {
   position: absolute;
   inset: 0px;
+}
+
+.folia-annotation-canvas.selected {
+  z-index: 1000;
 }
 
 .folia-annotation {
@@ -61,18 +69,18 @@ body {
 }
 
 .folia-annotation.selected {
-  z-index: 1000;
+  z-index: 1002;
 }
 
-.folia-annotation.selected:not(.CommentAnnotation):not(.ArrowAnnotation)::before {
+.folia-annotation.selected:not(.CommentAnnotation):not(.TextBoxAnnotation):not(.ArrowAnnotation)::before {
   display: block;
   content: "";
   border: solid 1px var(--annotation-border-color);
   position: absolute;
-  left: -6px;
-  top: -6px;
-  right: -6px;
-  bottom: -6px;
+  left: -1px;
+  top: -1px;
+  right: -1px;
+  bottom: -1px;
   z-index: -1;
 }
 
@@ -82,25 +90,25 @@ body {
   justify-content: center;
 }
 
-.folia-annotation.ArrowAnnotation::after {
-  content: "";
-  position: absolute;
-  width: var(--arrow-width);
-  height: var(--arrow-height);
-
-  background-image: var(--arrow-image);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
-}
-
 .folia-annotation.ArrowAnnotation.selected::before {
   display: block;
   content: "";
   border: solid 1px var(--annotation-border-color);
   position: absolute;
-  width: calc(var(--arrow-width) + 6px);
-  height: calc(var(--arrow-height) + 6px);
+  width: var(--arrow-width);
+  height: var(--arrow-height);
+}
+
+.folia-annotation.TextBoxAnnotation.selected::before {
+  display: block;
+  content: "";
+  border: solid 1px var(--annotation-border-color);
+  position: absolute;
+  left: -6px;
+  top: -4px;
+  right: -6px;
+  bottom: -4px;
+  z-index: -1;
 }
 
 .folia-annotation.TextBoxAnnotation > .text-box {
@@ -155,55 +163,55 @@ body {
 }
 
 .corner-begin {
-  left: calc(var(--line-width) - 5px);
+  left: calc(var(--line-width) - 4px);
   cursor: move;
 }
 .corner-end {
-  right: calc(var(--line-width) - 3px);
+  right: calc(var(--line-width) - 4px);
   cursor: move;
 }
 
-.folia-annotation > .corner-lt {
-  left: -8.5px;
-  top: -8.5px;
+.folia-annotation:not(.TextBoxAnnotation) > .corner-lt {
+  left: -4px;
+  top: -4px;
   cursor: nwse-resize;
 }
-.folia-annotation > .corner-rt {
-  right: -8.5px;
-  top: -8.5px;
+.folia-annotation:not(.TextBoxAnnotation) > .corner-rt {
+  right: -4px;
+  top: -4px;
   cursor: nesw-resize;
 }
-.folia-annotation > .corner-lb {
-  left: -8.5px;
-  bottom: -8.5px;
+.folia-annotation:not(.TextBoxAnnotation) > .corner-lb {
+  left: -4px;
+  bottom: -4px;
   cursor: nesw-resize;
 }
-.folia-annotation > .corner-rb {
-  right: -8.5px;
-  bottom: -8.5px;
+.folia-annotation:not(.TextBoxAnnotation) > .corner-rb {
+  right: -4px;
+  bottom: -4px;
   cursor: nwse-resize;
 }
 
-/* .folia-annotation.TextBoxAnnotation > .corner-lt {
-  left: -4px;
-  top: -4px;
+.folia-annotation.TextBoxAnnotation > .corner-lt {
+  left: -8.5px;
+  top: -7px;
   cursor: nwse-resize;
 }
 .folia-annotation.TextBoxAnnotation > .corner-rt {
-  right: -4px;
-  top: -4px;
+  right: -8.5px;
+  top: -7px;
   cursor: nesw-resize;
 }
 .folia-annotation.TextBoxAnnotation > .corner-lb {
-  left: -4px;
-  bottom: -4px;
+  left: -8.5px;
+  bottom: -7px;
   cursor: nesw-resize;
 }
 .folia-annotation.TextBoxAnnotation > .corner-rb {
-  right: -4px;
-  bottom: -4px;
+  right: -8.5px;
+  bottom: -7px;
   cursor: nwse-resize;
-} */
+}
 
 .folia-annotation.InkAnnotation.error::after,
 .folia-annotation.CircleAnnotation.error::after,

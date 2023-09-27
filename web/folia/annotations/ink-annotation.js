@@ -2,6 +2,7 @@ import { view } from "paper/dist/paper-core";
 import { ANNOTATION_TYPES } from "../constants";
 import { hexColor2RGBA, fromPdfPoint, toPdfPath, fromPdfPath, fromPdfRect } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";
+import * as turf from "@turf/turf";
 
 class FoliaInkAnnotation extends FoliaBaseAnnotation {
   relativePdfPaths = [];
@@ -10,6 +11,13 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
 
   constructor(...props) {
     super(...props);
+    super.createAndAppendCanvas();
+    // console.log("INK ANNO CONSTRUCTOR");
+  }
+
+  deleteFromCanvas() {
+    this.canvas.remove();
+    super.deleteFromCanvas();
   }
 
   getBoundingRect() {
@@ -58,8 +66,8 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
       .map((viewPath) => {
         const viewportPath = viewPath.map((point) => {
           return {
-            x: point.x + offsetLeft,
-            y: point.y + offsetTop,
+            x: Math.round(point.x + offsetLeft),
+            y: Math.round(point.y + offsetTop),
           };
         });
         return toPdfPath(viewportPath, this.viewport.width, this.viewport.height);
@@ -70,12 +78,25 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
     this.updateRectsTimer = requestAnimationFrame(() => this.canvasRender());
   }
 
+  simplifyPath(path, index) {
+    try {
+      if (!path) return [];
+      if (path.length < 3) return path;
+      const line = turf.lineString(path.map((p) => [p.x, p.y]));
+      const simplified = turf.simplify(line, { tolerance: 0.1, highQuality: true });
+      const _path = simplified.geometry.coordinates.map((c) => ({ x: c[0], y: c[1] }));
+      console.timeEnd("path" + index);
+      return _path;
+    } catch (e) {
+      console.error("turf error:", e.message);
+      return path;
+    }
+  }
+
   canvasRender() {
+    this.canvas.width = this.canvas.width;
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
-    const canvas = document.createElement("canvas");
-    canvas.width = this.pdfCanvas.width;
-    canvas.height = this.pdfCanvas.height;
-    const ctx = canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d");
     const paths = this.annotationRawData.paths
       .map((pdfPath) => fromPdfPath(pdfPath, this.viewport.width, this.viewport.height))
       .map((path) =>
@@ -85,47 +106,61 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
         }))
       );
 
+    ctx.lineJoin = "round";
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-    ctx.lineWidth = lineWidth;
+    ctx.fillStyle = hexColor2RGBA(this.annotationRawData.color);
+    // prettier-ignore
     paths.forEach((viewportPath) => {
-      ctx.save();
       let p1 = viewportPath[0];
       let p2 = viewportPath[1];
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
-      for (let i = 1, len = viewportPath.length; i < len; i++) {
-        const mp = { x: p1.x + (p2.x - p1.x) * 0.5, y: p1.y + (p2.y - p1.y) * 0.5 };
-        ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
-        p1 = viewportPath[i];
-        p2 = viewportPath[i + 1];
+
+      if (viewportPath.length === 1) {
+        ctx.lineWidth = 1;
+        ctx.arc(p1.x, p1.y, lineWidth / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.lineWidth = lineWidth;
+        for (let i = 1, len = viewportPath.length; i < len; i++) {
+          const mp = {
+            x: p1.x + (p2.x - p1.x) * 0.5,
+            y: p1.y + (p2.y - p1.y) * 0.5
+          };
+          ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
+          p1 = viewportPath[i];
+          p2 = viewportPath[i + 1];
+        }
       }
+
       ctx.lineTo(p1.x, p1.y);
       ctx.stroke();
+      ctx.closePath();
     });
 
-    const annoBoundingRect = this.getBoundingRect();
-    const annoLeft = annoBoundingRect.left * window.devicePixelRatio;
-    const annoTop = annoBoundingRect.top * window.devicePixelRatio;
-    const annoWidth = annoBoundingRect.width * window.devicePixelRatio;
-    const annoHeight = annoBoundingRect.height * window.devicePixelRatio;
-
-    const annotationCanvas = document.createElement("canvas");
-    annotationCanvas.width = annoWidth + lineWidth;
-    annotationCanvas.height = annoHeight + lineWidth;
-    const annotationCtx = annotationCanvas.getContext("2d");
-    annotationCtx.putImageData(
-      ctx.getImageData(
-        annoLeft - lineWidth / 2,
-        annoTop - lineWidth / 2,
-        annoWidth + lineWidth,
-        annoHeight + lineWidth
-      ),
-      0,
-      0
-    );
-
-    this.annotationDIV.style.backgroundImage = `url("${annotationCanvas.toDataURL("png")}")`;
+    // ctx.lineWidth = 1;
+    // ctx.strokeStyle = "black";
+    // // prettier-ignore
+    // paths.forEach((viewportPath) => {
+    //   let p1 = viewportPath[0];
+    //   let p2 = viewportPath[1];
+    //   ctx.lineCap = "round";
+    //   ctx.beginPath();
+    //   ctx.moveTo(p1.x, p1.y);
+    //   for (let i = 1, len = viewportPath.length; i < len; i++) {
+    //     const mp = {
+    //       x: p1.x + (p2.x - p1.x) * 0.5,
+    //       y: p1.y + (p2.y - p1.y) * 0.5
+    //     };
+    //     ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
+    //     p1 = viewportPath[i];
+    //     p2 = viewportPath[i + 1];
+    //   }
+    //   ctx.lineTo(p1.x, p1.y);
+    //   ctx.stroke();
+    //   ctx.closePath();
+    // });
   }
 
   render() {

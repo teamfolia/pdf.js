@@ -8,7 +8,22 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
   constructor(...props) {
     super(...props);
     this.annotationDIV.classList.add(this.annotationRawData.__typename);
+
+    // const canvas = document.createElement("canvas");
+    // canvas.width = this.pdfCanvas.width;
+    // canvas.height = this.pdfCanvas.height;
+    // canvas.className = "folia-annotation-canvas " + this.annotationRawData.__typename;
+    // canvas.style.width = this.pdfCanvas.clientWidth + "px";
+    // canvas.style.height = this.pdfCanvas.clientHeight + "px";
+    // this.canvas = canvas;
+    // this.pdfCanvas.parentNode.appendChild(canvas);
+    super.createAndAppendCanvas();
     super.buildBaseCorners();
+  }
+
+  deleteFromCanvas() {
+    this.canvas.remove();
+    super.deleteFromCanvas();
   }
 
   getRawData() {
@@ -50,11 +65,9 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
 
   canvasRender() {
     // console.log("render circle", [x, y], [radiusX, radiusY]);
-    const canvas = document.createElement("canvas");
-    canvas.width = this.pdfCanvas.width;
-    canvas.height = this.pdfCanvas.height;
+    this.canvas.width = this.canvas.width;
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
-    const ctx = canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d");
     const annoBoundingRect = this.getBoundingRect();
     const annoLeft = annoBoundingRect.left * window.devicePixelRatio;
     const annoTop = annoBoundingRect.top * window.devicePixelRatio;
@@ -72,21 +85,21 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
     ctx.stroke();
     ctx.closePath();
 
-    const annotationCanvas = document.createElement("canvas");
-    annotationCanvas.width = annoWidth + lineWidth;
-    annotationCanvas.height = annoHeight + lineWidth;
-    const annotationCtx = annotationCanvas.getContext("2d");
-    annotationCtx.putImageData(
-      ctx.getImageData(
-        annoLeft - lineWidth / 2,
-        annoTop - lineWidth / 2,
-        annoWidth + lineWidth,
-        annoHeight + lineWidth
-      ),
-      0,
-      0
-    );
-    this.annotationDIV.style.backgroundImage = `url("${annotationCanvas.toDataURL("png")}")`;
+    // const annotationCanvas = document.createElement("canvas");
+    // annotationCanvas.width = annoWidth + lineWidth;
+    // annotationCanvas.height = annoHeight + lineWidth;
+    // const annotationCtx = annotationCanvas.getContext("2d");
+    // annotationCtx.putImageData(
+    //   ctx.getImageData(
+    //     annoLeft - lineWidth / 2,
+    //     annoTop - lineWidth / 2,
+    //     annoWidth + lineWidth,
+    //     annoHeight + lineWidth
+    //   ),
+    //   0,
+    //   0
+    // );
+    // this.annotationDIV.style.backgroundImage = `url("${annotationCanvas.toDataURL("png")}")`;
   }
 
   render() {

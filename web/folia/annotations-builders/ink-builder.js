@@ -143,24 +143,35 @@ class InkBuilder extends BaseBuilder {
     this.drawAll();
   }
 
-  drawSegment(color, lineWidth, path) {
+  drawSegment(color, _lineWidth, path) {
     if (path.length === 0) return;
+    const lineWidth = _lineWidth * this.viewport.scale * window.devicePixelRatio;
     const ctx = this.canvas.getContext("2d");
     ctx.save();
     ctx.strokeStyle = hexColor2RGBA(color);
-    ctx.lineWidth = lineWidth * this.viewport.scale * window.devicePixelRatio;
+    ctx.fillStyle = hexColor2RGBA(color);
+
+    ctx.lineWidth = lineWidth;
     let p1 = path[0];
     let p2 = path[1];
-    ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
-    for (let i = 1, len = path.length; i < len; i++) {
-      const mp = { x: p1.x + (p2.x - p1.x) * 0.5, y: p1.y + (p2.y - p1.y) * 0.5 };
-      ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
-      p1 = path[i];
-      p2 = path[i + 1];
+
+    if (path.length === 1) {
+      ctx.lineWidth = 1;
+      ctx.arc(p1.x, p1.y, lineWidth / 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      for (let i = 1, len = path.length; i < len; i++) {
+        const mp = { x: p1.x + (p2.x - p1.x) * 0.5, y: p1.y + (p2.y - p1.y) * 0.5 };
+        ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
+        p1 = path[i];
+        p2 = path[i + 1];
+      }
+      ctx.lineTo(p1.x, p1.y);
     }
-    ctx.lineTo(p1.x, p1.y);
     ctx.stroke();
     ctx.closePath();
   }

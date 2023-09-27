@@ -1,5 +1,3 @@
-import { v4 as uuid } from "uuid";
-// import FoliaConversationAnnotation from "./annotations/_conversation-annotation";
 import FoliaImageAnnotation from "./annotations/image-annotation";
 import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
 import MultipleSelect from "./MultiSelectObjects";
@@ -10,6 +8,7 @@ import FoliaArrowAnnotation from "./annotations/arrow-annotation";
 import FoliaHighlightAnnotation from "./annotations/highlight-annotation";
 import FoliaCommentAnnotation from "./annotations/comment-annotation";
 import { ANNOTATION_TYPES, ANNOTATION_WEIGHT } from "./constants";
+import PasteIntoPage from "./pasteIntoPage";
 
 const ANNOTATIONS_CLASSES = {
   [ANNOTATION_TYPES.INK]: FoliaInkAnnotation,
@@ -68,13 +67,6 @@ class FoliaPageLayer {
   annotationObjects = new MyMap();
   permissions = {};
 
-  multipleSelect;
-  actionTarget = { role: "", id: "" };
-  isMouseDown = false;
-  isMouseMoved = false;
-  startPoint;
-  annotationBuilder;
-
   constructor(props) {
     this.pageDiv = props.pageDiv;
     this.pdfPage = props.pdfPage;
@@ -87,18 +79,81 @@ class FoliaPageLayer {
     this.pdfViewerScale = props.pdfViewerScale;
 
     this.pageNumber = props.pdfPage.pageNumber - 1;
+    this.actionTarget = { role: "", id: "" };
+    this.isMouseDown = false;
+    this.isMouseMoved = false;
+    this.startPoint;
     this.multipleSelect = new MultipleSelect(this.viewport, props.eventBus, this.pageNumber);
+    this.annotationBuilder = null;
+    this.pageIsHovered = false;
 
-    props.pageDiv.parentNode.addEventListener("mousedown", (e) => this.viewerMouseDown(e));
-    props.pageDiv.parentNode.addEventListener("mousemove", (e) => this.viewerMouseMove(e));
-    props.pageDiv.parentNode.addEventListener("mouseup", (e) => this.viewerMouseUp(e));
-    // console.log("FoliaLayer constructor");
+    this.viewerMouseDownBind = this.viewerMouseDown.bind(this);
+    this.viewerMouseMoveBind = this.viewerMouseMove.bind(this);
+    this.viewerMouseUpBind = this.viewerMouseUp.bind(this);
+
+    this.pageMouseOverBind = this.pageMouseOver.bind(this);
+    this.pageMouseOutBind = this.pageMouseOut.bind(this);
+    this.pageMouseMoveBind = this.pageMouseMove.bind(this);
+
+    this.pageDiv.parentNode.addEventListener("mousedown", this.viewerMouseDownBind);
+    this.pageDiv.parentNode.addEventListener("mousemove", this.viewerMouseMoveBind);
+    this.pageDiv.parentNode.addEventListener("mouseup", this.viewerMouseUpBind);
+    this.pageDiv.addEventListener("mouseover", this.pageMouseOverBind);
+    this.pageDiv.addEventListener("mouseout", this.pageMouseOutBind);
+    this.pageDiv.addEventListener("mousemove", this.pageMouseMoveBind);
+  }
+
+  pasteAsAnnotation(annotationType, annotationData) {
+    // console.log("PASTE", annotationType, annotationData);
+    if (!this.pageIsHovered) return;
+    for (const multipleSelectObj of this.multipleSelect.getObjects()) {
+      this.multipleSelect.deleteObject(multipleSelectObj);
+    }
+    this.stopDrawing();
+    const pasteIntoPage = new PasteIntoPage(annotationType, annotationData);
+    pasteIntoPage.pasteInto(this);
+  }
+
+  pageMouseOver(e) {
+    // console.log("foliaLayer::mouseOver on page", this.pageNumber);
+    this.pageIsHovered = true;
+  }
+
+  pageMouseOut(e) {
+    // console.log("foliaLayer::mouseOut from page", this.pageNumber);
+    this.pageIsHovered = false;
+  }
+
+  pageMouseMove(e) {
+    if (this.pageIsHovered) {
+      this.freeMousePoint = this.getRelativePoint(e);
+      // console.log("foliaLayer::MouseMove", this.pageNumber, this.freeMousePoint);
+    }
+  }
+
+  getRelativePoint(e) {
+    let reference;
+    const offset = {
+      left: e.currentTarget.offsetLeft,
+      top: e.currentTarget.offsetTop,
+    };
+    reference = e.currentTarget.offsetParent;
+    do {
+      offset.left += reference.offsetLeft - reference.scrollLeft;
+      offset.top += reference.offsetTop - reference.scrollTop;
+      reference = reference.offsetParent;
+    } while (reference);
+
+    return {
+      x: Math.round(e.pageX - offset.left),
+      y: Math.round(e.pageY - offset.top),
+    };
   }
 
   viewerMouseDown(e) {
+    // console.log("foliaLayer::MouseDown", e.target);
     const { id, role } = e.target.dataset;
     // if (e.target.tagName === "TEXTAREA") return;
-    // console.log("foliaLayer::MouseDown", role);
     if (!role) return;
     if (role === FOLIA_LAYER_ROLES.FOLIA_BUILDER || role === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
       return;
@@ -123,7 +178,6 @@ class FoliaPageLayer {
     if (!this.isMouseDown) return;
     // const { id, role } = e.target.dataset;
     const { id, role } = this.actionTarget;
-    // console.log("foliaLayer::MouseMove", role);
     // if (e.target.tagName === "TEXTAREA") return;
     if (role === FOLIA_LAYER_ROLES.FOLIA_BUILDER || role === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
       return;
@@ -165,9 +219,9 @@ class FoliaPageLayer {
   }
 
   viewerMouseUp(e) {
+    // console.log("foliaLayer::MouseUp", e.target);
     // const { id, role } = e.target.dataset;
     const { id, role } = this.actionTarget;
-    // console.log("foliaLayer::MouseUp", role);
     // if (e.target.tagName === "TEXTAREA") return;
     if (role === FOLIA_LAYER_ROLES.FOLIA_BUILDER || role === FOLIA_LAYER_ROLES.ANNOTATION_EDITOR) {
       return;
@@ -205,6 +259,9 @@ class FoliaPageLayer {
   }
 
   startDrawing(BuilderClass) {
+    for (const multipleSelectObj of this.multipleSelect.getObjects()) {
+      this.multipleSelect.deleteObject(multipleSelectObj);
+    }
     this.stopDrawing();
     this.annotationBuilderClass = BuilderClass;
     this.annotationBuilder = new BuilderClass(this, BuilderClass, this.undoRedoManager);
@@ -244,6 +301,7 @@ class FoliaPageLayer {
       if (!object.canManage || object.permanentPosition) return;
       const duplicatedAnnot = Object.assign({}, object.getDuplicate());
 
+      duplicatedAnnot.addedAt = new Date().toISOString();
       duplicatedAnnot.collaboratorEmail = this.dataProxy.userEmail;
       this.addAnnotationObject(duplicatedAnnot);
       this.commitObjectChanges(duplicatedAnnot);
@@ -256,12 +314,12 @@ class FoliaPageLayer {
     const obj = this.annotationObjects.get(objectData.id);
     const { __typename, text } = objectData;
     const shouldBeDeleted = __typename === ANNOTATION_TYPES.TEXT_BOX && !text && obj?.isDirty;
-    // console.log("commitObjectChanges", { shouldBeDeleted });
+    // console.log("commitObjectChanges", obj.isDirty, obj.newbie);
 
     if (objectData.deletedAt || shouldBeDeleted) {
       if (obj) this.annotationObjects.delete(obj.id);
       this.eventBus.dispatch("delete-object", objectData.id);
-    } else if (obj?.isDirty) {
+    } else {
       this.eventBus.dispatch("commit-object", objectData);
       obj.markAsUnchanged();
     }
@@ -320,6 +378,7 @@ class FoliaPageLayer {
       for (const [id, annotationObject] of this.annotationObjects) {
         if (this._cancelled) return;
         if (annotations.findIndex((a) => a.id === id) === -1 && !annotationObject.isDirty) {
+          console.log("DELETE WHILE RENDER", annotationObject);
           this.multipleSelect.deleteObject(annotationObject);
           this.annotationObjects.delete(annotationObject.id);
         }
@@ -359,9 +418,15 @@ class FoliaPageLayer {
     this._cancelled = true;
     if (this.annotationBuilder) this.annotationBuilder.stop();
     for (const annoObject of this.multipleSelect.getObjects()) {
-      // console.log("FoliaPageLayer cancel ==>", this.pageNumber, annoObject.isDirty);
-      if (annoObject.isDirty) this.commitObjectChanges(annoObject.getRawData());
+      this.multipleSelect.deleteObject(annoObject);
+      // if (annoObject.isDirty) this.commitObjectChanges(annoObject.getRawData());
     }
+    this.pageDiv.parentNode.removeEventListener("mousedown", this.viewerMouseDownBind);
+    this.pageDiv.parentNode.removeEventListener("mousemove", this.viewerMouseMoveBind);
+    this.pageDiv.parentNode.removeEventListener("mouseup", this.viewerMouseUpBind);
+    this.pageDiv.removeEventListener("mouseover", this.pageMouseOverBind);
+    this.pageDiv.removeEventListener("mouseout", this.pageMouseOutBind);
+    this.pageDiv.removeEventListener("mousemove", this.pageMouseMoveBind);
   }
   hide() {
     // console.log("FoliaPageLayer hide ==>", this.pageNumber);
