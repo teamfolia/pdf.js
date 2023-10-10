@@ -23,7 +23,6 @@ class CreatingAnnotation {
     const annoObject = page.foliaPageLayer.annotationObjects.get(this.state.id);
     if (!annoObject) return;
     page.foliaPageLayer.deleteAnnotationObject(annoObject);
-    // console.log("CreatingAnnotation.undo -> delete", annoObject.id);
   }
 
   redo() {
@@ -38,9 +37,11 @@ class CreatingAnnotation {
       allowNegativeOffset: true,
     });
 
-    page.foliaPageLayer.addAnnotationObject(this.state);
-    page.foliaPageLayer.commitObjectChanges(this.state);
-    // console.log("CreatingAnnotation.redo -> create", this.state.id);
+    const state = structuredClone(this.state);
+    state.addedAt = new Date().toISOString();
+
+    page.foliaPageLayer.addAnnotationObject(state);
+    page.foliaPageLayer.commitObjectChanges(state);
   }
 }
 
@@ -68,7 +69,9 @@ class UpdatingAnnotation {
 
     const annoObject = page.foliaPageLayer.annotationObjects.get(this.prevState.id);
     if (!annoObject) return;
-    annoObject.update(this.prevState, null, true);
+    const state = structuredClone(this.prevState);
+    state.addedAt = new Date().toISOString();
+    annoObject.update(state, null, true);
     annoObject.markAsChanged();
     page.foliaPageLayer.commitObjectChanges(annoObject.getRawData());
     // console.log("UpdatingAnnotation.undo -> update", annoObject.id);
@@ -90,7 +93,9 @@ class UpdatingAnnotation {
 
     const annoObject = page.foliaPageLayer.annotationObjects.get(this.newState.id);
     if (!annoObject) return;
-    annoObject.update(this.newState, null, true);
+    const state = structuredClone(this.newState);
+    state.addedAt = new Date().toISOString();
+    annoObject.update(state, null, true);
     annoObject.markAsChanged();
     page.foliaPageLayer.commitObjectChanges(annoObject.getRawData());
     // console.log("UpdatingAnnotation.redo -> update", annoObject.id);
@@ -118,12 +123,13 @@ class DeletingAnnotation {
       allowNegativeOffset: true,
     });
 
-    if (this.prevState.__typename === ANNOTATION_TYPES.IMAGE) {
-      this.prevState.newbie = true;
+    const state = structuredClone(this.prevState);
+    state.addedAt = new Date().toISOString();
+    if (state.__typename === ANNOTATION_TYPES.IMAGE) {
+      state.newbie = true;
     }
-    page.foliaPageLayer.addAnnotationObject(this.prevState);
-    page.foliaPageLayer.commitObjectChanges(this.prevState);
-    // console.log("DeletingAnnotation.undo -> create", this.prevState.id);
+    page.foliaPageLayer.addAnnotationObject(state);
+    page.foliaPageLayer.commitObjectChanges(state);
   }
 
   redo() {
@@ -163,11 +169,11 @@ class ToolUndoRedo {
     if (!page) return;
     if (!page.foliaPageLayer) return setTimeout(() => this.undo(), 100);
 
-    this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
-      pageNumber: this.prevState.page + 1,
-      destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
-      allowNegativeOffset: true,
-    });
+    // this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
+    //   pageNumber: this.prevState.page + 1,
+    //   destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
+    //   allowNegativeOffset: true,
+    // });
 
     const builder = page.foliaPageLayer.annotationBuilder;
     if (!builder) return;
@@ -182,11 +188,11 @@ class ToolUndoRedo {
     if (!page) return;
     if (!page.foliaPageLayer) return setTimeout(() => this.undo(), 100);
 
-    this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
-      pageNumber: this.prevState.page + 1,
-      destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
-      allowNegativeOffset: false,
-    });
+    // this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
+    //   pageNumber: this.prevState.page + 1,
+    //   destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
+    //   allowNegativeOffset: false,
+    // });
 
     const builder = page.foliaPageLayer.annotationBuilder;
     if (!builder) return;
@@ -217,6 +223,7 @@ export class UndoRedo {
   }
 
   deletingObject(objectData) {
+    // console.log("deletingObject", objectData);
     const command = new DeletingAnnotation(this, objectData);
     this.undoStack.push(command);
     this.redoStack = [];

@@ -16,6 +16,10 @@ module.exports = {
         test: /\.html$/i,
         loader: "html-loader",
       },
+      {
+        test: /\.worker\.js$/,
+        use: { loader: "worker-loader" },
+      },
     ],
   },
   entry: "./web/folia/viewer.js",
@@ -30,7 +34,7 @@ module.exports = {
   resolve: {
     alias: {
       "pdfjs-lib": path.resolve(__dirname, "build/dist/build/pdf.js"),
-      "pdfjs-worker": path.resolve(__dirname, "build/dist/build/pdf.worker.js"),
+      "folia-pdf-viewer/pdfjs-worker.js": path.resolve(__dirname, "build/dist/build/pdf.worker.js"),
     },
   },
   output: {

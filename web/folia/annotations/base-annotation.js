@@ -45,6 +45,7 @@ class FoliaBaseAnnotation {
   }
 
   createAndAppendCanvas() {
+    // console.log("createAndAppendCanvas::" + this.annotationRawData.__typename, this.canvas);
     const canvas = document.createElement("canvas");
     canvas.setAttribute("data-id", `${this.id}`);
     canvas.setAttribute("data-timestamp", new Date(this.annotationRawData.addedAt).getTime());
@@ -119,22 +120,21 @@ class FoliaBaseAnnotation {
     this.annotationRawData.error = annotationRawData.error;
     this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
 
-    const newDate = new Date(annotationRawData.addedAt).getTime();
-    const currDate = new Date(this.annotationRawData.addedAt).getTime();
+    const inputDate = new Date(annotationRawData.addedAt).getTime();
+    const objectDate = new Date(this.annotationRawData.addedAt).getTime();
 
-    if (newDate === currDate) this.isDirty = null;
+    if (inputDate === objectDate) this.isDirty = null;
 
     const updateByErrorChanges = Boolean(annotationRawData.error) !== Boolean(this.annotationRawData.error);
-    const roleHasBeenChanged = annotationRawData.userRole !== this.annotationRawData.userRole;
-    if (force || newDate > currDate || updateByErrorChanges || roleHasBeenChanged) {
-      // console.log("update", { new: annotationRawData.addedAt, curr: this.annotationRawData.addedAt });
+    // prettier-ignore
+    const roleHasBeenChanged = this.annotationRawData.hasOwnProperty("userRole") && annotationRawData.userRole !== this.annotationRawData.userRole;
+    if (force || inputDate > objectDate || updateByErrorChanges || roleHasBeenChanged) {
+      // prettier-ignore
+      // console.log("object was changed", annotationRawData.id, { force, date: inputDate > objectDate, errorChanges: updateByErrorChanges, roleChanges: roleHasBeenChanged });
       for (const [key, value] of Object.entries(annotationRawData)) {
-        // console.log("anno update", { [key]: value });
         this.annotationRawData[key] = value;
       }
       this.render();
-    } else {
-      // console.log("not update", { new: annotationRawData, curr: this.annotationRawData.addedAt });
     }
   }
 
@@ -180,7 +180,7 @@ class FoliaBaseAnnotation {
 
     this.isSelected = false;
     delete this.annotationRawData.doNotCommit;
-    this.foliaPageLayer.commitObjectChanges(this.getRawData());
+    if (this.isDirty) this.foliaPageLayer.commitObjectChanges(this.getRawData());
   }
 
   markAsDeleted() {
@@ -333,12 +333,12 @@ class FoliaBaseAnnotation {
   }
 
   resizeTo(point, corner, withAlt) {
-    // console.log("resizeTo", point, corner, withAlt);
+    // console.log("resizeTo", this.safeArea);
     if (!this.canManage) return;
     if (!point || !corner) return;
 
     const lineWidth = (this.annotationRawData.lineWidth || 0) * this.viewport.scale;
-    this.safeArea = lineWidth * 1;
+    this.safeArea ||= lineWidth * 1;
 
     const fixedAspectRatio = this.fixedAspectRatio && !withAlt;
     const { startPoint, startRect, aspectRatioH, aspectRatioW, dimensions } = this._startMoving;
@@ -503,6 +503,13 @@ class FoliaBaseAnnotation {
         Math.max(this._startMoving.sourcePoint.y - deltaY, this.safeArea),
         this.viewport.height - this.safeArea
       );
+
+      // const arrowHeight = Math.max(this.annotationRawData.lineWidth * this.viewport.scale, 5) * 3.7;
+      // const annotationWidth = Math.abs(this.targetPoint.x - this.sourcePoint.x) * window.devicePixelRatio;
+      // const annotationHeight = Math.abs(this.targetPoint.y - this.sourcePoint.y) * window.devicePixelRatio;
+      // const arrowLength = Math.sqrt(Math.pow(annotationWidth, 2) + Math.pow(annotationHeight, 2));
+      // console.log({ arrowHeight, arrowLength });
+      //
     } else if (corner === FOLIA_LAYER_ROLES.ARROW_CORNERS.END && this.targetPoint) {
       this.targetPoint.x = Math.min(
         Math.max(this._startMoving.targetPoint.x - deltaX, this.safeArea),
@@ -578,8 +585,12 @@ class FoliaBaseAnnotation {
     }
   }
 
-  startEditMode() {}
-  stopEditMode() {}
+  startEditMode() {
+    //
+  }
+  stopEditMode() {
+    //
+  }
 
   get isDirty() {
     // console.log("get isDirty, doNotCommit is", "doNotCommit" in this.annotationRawData);

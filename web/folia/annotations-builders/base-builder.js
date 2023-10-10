@@ -50,8 +50,6 @@ class BaseBuilder {
         annotation.__typename
       );
       const shouldBeCommitted = !("doNotCommit" in annotation);
-      // delete annotation["doNotCommit"];
-      // console.log(annotation);
 
       this.foliaPageLayer.addAnnotationObject(annotation, makeSelected);
       if (shouldBeCommitted) {

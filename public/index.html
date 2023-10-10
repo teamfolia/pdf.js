@@ -48,11 +48,25 @@ See https://github.com/adobe-type-tools/cmap-resources
       }
       .app-toolbar {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         width: 100%;
         background-color: white;
-        height: 30px;
+        height: 60px;
+        padding: 0 20px;
+      }
+
+      .app-toolbar-panel {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        background-color: white;
+      }
+
+      .viewer-container {
+        margin-top: 60px;
       }
 
       .projects-list,
@@ -74,7 +88,8 @@ See https://github.com/adobe-type-tools/cmap-resources
         align-items: center;
         justify-content: center;
       }
-      .tool-button {
+      .tool-button,
+      .just-button {
         margin-right: 10px;
         min-width: 26px;
         min-height: 26px;
@@ -117,21 +132,6 @@ See https://github.com/adobe-type-tools/cmap-resources
         background-size: 28px;
       }
 
-      .viewer-container {
-        flex-grow: 1;
-        /* border: solid 5px red; */
-        margin-top: 30px;
-      }
-
-      .viewer {
-        /* border: solid 5px blue; */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 10px;
-        gap: 10px;
-      }
-
       .thumbnail-viewer {
         border: solid 4px red;
         position: absolute;
@@ -144,9 +144,6 @@ See https://github.com/adobe-type-tools/cmap-resources
         overflow: auto;
       }
 
-      .page {
-        position: relative;
-      }
       .zoom-control {
         position: absolute;
         left: 20px;
@@ -159,6 +156,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         align-items: center;
         justify-content: center;
         user-select: none;
+        background: whitesmoke;
       }
       .page-indicator {
         position: absolute;
@@ -172,6 +170,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         align-items: center;
         justify-content: center;
         user-select: none;
+        background: whitesmoke;
       }
       #zoomValue {
         min-width: 30px;
@@ -223,264 +222,266 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div class="folia-app">
       <!-- toolbar -->
       <div class="app-toolbar">
-        <select id="projects-list" class="projects-list">
-          <option>select project</option>
-        </select>
-        <select id="documents-list" class="documents-list">
-          <option>select document</option>
-        </select>
-        &nbsp;
-        <button id="refresh" class="tool-button"></button>
-        &nbsp;
-        <button id="clear-tool" class="tool-button">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M10.375 1.625L1.62497 10.375M1.62497 1.625L10.375 10.375"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <span class="tool-divider">•</span>
-        <button id="INK-tool" class="tool-button">
-          <svg
-            width="10"
-            height="14"
-            viewBox="0 0 10 14"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M1.45801 13.0413V6.99967L4.99967 0.958008L8.54134 6.99967V13.0413M3.54134 3.66634C3.54134 3.66634 3.74967 4.70801 4.99967 4.70801C6.24967 4.70801 6.45801 3.66634 6.45801 3.66634M8.33301 8.45801H1.66634"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="MARKER-tool" class="tool-button">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M6.37467 11.3747L13.0413 3.45801L10.5413 0.958008L2.62467 7.62467M6.37467 11.3747L0.958008 13.0413M6.37467 11.3747L2.62467 7.62467M0.958008 13.0413L2.62467 7.62467M0.958008 13.0413H13.0413"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="UNDERLINE-tool" class="tool-button">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M0.958008 13.0413H13.0413M10.5413 0.958008V6.16634C10.5413 8.12235 8.95568 9.70801 6.99967 9.70801C5.04367 9.70801 3.45801 8.12235 3.45801 6.16634V0.958008"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="CROSSLINE-tool" class="tool-button">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M0.958008 7.20866H13.0413M12.208 3.87533V3.66699C12.208 2.28628 11.0887 1.16699 9.70801 1.16699H4.29134C2.91063 1.16699 1.79134 2.28628 1.79134 3.66699V4.70866C1.79134 6.08937 2.91063 7.20866 4.29134 7.20866H9.49967M1.79134 10.1253V10.542C1.79134 11.9227 2.91063 13.042 4.29134 13.042H9.70801C11.0887 13.042 12.208 11.9227 12.208 10.542V9.29199"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="COMMENT-tool" class="tool-button">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M0.958008 2.62467C0.958008 1.7042 1.7042 0.958008 2.62467 0.958008H11.3747C12.2951 0.958008 13.0413 1.7042 13.0413 2.62467V9.70801C13.0413 10.6285 12.2951 11.3747 11.3747 11.3747H9.18717L6.99967 13.0413L4.81217 11.3747H2.62467C1.7042 11.3747 0.958008 10.6285 0.958008 9.70801V2.62467Z"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M4.91634 6.16634C4.91634 6.39646 4.72979 6.58301 4.49967 6.58301C4.26956 6.58301 4.08301 6.39646 4.08301 6.16634C4.08301 5.93622 4.26956 5.74967 4.49967 5.74967C4.72979 5.74967 4.91634 5.93622 4.91634 6.16634Z"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M7.41634 6.16634C7.41634 6.39646 7.22979 6.58301 6.99967 6.58301C6.76956 6.58301 6.58301 6.39646 6.58301 6.16634C6.58301 5.93622 6.76956 5.74967 6.99967 5.74967C7.22979 5.74967 7.41634 5.93622 7.41634 6.16634Z"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M9.91634 6.16634C9.91634 6.39646 9.72979 6.58301 9.49967 6.58301C9.26956 6.58301 9.08301 6.39646 9.08301 6.16634C9.08301 5.93622 9.26956 5.74967 9.49967 5.74967C9.72979 5.74967 9.91634 5.93622 9.91634 6.16634Z"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="TEXT_BOX-tool" class="tool-button">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M11.2087 2.04199V0.791992H0.791992V2.04199M6.00033 1.00033V11.2087M6.00033 11.2087H4.95866M6.00033 11.2087H7.04199"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="SQUARE-tool" class="tool-button">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M11.3749 13.0413H2.62467C1.7042 13.0413 0.958008 12.2951 0.958008 11.3747V2.62467C0.958008 1.7042 1.7042 0.958008 2.62467 0.958008H11.3749C12.2953 0.958008 13.0415 1.7042 13.0415 2.62467V11.3747C13.0415 12.2951 12.2953 13.0413 11.3749 13.0413Z"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="CIRCLE-tool" class="tool-button">
-          <svg
-            width="17"
-            height="14"
-            viewBox="0 0 17 14"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M18.458 10.5413H25.5413M10.1285 4.58153C11.7478 5.15937 12.9409 6.66826 13.0292 8.49224C13.146 10.9057 11.2842 12.9568 8.87078 13.0736C7.79113 13.1258 6.78398 12.7821 5.99007 12.1702M5.33301 0.958008L0.958008 8.87467H9.70801L5.33301 0.958008Z"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="ARROW-tool" class="tool-button">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M10.375 8.70833V1.625H3.29167M10.1667 1.83333L1.625 10.375"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button id="IMAGE-tool" class="tool-button">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="#64748B"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M13.0413 11.3747V5.12467C13.0413 4.2042 12.2951 3.45801 11.3747 3.45801H11.0969C10.7605 3.45801 10.4571 3.25573 10.3277 2.94519L9.71335 1.47083C9.58396 1.16029 9.28054 0.958008 8.94412 0.958008H5.05523C4.71881 0.958008 4.41539 1.16029 4.286 1.47083L3.67168 2.94519C3.54229 3.25573 3.23887 3.45801 2.90245 3.45801H2.62467C1.7042 3.45801 0.958008 4.2042 0.958008 5.12467V11.3747C0.958008 12.2951 1.7042 13.0413 2.62467 13.0413H11.3747C12.2951 13.0413 13.0413 12.2951 13.0413 11.3747Z"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-            <path
-              d="M9.70801 7.83301C9.70801 9.32878 8.49545 10.5413 6.99967 10.5413C5.5039 10.5413 4.29134 9.32878 4.29134 7.83301C4.29134 6.33724 5.5039 5.12467 6.99967 5.12467C8.49545 5.12467 9.70801 6.33724 9.70801 7.83301Z"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
-        <button id="ERASER-tool" class="tool-button">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <title>eraser</title>
-            <path
-              d="M16.24,3.56L21.19,8.5C21.97,9.29 21.97,10.55 21.19,11.34L12,20.53C10.44,22.09 7.91,22.09 6.34,20.53L2.81,17C2.03,16.21 2.03,14.95 2.81,14.16L13.41,3.56C14.2,2.78 15.46,2.78 16.24,3.56M4.22,15.58L7.76,19.11C8.54,19.9 9.8,19.9 10.59,19.11L14.12,15.58L9.17,10.63L4.22,15.58Z"
-            />
-          </svg>
-        </button>
-        <button id="STAMPS-tool" class="tool-button"></button>
-        <span class="tool-divider">•</span>
-        <input type="color" id="preset-color" class="preset-button" />
-        <input type="range" id="preset-width" min="1" max="20" aria-haspopup="true" class="preset-button" />
-        <select id="preset-font_family" class="preset-button">
-          <option value="SANS_SERIF">SANS_SERIF</option>
-          <option value="SERIF">SERIF</option>
-          <option value="MONOSPACE">MONOSPACE</option>
-          <option value="SCRIPT">SCRIPT</option>
-          <option value="FANTASY">FANTASY</option>
-        </select>
-        <select id="preset-font_size" class="preset-button"></select>
-
-        <!-- <button id="zoom-out">-</button>&nbsp;<button id="zoom-in">+</button> -->
-        &nbsp;&nbsp;
-        <button id="undo" disabled>↩︎</button>&nbsp;<button id="redo" disabled>↪︎</button>
-        &nbsp;&nbsp;
-        <div style="position: relative">
-          <input id="search-input" type="text" style="width: 100px" />
-          <div style="position: absolute; right: 5px; top: 3px; color: gray; font-size: 12px">
-            <span id="search-current">0</span>/<span id="search-total">0</span>
-          </div>
+        <div class="app-toolbar-panel">
+          <select id="projects-list" class="projects-list">
+            <option>select project</option>
+          </select>
+          <select id="documents-list" class="documents-list">
+            <option>select document</option>
+          </select>
+          &nbsp;
+          <button id="refresh" class="just-button"></button>
+          <button id="clear-tool" class="tool-button">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10.375 1.625L1.62497 10.375M1.62497 1.625L10.375 10.375"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <span class="tool-divider">•</span>
+          <button id="INK-tool" class="tool-button">
+            <svg
+              width="10"
+              height="14"
+              viewBox="0 0 10 14"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1.45801 13.0413V6.99967L4.99967 0.958008L8.54134 6.99967V13.0413M3.54134 3.66634C3.54134 3.66634 3.74967 4.70801 4.99967 4.70801C6.24967 4.70801 6.45801 3.66634 6.45801 3.66634M8.33301 8.45801H1.66634"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="MARKER-tool" class="tool-button">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6.37467 11.3747L13.0413 3.45801L10.5413 0.958008L2.62467 7.62467M6.37467 11.3747L0.958008 13.0413M6.37467 11.3747L2.62467 7.62467M0.958008 13.0413L2.62467 7.62467M0.958008 13.0413H13.0413"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="UNDERLINE-tool" class="tool-button">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0.958008 13.0413H13.0413M10.5413 0.958008V6.16634C10.5413 8.12235 8.95568 9.70801 6.99967 9.70801C5.04367 9.70801 3.45801 8.12235 3.45801 6.16634V0.958008"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="CROSSLINE-tool" class="tool-button">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0.958008 7.20866H13.0413M12.208 3.87533V3.66699C12.208 2.28628 11.0887 1.16699 9.70801 1.16699H4.29134C2.91063 1.16699 1.79134 2.28628 1.79134 3.66699V4.70866C1.79134 6.08937 2.91063 7.20866 4.29134 7.20866H9.49967M1.79134 10.1253V10.542C1.79134 11.9227 2.91063 13.042 4.29134 13.042H9.70801C11.0887 13.042 12.208 11.9227 12.208 10.542V9.29199"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="COMMENT-tool" class="tool-button">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M0.958008 2.62467C0.958008 1.7042 1.7042 0.958008 2.62467 0.958008H11.3747C12.2951 0.958008 13.0413 1.7042 13.0413 2.62467V9.70801C13.0413 10.6285 12.2951 11.3747 11.3747 11.3747H9.18717L6.99967 13.0413L4.81217 11.3747H2.62467C1.7042 11.3747 0.958008 10.6285 0.958008 9.70801V2.62467Z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M4.91634 6.16634C4.91634 6.39646 4.72979 6.58301 4.49967 6.58301C4.26956 6.58301 4.08301 6.39646 4.08301 6.16634C4.08301 5.93622 4.26956 5.74967 4.49967 5.74967C4.72979 5.74967 4.91634 5.93622 4.91634 6.16634Z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M7.41634 6.16634C7.41634 6.39646 7.22979 6.58301 6.99967 6.58301C6.76956 6.58301 6.58301 6.39646 6.58301 6.16634C6.58301 5.93622 6.76956 5.74967 6.99967 5.74967C7.22979 5.74967 7.41634 5.93622 7.41634 6.16634Z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M9.91634 6.16634C9.91634 6.39646 9.72979 6.58301 9.49967 6.58301C9.26956 6.58301 9.08301 6.39646 9.08301 6.16634C9.08301 5.93622 9.26956 5.74967 9.49967 5.74967C9.72979 5.74967 9.91634 5.93622 9.91634 6.16634Z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="TEXT_BOX-tool" class="tool-button">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.2087 2.04199V0.791992H0.791992V2.04199M6.00033 1.00033V11.2087M6.00033 11.2087H4.95866M6.00033 11.2087H7.04199"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="SQUARE-tool" class="tool-button">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.3749 13.0413H2.62467C1.7042 13.0413 0.958008 12.2951 0.958008 11.3747V2.62467C0.958008 1.7042 1.7042 0.958008 2.62467 0.958008H11.3749C12.2953 0.958008 13.0415 1.7042 13.0415 2.62467V11.3747C13.0415 12.2951 12.2953 13.0413 11.3749 13.0413Z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="CIRCLE-tool" class="tool-button">
+            <svg
+              width="17"
+              height="14"
+              viewBox="0 0 17 14"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M18.458 10.5413H25.5413M10.1285 4.58153C11.7478 5.15937 12.9409 6.66826 13.0292 8.49224C13.146 10.9057 11.2842 12.9568 8.87078 13.0736C7.79113 13.1258 6.78398 12.7821 5.99007 12.1702M5.33301 0.958008L0.958008 8.87467H9.70801L5.33301 0.958008Z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="ARROW-tool" class="tool-button">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10.375 8.70833V1.625H3.29167M10.1667 1.83333L1.625 10.375"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+          <button id="IMAGE-tool" class="tool-button">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              stroke="#64748B"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M13.0413 11.3747V5.12467C13.0413 4.2042 12.2951 3.45801 11.3747 3.45801H11.0969C10.7605 3.45801 10.4571 3.25573 10.3277 2.94519L9.71335 1.47083C9.58396 1.16029 9.28054 0.958008 8.94412 0.958008H5.05523C4.71881 0.958008 4.41539 1.16029 4.286 1.47083L3.67168 2.94519C3.54229 3.25573 3.23887 3.45801 2.90245 3.45801H2.62467C1.7042 3.45801 0.958008 4.2042 0.958008 5.12467V11.3747C0.958008 12.2951 1.7042 13.0413 2.62467 13.0413H11.3747C12.2951 13.0413 13.0413 12.2951 13.0413 11.3747Z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <path
+                d="M9.70801 7.83301C9.70801 9.32878 8.49545 10.5413 6.99967 10.5413C5.5039 10.5413 4.29134 9.32878 4.29134 7.83301C4.29134 6.33724 5.5039 5.12467 6.99967 5.12467C8.49545 5.12467 9.70801 6.33724 9.70801 7.83301Z"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+          <button id="ERASER-tool" class="tool-button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <title>eraser</title>
+              <path
+                d="M16.24,3.56L21.19,8.5C21.97,9.29 21.97,10.55 21.19,11.34L12,20.53C10.44,22.09 7.91,22.09 6.34,20.53L2.81,17C2.03,16.21 2.03,14.95 2.81,14.16L13.41,3.56C14.2,2.78 15.46,2.78 16.24,3.56M4.22,15.58L7.76,19.11C8.54,19.9 9.8,19.9 10.59,19.11L14.12,15.58L9.17,10.63L4.22,15.58Z"
+              />
+            </svg>
+          </button>
+          <button id="STAMPS-tool" class="tool-button"></button>
         </div>
-        &nbsp;
-        <button id="search-start">🔍</button>
-        &nbsp;
-        <button id="search-prev">⇧</button>
-        &nbsp;
-        <button id="search-next">⇩</button>
-        &nbsp;|&nbsp;
-        <button id="duplicate">🙌</button>
+        <div class="app-toolbar-panel">
+          <input type="color" id="preset-color" class="preset-button" />
+          <input type="range" id="preset-width" min="1" max="20" aria-haspopup="true" class="preset-button" />
+          <select id="preset-font_family" class="preset-button">
+            <option value="SANS_SERIF">SANS_SERIF</option>
+            <option value="SERIF">SERIF</option>
+            <option value="MONOSPACE">MONOSPACE</option>
+            <option value="SCRIPT">SCRIPT</option>
+            <option value="FANTASY">FANTASY</option>
+          </select>
+          <select id="preset-font_size" class="preset-button"></select>
+
+          <!-- <button id="zoom-out">-</button>&nbsp;<button id="zoom-in">+</button> -->
+          &nbsp;&nbsp;
+          <button id="undo" disabled>↩︎</button>&nbsp;<button id="redo" disabled>↪︎</button>
+          &nbsp;&nbsp;
+          <div style="position: relative">
+            <input id="search-input" type="text" style="width: 100px" />
+            <div style="position: absolute; right: 5px; top: 3px; color: gray; font-size: 12px">
+              <span id="search-current">0</span>/<span id="search-total">0</span>
+            </div>
+          </div>
+          &nbsp;
+          <button id="search-start">🔍</button>
+          &nbsp;
+          <button id="search-prev">⇧</button>
+          &nbsp;
+          <button id="search-next">⇩</button>
+          &nbsp;|&nbsp;
+          <button id="duplicate">🙌</button>
+        </div>
       </div>
       <!-- end of toolbar -->
 

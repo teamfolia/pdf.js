@@ -38,6 +38,14 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       this.markAsChanged();
       delete this.annotationRawData.doNotCommit;
     };
+    this.editorEl.onkeydown = (e) => {
+      console.log(e.key);
+      console.log("stopEditMode", this.editorEl.children);
+      if (e.shiftKey === false && e.key === "Enter") {
+        e.preventDefault();
+        this.stopEditMode();
+      }
+    };
 
     this.annotationDIV.appendChild(this.editorEl);
     this.buildBaseCorners();
@@ -46,6 +54,13 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
   }
 
   getRawData() {
+    const viewportRect = [
+      this.annotationDIV.offsetLeft,
+      this.annotationDIV.offsetTop,
+      this.annotationDIV.clientWidth,
+      this.annotationDIV.clientHeight,
+    ];
+    const rect = toPdfRect(viewportRect, this.viewport.width, this.viewport.height);
     return {
       __typename: ANNOTATION_TYPES.TEXT_BOX,
       id: this.annotationRawData.id,
@@ -59,7 +74,7 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
       fontSize: this.annotationRawData.fontSize,
       fontWeight: this.annotationRawData.fontWeight,
       textAlignment: this.annotationRawData.textAlignment,
-      rect: this.annotationRawData.rect,
+      rect,
     };
   }
 
@@ -140,15 +155,15 @@ class FoliaTextBoxAnnotation extends FoliaBaseAnnotation {
     this.adjustHeight();
     this.editorEl.style.width = `${this.annotationDIV.clientWidth}px`;
     this.editorEl.style.height = `${this.annotationDIV.clientHeight}px`;
-    const { width: viewportWidth, height: viewportHeight } = this.viewport;
-    const viewRect = [
-      this.annotationDIV.offsetLeft,
-      this.annotationDIV.offsetTop,
-      this.annotationDIV.clientWidth,
-      this.annotationDIV.clientHeight,
-    ];
-    const pdfRect = toPdfRect(viewRect, viewportWidth, viewportHeight);
-    this.annotationRawData.rect = pdfRect;
+    // const { width: viewportWidth, height: viewportHeight } = this.viewport;
+    // const viewRect = [
+    //   this.annotationDIV.offsetLeft,
+    //   this.annotationDIV.offsetTop,
+    //   this.annotationDIV.clientWidth,
+    //   this.annotationDIV.clientHeight,
+    // ];
+    // const pdfRect = toPdfRect(viewRect, viewportWidth, viewportHeight);
+    // this.annotationRawData.rect = pdfRect;
   }
 
   render() {

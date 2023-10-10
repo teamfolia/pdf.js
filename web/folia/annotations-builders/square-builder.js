@@ -1,16 +1,13 @@
 import { toPdfRect, hexColor2RGBA } from "../folia-util";
 import BaseBuilder from "./base-builder";
 import { ANNOTATION_TYPES } from "../constants";
+import { colord } from "colord";
 
 class SquareBuilder extends BaseBuilder {
-  defaultPreset = { color: "#000000", lineWidth: 5, singleCreating: false };
-  mouseIsDown = false;
-  mouseIsMove = false;
+  currentSquare = null;
+  squares = [];
   minWidth = 20;
   minHeight = 20;
-  squares = [];
-
-  static type = "square";
 
   constructor(...props) {
     super(...props);
@@ -19,7 +16,7 @@ class SquareBuilder extends BaseBuilder {
   resume() {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
-      this.canvas.className = "annotation-builder-container";
+      this.canvas.className = "annotation-builder-container square-builder";
       this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
       this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
       this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
@@ -28,104 +25,127 @@ class SquareBuilder extends BaseBuilder {
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
+      this.canvas.onmouseout = this.onMouseOut.bind(this);
     }
     this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    this.drawingStarted = false;
+    this.mouseHasBeenMoved = false;
   }
 
   prepareAnnotations2save() {
-    return this.squares.map(({ addedAt, color, lineWidth, rect }) => {
-      const pdfRect = toPdfRect(
-        [rect[0], rect[1], rect[2], rect[3]],
+    return this.squares.map(({ addedAt, color, lineWidth, startPoint, endPoint }) => {
+      const rect = toPdfRect(
+        [
+          Math.min(startPoint.x, endPoint.x),
+          Math.min(startPoint.y, endPoint.y),
+          Math.max(Math.abs(startPoint.x - endPoint.x), lineWidth * 3),
+          Math.max(Math.abs(startPoint.y - endPoint.y), lineWidth * 3),
+        ],
         this.viewport.width,
         this.viewport.height
       );
-
       return {
         __typename: ANNOTATION_TYPES.SQUARE,
         addedAt,
         lineWidth,
         color,
-        rect: pdfRect,
+        rect,
       };
     });
   }
-
-  onMouseDown(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.mouseIsDown = true;
-    this.startPoint = this.getRelativePoint(e);
-    this.squares.push({
-      color: this.preset.color,
-      lineWidth: this.preset.lineWidth,
-      rect: [this.startPoint.x, this.startPoint.y, this.minWidth, this.minHeight],
-    });
-  }
-  onMouseMove(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!this.mouseIsDown) return;
-    this.mouseIsMove = true;
-    const point = this.getRelativePoint(e);
-    this.squares.pop();
-    this.squares.push({
-      color: this.preset.color,
-      lineWidth: this.preset.lineWidth,
-      rect: [
-        Math.min(this.startPoint.x, point.x),
-        Math.min(this.startPoint.y, point.y),
-        Math.abs(point.x - this.startPoint.x),
-        Math.abs(point.y - this.startPoint.y),
-      ],
-    });
-    window.requestAnimationFrame(() => this.draw());
-  }
-  onMouseUp(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.mouseIsDown = false;
-    this.mouseIsMove = false;
-
-    const point = this.getRelativePoint(e);
-    this.squares.pop();
-    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.squares.slice() };
-    this.squares.push({
-      addedAt: new Date().toISOString(),
-      color: this.preset.color,
-      lineWidth: this.preset.lineWidth,
-      rect: [
-        Math.min(this.startPoint.x, point.x),
-        Math.min(this.startPoint.y, point.y),
-        Math.max(Math.abs(point.x - this.startPoint.x), this.minWidth),
-        Math.max(Math.abs(point.y - this.startPoint.y), this.minHeight),
-      ],
-    });
-    const newState = { page: this.foliaPageLayer.pageNumber, data: this.squares.slice() };
-    this.undoRedoManager.addToolStep(prevState, newState);
-
-    window.requestAnimationFrame(() => this.draw());
-  }
-
   applyUndoRedo(squares) {
     this.squares = squares.slice();
     this.draw();
   }
 
+  startDrawing(point) {
+    this.currentSquare = {
+      color: this.preset.color,
+      lineWidth: this.preset.lineWidth,
+      startPoint: point,
+    };
+    this.drawingStarted = true;
+  }
+
+  stopDrawing() {
+    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.squares.slice() };
+    const { startPoint, endPoint, lineWidth, color } = this.currentSquare;
+    this.squares.push({
+      color,
+      addedAt: new Date().toISOString(),
+      lineWidth,
+      startPoint,
+      endPoint,
+    });
+    this.currentSquare = null;
+    this.drawingStarted = false;
+    this.mouseHasBeenMoved = false;
+
+    const newState = { page: this.foliaPageLayer.pageNumber, data: this.squares.slice() };
+    this.undoRedoManager.addToolStep(prevState, newState);
+    window.requestAnimationFrame(() => this.draw());
+  }
+
+  onMouseDown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const point = this.getRelativePoint(e);
+    if (this.drawingStarted === true) {
+      this.currentSquare.endPoint = point;
+      this.stopDrawing();
+    } else {
+      this.startDrawing(point);
+    }
+  }
+
+  onMouseMove(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!this.drawingStarted) return;
+    this.mouseHasBeenMoved = true;
+    const point = this.getRelativePoint(e);
+    this.currentSquare.endPoint = point;
+    window.requestAnimationFrame(() => this.draw());
+  }
+
+  onMouseUp(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (this.mouseHasBeenMoved) {
+      const point = this.getRelativePoint(e);
+      this.currentSquare.endPoint = point;
+      this.stopDrawing();
+    }
+  }
+
+  onMouseOut(e) {
+    if (this.drawingStarted) this.stopDrawing();
+  }
+
   draw() {
     const ctx = this.canvas.getContext("2d");
-    this.canvas.width = this.canvas.width;
-    this.canvas.height = this.canvas.height;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.currentSquare && this.drawSquare(ctx, this.currentSquare, true);
+    this.squares.forEach((circle) => this.drawSquare(ctx, circle));
+  }
 
-    this.squares.forEach((square) => {
-      const lineWidth = square.lineWidth * this.viewport.scale * window.devicePixelRatio;
-      ctx.save();
-      ctx.beginPath();
-      ctx.strokeStyle = hexColor2RGBA(square.color);
-      ctx.lineWidth = lineWidth;
-      ctx.strokeRect(...square.rect.map((side) => side * window.devicePixelRatio));
-      ctx.closePath();
-      ctx.restore();
-    });
+  drawSquare(ctx, squareData, isCurrent = false) {
+    const { color, lineWidth, startPoint, endPoint } = squareData;
+    const rect = [
+      Math.min(startPoint.x, endPoint.x) * window.devicePixelRatio,
+      Math.min(startPoint.y, endPoint.y) * window.devicePixelRatio,
+      Math.abs(startPoint.x - endPoint.x) * window.devicePixelRatio,
+      Math.abs(startPoint.y - endPoint.y) * window.devicePixelRatio,
+    ];
+    ctx.save();
+    ctx.beginPath();
+    if (isCurrent) ctx.globalAlpha = 0.75;
+    ctx.strokeStyle = hexColor2RGBA(color);
+    ctx.lineWidth = lineWidth * this.viewport.scale * window.devicePixelRatio;
+    ctx.strokeRect(...rect);
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
   }
 }
 

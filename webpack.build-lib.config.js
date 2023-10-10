@@ -13,6 +13,10 @@ module.exports = {
       import: "./web/folia/folia-pdf-viewer.js",
       filename: "[name]_[contenthash].js",
     },
+    pdfjs_worker: {
+      import: "./build/dist/build/pdf.worker.js",
+      filename: "pdfjs-worker.js",
+    },
   },
   cache: true,
   mode: "development",

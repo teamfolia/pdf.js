@@ -3,10 +3,7 @@ import BaseBuilder from "./base-builder";
 import { ANNOTATION_TYPES } from "../constants";
 
 class ArrowBuilder extends BaseBuilder {
-  mouseIsDown = false;
-  mouseIsMove = false;
-  sourcePoint;
-  targetPoint;
+  currentArrow = null;
   arrows = [];
 
   constructor(...props) {
@@ -16,7 +13,7 @@ class ArrowBuilder extends BaseBuilder {
   resume() {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
-      this.canvas.className = "annotation-builder-container";
+      this.canvas.className = "annotation-builder-container arrow-builder";
       this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
       this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
       this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
@@ -25,8 +22,11 @@ class ArrowBuilder extends BaseBuilder {
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
+      this.canvas.onmouseout = this.onMouseOut.bind(this);
     }
     this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    this.drawingStarted = false;
+    this.mouseHasBeenMoved = false;
   }
 
   prepareAnnotations2save() {
@@ -57,95 +57,86 @@ class ArrowBuilder extends BaseBuilder {
       };
     });
   }
-  checkMinLength(sourcePoint, targetPoint) {
-    const LENGTH_FACTOR = 5;
-    const minArrowLength = Math.max(this.preset.lineWidth * LENGTH_FACTOR, 20);
-    const cat1 = Math.abs(sourcePoint.x - targetPoint.x) || 10;
-    const cat2 = Math.abs(sourcePoint.y - targetPoint.y) || 10;
-    const arrowLength = Math.sqrt(Math.pow(cat1, 2) + Math.pow(cat2, 2));
-
-    if (arrowLength < minArrowLength) {
-      const angle1 = Math.asin(cat1 / arrowLength);
-      const angle2 = Math.asin(cat2 / arrowLength);
-      const cat1new = minArrowLength * Math.sin(angle1) * (sourcePoint.x >= targetPoint.x ? -1 : 1);
-      const cat2new = minArrowLength * Math.sin(angle2) * (sourcePoint.y >= targetPoint.y ? -1 : 1);
-      const _targetPoint = { x: sourcePoint.x + cat1new, y: sourcePoint.y + cat2new };
-      return { sourcePoint, targetPoint: _targetPoint };
-    } else {
-      return { sourcePoint, targetPoint };
-    }
-  }
-  onMouseDown(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.mouseIsDown = true;
-    this.sourcePoint = this.targetPoint = this.getRelativePoint(e);
-    this.arrows.push({
-      color: this.preset.color,
-      lineWidth: this.preset.lineWidth,
-      sourcePoint: this.sourcePoint,
-      targetPoint: this.targetPoint,
-    });
-  }
-  onMouseMove(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!this.mouseIsDown) return;
-    this.mouseIsMove = true;
-    this.targetPoint = this.getRelativePoint(e);
-    this.arrows[this.arrows.length - 1] = {
-      color: this.preset.color,
-      lineWidth: this.preset.lineWidth,
-      sourcePoint: this.sourcePoint,
-      targetPoint: this.targetPoint,
-    };
-    window.requestAnimationFrame(() => this.draw());
-  }
-  onMouseUp(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    this.mouseIsDown = false;
-    this.mouseIsMove = false;
-
-    this.arrows.pop();
-    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
-    const { sourcePoint, targetPoint } = this.checkMinLength(this.sourcePoint, this.targetPoint);
-
-    this.arrows.push({
-      color: this.preset.color,
-      lineWidth: this.preset.lineWidth,
-      sourcePoint,
-      targetPoint,
-      addedAt: new Date().toISOString(),
-    });
-
-    const newState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
-    this.undoRedoManager.addToolStep(prevState, newState);
-
-    window.requestAnimationFrame(() => this.draw());
-
-    this.sourcePoint = this.targetPoint = null;
-  }
-
   applyUndoRedo(arrows) {
     this.arrows = arrows.slice();
     this.draw();
   }
 
+  startDrawing(sourcePoint) {
+    this.currentArrow = {
+      color: this.preset.color,
+      lineWidth: this.preset.lineWidth,
+      sourcePoint: sourcePoint,
+      targetPoint: null,
+    };
+    this.drawingStarted = true;
+  }
+
+  stopDrawing() {
+    const prevState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
+    this.arrows.push({
+      color: this.currentArrow.color,
+      lineWidth: this.currentArrow.lineWidth,
+      sourcePoint: this.currentArrow.sourcePoint,
+      targetPoint: this.currentArrow.targetPoint,
+      addedAt: new Date().toISOString(),
+    });
+    this.currentArrow = null;
+    this.drawingStarted = false;
+    this.mouseHasBeenMoved = false;
+
+    const newState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
+    this.undoRedoManager.addToolStep(prevState, newState);
+    window.requestAnimationFrame(() => this.draw());
+  }
+
+  onMouseDown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const point = this.getRelativePoint(e);
+    if (this.drawingStarted === true) {
+      this.currentArrow.targetPoint = point;
+      this.stopDrawing();
+    } else {
+      this.startDrawing(point);
+    }
+  }
+
+  onMouseMove(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!this.drawingStarted) return;
+    this.mouseHasBeenMoved = true;
+    this.currentArrow.targetPoint = this.getRelativePoint(e);
+    window.requestAnimationFrame(() => this.draw());
+  }
+
+  onMouseUp(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (this.mouseHasBeenMoved) {
+      this.currentArrow.targetPoint = this.getRelativePoint(e);
+      this.stopDrawing();
+    }
+  }
+
+  onMouseOut(e) {
+    if (this.drawingStarted) this.stopDrawing();
+  }
+
   draw() {
     const ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.currentArrow && this.drawArrow(ctx, this.currentArrow, true);
     this.arrows.forEach((arrow) => this.drawArrow(ctx, arrow));
   }
 
-  drawArrow(ctx, arrowData) {
+  drawArrow(ctx, arrowData, isCurrent = false) {
     const lineWidth = arrowData.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const sourceX = arrowData.sourcePoint.x * window.devicePixelRatio;
     const sourceY = arrowData.sourcePoint.y * window.devicePixelRatio;
     const targetX = arrowData.targetPoint.x * window.devicePixelRatio;
     const targetY = arrowData.targetPoint.y * window.devicePixelRatio;
-    const dirX = Math.sign(targetX - sourceX);
-    const dirY = -Math.sign(targetY - sourceY);
     const annotationWidth = Math.abs(targetX - sourceX);
     const annotationHeight = Math.abs(targetY - sourceY);
     const annotationAgle = Math.atan(annotationHeight / annotationWidth);
@@ -158,89 +149,104 @@ class ArrowBuilder extends BaseBuilder {
     const cornersRadius = lineFactor / 6;
 
     const outSideLine = arrowHeight / Math.cos(arrowAngle / 2);
-    const x1 = targetX - dirX * outSideLine * Math.cos(annotationAgle - arrowAngle / 2);
-    const y1 = targetY + dirY * outSideLine * Math.sin(annotationAgle - arrowAngle / 2);
-    const x2 = targetX - dirX * outSideLine * Math.cos(annotationAgle + arrowAngle / 2);
-    const y2 = targetY + dirY * outSideLine * Math.sin(annotationAgle + arrowAngle / 2);
-    const x3 = targetX - dirX * (arrowHeight - arrowLeavesHeight) * Math.cos(annotationAgle);
-    const y3 = targetY + dirY * (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle);
+    const x1 =
+      sourceX <= targetX
+        ? targetX - outSideLine * Math.cos(annotationAgle - arrowAngle / 2)
+        : targetX + outSideLine * Math.cos(annotationAgle - arrowAngle / 2);
 
-    if (new Set([x3, x2, targetX, x1]).size > 1 && new Set([y3, y2, targetY, y1]).size > 1) {
-      ctx.strokeStyle = hexColor2RGBA(arrowData.color);
-      ctx.fillStyle = hexColor2RGBA(arrowData.color);
-      ctx.lineWidth = lineWidth;
+    const y1 =
+      sourceY <= targetY
+        ? targetY - outSideLine * Math.sin(annotationAgle - arrowAngle / 2)
+        : targetY + outSideLine * Math.sin(annotationAgle - arrowAngle / 2);
 
-      ctx.beginPath();
-      ctx.moveTo(x3, y3);
-      ctx.arcTo(x2, y2, targetX, targetY, cornersRadius);
-      ctx.arcTo(targetX, targetY, x1, y1, cornersRadius);
-      ctx.arcTo(x1, y1, x3, y3, cornersRadius);
-      ctx.closePath();
-      ctx.fill();
+    const x2 =
+      sourceX <= targetX
+        ? targetX - outSideLine * Math.cos(annotationAgle + arrowAngle / 2)
+        : targetX + outSideLine * Math.cos(annotationAgle + arrowAngle / 2);
 
-      ctx.beginPath();
-      ctx.lineCap = "butt";
-      ctx.moveTo(x3, y3);
-      ctx.lineTo(sourceX, sourceY);
-      ctx.closePath();
-      ctx.stroke();
-    }
+    const y2 =
+      sourceY <= targetY
+        ? targetY - outSideLine * Math.sin(annotationAgle + arrowAngle / 2)
+        : targetY + outSideLine * Math.sin(annotationAgle + arrowAngle / 2);
 
-    const arrowBase = Math.sqrt(Math.pow(outSideLine, 2) - Math.pow(arrowHeight, 2));
-    return {
-      arrowLength: arrowLength / window.devicePixelRatio,
-      arrowWidth: arrowBase + arrowData.lineWidth / 2,
-    };
-  }
+    const x3 =
+      sourceX <= targetX
+        ? targetX - (arrowHeight - arrowLeavesHeight) * Math.cos(annotationAgle)
+        : targetX + (arrowHeight - arrowLeavesHeight) * Math.cos(annotationAgle);
 
-  drawArrow2(ctx, arrowData) {
-    const lineWidth = arrowData.lineWidth * this.viewport.scale;
-    const annotationWidth = Math.abs(arrowData.sourcePoint.x - arrowData.targetPoint.x);
-    const annotationHeight = Math.abs(arrowData.sourcePoint.y - arrowData.targetPoint.y);
-    const arrowLength = Math.sqrt(Math.pow(annotationWidth, 2) + Math.pow(annotationHeight, 2));
-
-    // prepare arrow head
-    const capLength = arrowLength / 4;
-    let lineAngle = Math.atan2(
-      arrowData.sourcePoint.y - arrowData.targetPoint.y,
-      arrowData.sourcePoint.x - arrowData.targetPoint.x
-    );
-    let deltaAngle = Math.PI / 6;
-
-    let sourceX = arrowData.sourcePoint.x;
-    let sourceY = arrowData.sourcePoint.y;
-    let targetX = arrowData.targetPoint.x;
-    let targetY = arrowData.targetPoint.y;
-    let arrowLeftCapX = targetX + capLength * Math.cos(lineAngle + deltaAngle);
-    let arrowLeftCapY = targetY + capLength * Math.sin(lineAngle + deltaAngle);
-    let arrowRightCapX = targetX + capLength * Math.cos(lineAngle - deltaAngle);
-    let arrowRightCapY = targetY + capLength * Math.sin(lineAngle - deltaAngle);
+    const y3 =
+      sourceY <= targetY
+        ? targetY - (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle)
+        : targetY + (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle);
 
     ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    if (isCurrent) ctx.globalAlpha = 0.75;
     ctx.strokeStyle = hexColor2RGBA(arrowData.color);
-    ctx.lineWidth = lineWidth * window.devicePixelRatio;
-
-    sourceX *= window.devicePixelRatio;
-    sourceY *= window.devicePixelRatio;
-    targetX *= window.devicePixelRatio;
-    targetY *= window.devicePixelRatio;
-    arrowLeftCapX *= window.devicePixelRatio;
-    arrowLeftCapY *= window.devicePixelRatio;
-    arrowRightCapX *= window.devicePixelRatio;
-    arrowRightCapY *= window.devicePixelRatio;
+    ctx.fillStyle = hexColor2RGBA(arrowData.color);
+    ctx.lineWidth = lineWidth;
 
     ctx.beginPath();
-    ctx.moveTo(sourceX, sourceY);
-    ctx.lineTo(targetX, targetY);
-    ctx.lineTo(arrowLeftCapX, arrowLeftCapY);
-    ctx.lineTo(targetX, targetY);
-    ctx.lineTo(arrowRightCapX, arrowRightCapY);
-
-    ctx.stroke();
-    ctx.restore();
+    ctx.moveTo(x3, y3);
+    ctx.arcTo(x2, y2, targetX, targetY, cornersRadius);
+    ctx.arcTo(targetX, targetY, x1, y1, cornersRadius);
+    ctx.arcTo(x1, y1, x3, y3, cornersRadius);
     ctx.closePath();
+    ctx.fill();
+
+    if (arrowLength >= arrowHeight - arrowLeavesHeight) {
+      // arrow annotation foot calc
+      const t1x =
+        sourceX <= targetX
+          ? sourceX - (lineWidth / 2) * Math.cos(annotationAgle + (90 * Math.PI) / 180)
+          : sourceX + (lineWidth / 2) * Math.cos(annotationAgle + (90 * Math.PI) / 180);
+
+      const t1y =
+        sourceY <= targetY
+          ? sourceY - (lineWidth / 2) * Math.sin(annotationAgle + (90 * Math.PI) / 180)
+          : sourceY + (lineWidth / 2) * Math.sin(annotationAgle + (90 * Math.PI) / 180);
+
+      const t2x =
+        sourceX <= targetX
+          ? sourceX - (lineWidth / 2) * Math.cos(annotationAgle - (90 * Math.PI) / 180)
+          : sourceX + (lineWidth / 2) * Math.cos(annotationAgle - (90 * Math.PI) / 180);
+
+      const t2y =
+        sourceY <= targetY
+          ? sourceY - (lineWidth / 2) * Math.sin(annotationAgle - (90 * Math.PI) / 180)
+          : sourceY + (lineWidth / 2) * Math.sin(annotationAgle - (90 * Math.PI) / 180);
+
+      const arrowBaseAngle = Math.asin(
+        arrowLeavesHeight / Math.sqrt(Math.pow(Math.abs(x3 - x1), 2) + Math.pow(Math.abs(y3 - y1), 2))
+      );
+
+      const theigth = (lineWidth / 2) * Math.tan(arrowBaseAngle);
+      const tlen = Math.sqrt(Math.pow(lineWidth / 2, 2) + Math.pow(theigth, 2));
+      const t3x =
+        sourceX <= targetX
+          ? x3 - tlen * Math.cos(annotationAgle - arrowBaseAngle + (90 * Math.PI) / 180)
+          : x3 + tlen * Math.cos(annotationAgle - arrowBaseAngle + (90 * Math.PI) / 180);
+      const t3y =
+        sourceY <= targetY
+          ? y3 - tlen * Math.sin(annotationAgle - arrowBaseAngle + (90 * Math.PI) / 180)
+          : y3 + tlen * Math.sin(annotationAgle - arrowBaseAngle + (90 * Math.PI) / 180);
+      const t4x =
+        sourceX <= targetX
+          ? x3 - tlen * Math.cos(annotationAgle + arrowBaseAngle - (90 * Math.PI) / 180)
+          : x3 + tlen * Math.cos(annotationAgle + arrowBaseAngle - (90 * Math.PI) / 180);
+      const t4y =
+        sourceY <= targetY
+          ? y3 - tlen * Math.sin(annotationAgle + arrowBaseAngle - (90 * Math.PI) / 180)
+          : y3 + tlen * Math.sin(annotationAgle + arrowBaseAngle - (90 * Math.PI) / 180);
+      ctx.beginPath();
+      ctx.moveTo(x3, y3);
+      ctx.lineTo(t3x, t3y);
+      ctx.lineTo(t1x, t1y);
+      ctx.lineTo(t2x, t2y);
+      ctx.lineTo(t4x, t4y);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
   }
 }
 

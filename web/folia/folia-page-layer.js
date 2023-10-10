@@ -308,20 +308,25 @@ class FoliaPageLayer {
       this.undoRedoManager.creatingObject(duplicatedAnnot);
     }
   }
+  selectAll() {
+    this.annotationObjects.forEach((obj) => this.multipleSelect.addObject(obj));
+  }
 
   commitObjectChanges(objectData) {
     if (!objectData) return;
     const obj = this.annotationObjects.get(objectData.id);
     const { __typename, text } = objectData;
     const shouldBeDeleted = __typename === ANNOTATION_TYPES.TEXT_BOX && !text && obj?.isDirty;
-    // console.log("commitObjectChanges", obj.isDirty, obj.newbie);
 
     if (objectData.deletedAt || shouldBeDeleted) {
       if (obj) this.annotationObjects.delete(obj.id);
-      this.eventBus.dispatch("delete-object", objectData.id);
-    } else {
       this.eventBus.dispatch("commit-object", objectData);
-      obj.markAsUnchanged();
+      // this.eventBus.dispatch("delete-object", objectData);
+      // console.log("commitObjectChanges :: delete", objectData);
+    } else {
+      // if (obj) obj.markAsUnchanged();
+      this.eventBus.dispatch("commit-object", objectData);
+      // console.log("commitObjectChanges :: update", objectData.id);
     }
   }
 
@@ -344,6 +349,7 @@ class FoliaPageLayer {
       const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
       annotationObject = new AnnoClass(this, annotation);
       this.annotationObjects.set(annotation.id, annotationObject);
+
       if (makeSelected) {
         this.multipleSelect.toggleObject(annotationObject);
         if (typeof annotationObject.startEditMode === "function") annotationObject.startEditMode();
@@ -351,6 +357,7 @@ class FoliaPageLayer {
     } else {
       annotationObject.update(annotation, this.viewport);
     }
+    annotationObject.markAsChanged();
   }
   render(viewport) {
     // console.log("render", this.pageNumber);
@@ -368,53 +375,60 @@ class FoliaPageLayer {
       this.pageDiv.appendChild(this.foliaLayer);
     }
 
-    try {
-      const annotations = this.dataProxy.getObjects(this.pageNumber).sort((a, b) => {
-        const addedAtA = new Date(a.addedAt).getTime();
-        const addedAtB = new Date(b.addedAt).getTime();
-        return addedAtA - addedAtB;
-      });
-      // delete
-      for (const [id, annotationObject] of this.annotationObjects) {
-        if (this._cancelled) return;
-        if (annotations.findIndex((a) => a.id === id) === -1 && !annotationObject.isDirty) {
-          console.log("DELETE WHILE RENDER", annotationObject);
-          this.multipleSelect.deleteObject(annotationObject);
-          this.annotationObjects.delete(annotationObject.id);
-        }
-      }
-
-      // create or update
-      for (const annotation of annotations) {
-        // console.log("annotation", annotation.__typename, annotation.deletedAt);
-        try {
+    this.dataProxy
+      .getObjects(this.pageNumber)
+      .then((objects) =>
+        objects.sort((a, b) => {
+          const addedAtA = new Date(a.addedAt).getTime();
+          const addedAtB = new Date(b.addedAt).getTime();
+          return addedAtA - addedAtB;
+        })
+      )
+      .then((annotations) => {
+        // remove that not exist
+        for (const [id, annotationObject] of this.annotationObjects) {
           if (this._cancelled) return;
-          let annotationObject = this.annotationObjects.get(annotation.id);
-          if (!annotationObject) {
-            const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
-            annotationObject = new AnnoClass(this, annotation);
-            this.annotationObjects.set(annotation.id, annotationObject);
-          } else {
-            annotationObject.update(annotation, this.viewport);
+          // delete if not found in received anno
+          if (annotations.findIndex((a) => a.id === id) === -1 && !annotationObject.isDirty) {
+            this.multipleSelect.deleteObject(annotationObject);
+            this.annotationObjects.delete(annotationObject.id);
           }
-        } catch (e) {
-          console.error("error rendering anno 123", e, annotation);
         }
-      }
 
-      if (this.annotationBuilderClass && !this.annotationBuilder) {
-        if (this._cancelled) return;
-        this.startDrawing(this.annotationBuilderClass);
-      }
-    } catch (err) {
-      console.error(`error in render on page ${this.pageNumber}`, err.message);
-    }
-    // console.timeEnd("render");
+        // create or update
+        for (const annotation of annotations) {
+          if (this._cancelled) return;
+          try {
+            let annotationObject = this.annotationObjects.get(annotation.id);
+            if (!annotationObject && !annotation.deletedAt) {
+              // console.log("DELETED", annotation.id, annotation.deletedAt);
+              const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
+              annotationObject = new AnnoClass(this, annotation);
+              this.annotationObjects.set(annotation.id, annotationObject);
+            } else if (annotationObject && annotation.deletedAt) {
+              this.multipleSelect.deleteObject(annotationObject);
+              this.annotationObjects.delete(annotationObject.id);
+            } else if (annotationObject && !annotation.deletedAt) {
+              annotationObject.update(annotation, this.viewport);
+            }
+          } catch (e) {
+            console.error("error rendering annotation", e.message, annotation);
+          }
+        }
+
+        // start annotationBuilder if needed
+        if (this.annotationBuilderClass && !this.annotationBuilder) {
+          if (this._cancelled) return;
+          this.startDrawing(this.annotationBuilderClass);
+        }
+      })
+      .catch((err) => console.error(`error in render on page ${this.pageNumber}`, err.message));
   }
   refresh() {
     this.render(this.viewport);
   }
   cancel() {
+    // console.log("CANCEL", this.annotationBuilder);
     this._cancelled = true;
     if (this.annotationBuilder) this.annotationBuilder.stop();
     for (const annoObject of this.multipleSelect.getObjects()) {

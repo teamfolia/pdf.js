@@ -1,9 +1,8 @@
 import { cloneDeep } from "lodash";
 import PDFJSDev from "./PDFJSDev";
-import { AnnotationMode, getDocument } from "pdfjs-lib";
+import { AnnotationMode, getDocument, GlobalWorkerOptions } from "pdfjs-lib";
 import { EventBus } from "../event_utils";
 import { PDFFindController } from "../pdf_find_controller";
-import { PDFHistory } from "../pdf_history";
 import { PDFLinkService } from "../pdf_link_service";
 import { PDFRenderingQueue } from "../pdf_rendering_queue";
 import { PDFViewer } from "../pdf_viewer";
@@ -15,10 +14,10 @@ import {
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,
+  normalizeWheelEventDirection,
 } from "../ui_utils";
 import { ANNOTATION_TYPES, TOOLS } from "./constants";
 import ArrowBuilder from "./annotations-builders/arrow-builder";
-import BaseBuilder from "./annotations-builders/base-builder";
 import CircleBuilder from "./annotations-builders/circle-builder";
 import InkBuilder from "./annotations-builders/ink-builder";
 import SquareBuilder from "./annotations-builders/square-builder";
@@ -37,6 +36,11 @@ import FoliaInkAnnotation from "./annotations/ink-annotation";
 import FoliaSquareAnnotation from "./annotations/square-annotation";
 import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
 
+// import Worker from "worker-loader!../../build/dist/build/pdf.worker.js";
+// window.pdfjsWorker = Worker();
+// console.log("import", { GlobalWorkerOptions, worker: window.pdfjsWorker });
+// console.log("import", window.pdfjsWorker.terminate);
+
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
@@ -45,15 +49,6 @@ const promisedTimeout = (timeout) => {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 };
 
-// function onClickHandler(e) {
-//   if (e.target.id === "viewer") {
-//     // console.log('onClickHandler', e.target)
-//     this.pdfViewer._pages.map((_page) => {
-//       if (!_page.foliaPageLayer) return;
-//       _page.foliaPageLayer.clickByViewerContainer();
-//     });
-//   }
-// }
 function keyDownHandler(e) {
   const { key, keyCode, altKey, ctrlKey, metaKey, shiftKey, target, currentTarget } = e;
   // console.log("foliaPdfViewer -> keyDownHandler", target.nodeName);
@@ -140,8 +135,96 @@ function keyDownHandler(e) {
       this.deleteSelectedAnnotations();
       break;
     }
+    case "A":
+    case "a": {
+      if (ctrlKey || metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.selectAllHoveredPageAnnotations();
+      }
+      break;
+    }
+
     default:
       break;
+  }
+}
+
+let zoomDisabledTimeout = null;
+function setZoomDisabledTimeout() {
+  if (zoomDisabledTimeout) {
+    clearTimeout(zoomDisabledTimeout);
+  }
+  zoomDisabledTimeout = setTimeout(function () {
+    zoomDisabledTimeout = null;
+  }, WHEEL_ZOOM_DISABLED_TIMEOUT);
+}
+
+function webViewerWheel(evt) {
+  // const { pdfViewer, supportedMouseWheelZoomModifierKeys } = PDFViewerApplication;
+
+  const supportedMouseWheelZoomModifierKeys = { ctrlKey: true, metaKey: true };
+  if (this.pdfViewer.isInPresentationMode) {
+    return;
+  }
+
+  if (
+    (evt.ctrlKey && supportedMouseWheelZoomModifierKeys.ctrlKey) ||
+    (evt.metaKey && supportedMouseWheelZoomModifierKeys.metaKey)
+  ) {
+    // Only zoom the pages, not the entire viewer.
+    evt.preventDefault();
+    // NOTE: this check must be placed *after* preventDefault.
+    if (zoomDisabledTimeout || document.visibilityState === "hidden") {
+      return;
+    }
+
+    // It is important that we query deltaMode before delta{X,Y}, so that
+    // Firefox doesn't switch to DOM_DELTA_PIXEL mode for compat with other
+    // browsers, see https://bugzilla.mozilla.org/show_bug.cgi?id=1392460.
+    const deltaMode = evt.deltaMode;
+    const delta = normalizeWheelEventDirection(evt);
+    const previousScale = this.pdfViewer.currentScale;
+
+    let ticks = 0;
+    if (deltaMode === WheelEvent.DOM_DELTA_LINE || deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      // For line-based devices, use one tick per event, because different
+      // OSs have different defaults for the number lines. But we generally
+      // want one "clicky" roll of the wheel (which produces one event) to
+      // adjust the zoom by one step.
+      if (Math.abs(delta) >= 1) {
+        ticks = Math.sign(delta);
+      } else {
+        // If we're getting fractional lines (I can't think of a scenario
+        // this might actually happen), be safe and use the accumulator.
+        ticks = this.accumulateWheelTicks(delta);
+      }
+    } else {
+      // pixel-based devices
+      const PIXELS_PER_LINE_SCALE = 20;
+      ticks = this.accumulateWheelTicks(delta / PIXELS_PER_LINE_SCALE);
+    }
+
+    if (ticks < 0) {
+      this.zoomOut(-ticks);
+    } else if (ticks > 0) {
+      this.zoomIn(ticks);
+    }
+
+    const currentScale = this.pdfViewer.currentScale;
+    if (previousScale !== currentScale) {
+      // After scaling the page via zoomIn/zoomOut, the position of the upper-
+      // left corner is restored. When the mouse wheel is used, the position
+      // under the cursor should be restored instead.
+      const scaleCorrectionFactor = currentScale / previousScale - 1;
+      const rect = this.pdfViewer.container.getBoundingClientRect();
+      const dx = evt.clientX - rect.left;
+      const dy = evt.clientY - rect.top;
+      this.pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
+      this.pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
+    }
+  } else {
+    setZoomDisabledTimeout();
   }
 }
 
@@ -156,15 +239,18 @@ export class FoliaPDFViewer {
   pdfViewer;
   pdfDocument;
   pdfLoadingTask;
+  _wheelUnusedTicks = 0;
 
   constructor() {
     window.PDFJSDev = new PDFJSDev();
     this.keyDownHandler = keyDownHandler.bind(this);
     this.pasteIntoFoliaBinded = this.pasteIntoFolia.bind(this);
+    this.webViewerWheelBinded = webViewerWheel.bind(this);
   }
 
   async init(uiConfig, dataProxy) {
-    window.pdfjsWorker = await import("pdfjs-worker");
+    // window.pdfjsWorker = await import("pdfjs-worker");
+    // console.log("init", window.pdfjsWorker);
 
     this.dataProxy = dataProxy;
     this.uiConfig = uiConfig;
@@ -234,15 +320,14 @@ export class FoliaPDFViewer {
 
     window.addEventListener("keydown", this.keyDownHandler, { passive: false });
     window.addEventListener("paste", this.pasteIntoFoliaBinded, { passive: false });
-    // window.addEventListener("click", this.onClickHandler, true);
-
-    console.log("foliaPdfViewer has been initialized");
+    window.addEventListener("wheel", this.webViewerWheelBinded, { passive: false });
+    // console.log("foliaPdfViewer has been initialized");
   }
 
   deinit() {
     window.removeEventListener("paste", this.pasteIntoFoliaBinded, { passive: false });
     window.removeEventListener("keydown", this.keyDownHandler, { passive: false });
-    // window.removeEventListener("click", this.onClickHandler, true);
+    window.removeEventListener("wheel", this.webViewerWheelBinded, { passive: false });
   }
 
   webViewerUpdateViewarea({ location }) {
@@ -282,6 +367,16 @@ export class FoliaPDFViewer {
     if (this.uiConfig.thumbnailView) {
       this.pdfThumbnailViewer.scrollThumbnailIntoView(pageNumber);
     }
+  }
+  accumulateWheelTicks(ticks) {
+    // If the scroll direction changed, reset the accumulated wheel ticks.
+    if ((this._wheelUnusedTicks > 0 && ticks < 0) || (this._wheelUnusedTicks < 0 && ticks > 0)) {
+      this._wheelUnusedTicks = 0;
+    }
+    this._wheelUnusedTicks += ticks;
+    const wholeTicks = Math.sign(this._wheelUnusedTicks) * Math.floor(Math.abs(this._wheelUnusedTicks));
+    this._wheelUnusedTicks -= wholeTicks;
+    return wholeTicks;
   }
 
   _cleanup() {
@@ -375,6 +470,8 @@ export class FoliaPDFViewer {
     if (this.pdfLoadingTask) await this.close();
 
     const parameters = { url: content };
+    GlobalWorkerOptions.workerSrc = "/folia-pdf-viewer/pdfjs-worker.js";
+
     const loadingTask = getDocument(parameters);
     this.pdfLoadingTask = loadingTask;
 
@@ -493,15 +590,18 @@ export class FoliaPDFViewer {
   redo() {
     this.undoRedoManager.redo();
   }
-  zoomIn(steps) {
+  zoomIn(steps = 1) {
+    this.stopDrawing();
     this.pdfViewer.increaseScale(steps);
     this.pdfViewer.update();
   }
-  zoomOut(steps) {
+  zoomOut(steps = 1) {
+    this.stopDrawing();
     this.pdfViewer.decreaseScale(steps);
     this.pdfViewer.update();
   }
   zoomReset() {
+    this.stopDrawing();
     this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
     this.pdfViewer.update();
   }
@@ -647,6 +747,12 @@ export class FoliaPDFViewer {
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
       page.foliaPageLayer.duplicateSelectedAnnotations();
+    });
+  }
+  selectAllHoveredPageAnnotations() {
+    this.pdfViewer._pages.map((page) => {
+      if (!page.foliaPageLayer) return;
+      if (page.foliaPageLayer.pageIsHovered) page.foliaPageLayer.selectAll();
     });
   }
 

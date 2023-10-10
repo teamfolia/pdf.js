@@ -8,15 +8,6 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
   constructor(...props) {
     super(...props);
     this.annotationDIV.classList.add(this.annotationRawData.__typename);
-
-    // const canvas = document.createElement("canvas");
-    // canvas.width = this.pdfCanvas.width;
-    // canvas.height = this.pdfCanvas.height;
-    // canvas.className = "folia-annotation-canvas " + this.annotationRawData.__typename;
-    // canvas.style.width = this.pdfCanvas.clientWidth + "px";
-    // canvas.style.height = this.pdfCanvas.clientHeight + "px";
-    // this.canvas = canvas;
-    // this.pdfCanvas.parentNode.appendChild(canvas);
     super.createAndAppendCanvas();
     super.buildBaseCorners();
   }
@@ -84,22 +75,6 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
     ctx.ellipse(x, y, radiusX, radiusY, 0, 0, 180);
     ctx.stroke();
     ctx.closePath();
-
-    // const annotationCanvas = document.createElement("canvas");
-    // annotationCanvas.width = annoWidth + lineWidth;
-    // annotationCanvas.height = annoHeight + lineWidth;
-    // const annotationCtx = annotationCanvas.getContext("2d");
-    // annotationCtx.putImageData(
-    //   ctx.getImageData(
-    //     annoLeft - lineWidth / 2,
-    //     annoTop - lineWidth / 2,
-    //     annoWidth + lineWidth,
-    //     annoHeight + lineWidth
-    //   ),
-    //   0,
-    //   0
-    // );
-    // this.annotationDIV.style.backgroundImage = `url("${annotationCanvas.toDataURL("png")}")`;
   }
 
   render() {

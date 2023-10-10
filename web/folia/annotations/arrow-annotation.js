@@ -3,6 +3,10 @@ import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import { fromPdfPoint, hexColor2RGBA, toPdfPoint } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";
 
+Math.cotan = function ctg(x) {
+  return 1 / Math.tan(x);
+};
+
 class FoliaArrowAnnotation extends FoliaBaseAnnotation {
   arrowHeadSvg =
     "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA1OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4NCjxwYXRoIGQ9Ik0yNy4wOTU3IDEuMTUzNDlDMjguMDQzIC0wLjM4NDQ5OCAzMC4xNDkzIC0wLjM4NDQ5NyAzMS4wOTY2IDEuMTUzNDlMNTcuMzc3OSA0My44MjM5QzU4LjU3NTUgNDUuNzY4NSA1Ni45MzEyIDQ4LjI3OTIgNTQuODE2OSA0Ny43MzQzTDI5LjY1NjcgNDEuMjUwMkMyOS4yODgzIDQxLjE1NTIgMjguOTA0MSA0MS4xNTUyIDI4LjUzNTYgNDEuMjUwMkwzLjM3NTQ1IDQ3LjczNDNDMS4yNjExNCA0OC4yNzkyIC0wLjM4MzIwNCA0NS43Njg1IDAuODE0NDYyIDQzLjgyMzlMMjcuMDk1NyAxLjE1MzQ5WiIgZmlsbD0iI0VGNDQ0NCIvPg0KPC9zdmc+";
@@ -116,13 +120,12 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
     const sourceY = this.sourcePoint.y * window.devicePixelRatio;
     const targetX = this.targetPoint.x * window.devicePixelRatio;
     const targetY = this.targetPoint.y * window.devicePixelRatio;
-    const dirX = Math.sign(targetX - sourceX);
-    const dirY = -Math.sign(targetY - sourceY);
     const annotationWidth = Math.abs(targetX - sourceX);
     const annotationHeight = Math.abs(targetY - sourceY);
     const annotationAgle = Math.atan(annotationHeight / annotationWidth);
     const arrowLength = Math.sqrt(Math.pow(annotationWidth, 2) + Math.pow(annotationHeight, 2));
 
+    // arrow cap calc
     const lineFactor = Math.max(lineWidth, 5);
     const arrowHeight = lineFactor * 3.7;
     const arrowLeavesHeight = arrowHeight / 6.5;
@@ -130,35 +133,105 @@ class FoliaArrowAnnotation extends FoliaBaseAnnotation {
     const cornersRadius = lineFactor / 6;
 
     const outSideLine = arrowHeight / Math.cos(arrowAngle / 2);
-    const x1 = targetX - dirX * outSideLine * Math.cos(annotationAgle - arrowAngle / 2);
-    const y1 = targetY + dirY * outSideLine * Math.sin(annotationAgle - arrowAngle / 2);
-    const x2 = targetX - dirX * outSideLine * Math.cos(annotationAgle + arrowAngle / 2);
-    const y2 = targetY + dirY * outSideLine * Math.sin(annotationAgle + arrowAngle / 2);
-    const x3 = targetX - dirX * (arrowHeight - arrowLeavesHeight) * Math.cos(annotationAgle);
-    const y3 = targetY + dirY * (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle);
+    const x1 =
+      sourceX <= targetX
+        ? targetX - outSideLine * Math.cos(annotationAgle - arrowAngle / 2)
+        : targetX + outSideLine * Math.cos(annotationAgle - arrowAngle / 2);
 
-    if (new Set([x3, x2, targetX, x1]).size > 1 && new Set([y3, y2, targetY, y1]).size > 1) {
-      this.canvas.width = this.canvas.width;
-      const ctx = this.canvas.getContext("2d");
-      ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
-      ctx.fillStyle = hexColor2RGBA(this.annotationRawData.color);
-      ctx.lineWidth = lineWidth;
+    const y1 =
+      sourceY <= targetY
+        ? targetY - outSideLine * Math.sin(annotationAgle - arrowAngle / 2)
+        : targetY + outSideLine * Math.sin(annotationAgle - arrowAngle / 2);
 
+    const x2 =
+      sourceX <= targetX
+        ? targetX - outSideLine * Math.cos(annotationAgle + arrowAngle / 2)
+        : targetX + outSideLine * Math.cos(annotationAgle + arrowAngle / 2);
+
+    const y2 =
+      sourceY <= targetY
+        ? targetY - outSideLine * Math.sin(annotationAgle + arrowAngle / 2)
+        : targetY + outSideLine * Math.sin(annotationAgle + arrowAngle / 2);
+
+    const x3 =
+      sourceX <= targetX
+        ? targetX - (arrowHeight - arrowLeavesHeight) * Math.cos(annotationAgle)
+        : targetX + (arrowHeight - arrowLeavesHeight) * Math.cos(annotationAgle);
+
+    const y3 =
+      sourceY <= targetY
+        ? targetY - (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle)
+        : targetY + (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle);
+
+    this.canvas.width = this.canvas.width;
+    const ctx = this.canvas.getContext("2d");
+    ctx.save();
+    ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
+    ctx.fillStyle = hexColor2RGBA(this.annotationRawData.color);
+    ctx.lineWidth = lineWidth;
+
+    ctx.beginPath();
+    ctx.moveTo(x3, y3);
+    ctx.arcTo(x2, y2, targetX, targetY, cornersRadius);
+    ctx.arcTo(targetX, targetY, x1, y1, cornersRadius);
+    ctx.arcTo(x1, y1, x3, y3, cornersRadius);
+    ctx.closePath();
+    ctx.fill();
+
+    if (arrowLength >= arrowHeight - arrowLeavesHeight) {
+      // arrow annotation foot calc
+      const t1x =
+        sourceX <= targetX
+          ? sourceX - (lineWidth / 2) * Math.cos(annotationAgle + (90 * Math.PI) / 180)
+          : sourceX + (lineWidth / 2) * Math.cos(annotationAgle + (90 * Math.PI) / 180);
+
+      const t1y =
+        sourceY <= targetY
+          ? sourceY - (lineWidth / 2) * Math.sin(annotationAgle + (90 * Math.PI) / 180)
+          : sourceY + (lineWidth / 2) * Math.sin(annotationAgle + (90 * Math.PI) / 180);
+
+      const t2x =
+        sourceX <= targetX
+          ? sourceX - (lineWidth / 2) * Math.cos(annotationAgle - (90 * Math.PI) / 180)
+          : sourceX + (lineWidth / 2) * Math.cos(annotationAgle - (90 * Math.PI) / 180);
+
+      const t2y =
+        sourceY <= targetY
+          ? sourceY - (lineWidth / 2) * Math.sin(annotationAgle - (90 * Math.PI) / 180)
+          : sourceY + (lineWidth / 2) * Math.sin(annotationAgle - (90 * Math.PI) / 180);
+
+      const arrowBaseAngle = Math.asin(
+        arrowLeavesHeight / Math.sqrt(Math.pow(Math.abs(x3 - x1), 2) + Math.pow(Math.abs(y3 - y1), 2))
+      );
+
+      const tHeigth = (lineWidth / 2) * Math.tan(arrowBaseAngle);
+      const tLen = Math.sqrt(Math.pow(lineWidth / 2, 2) + Math.pow(tHeigth, 2));
+      const t3x =
+        sourceX <= targetX
+          ? x3 - tLen * Math.cos(annotationAgle - arrowBaseAngle + (90 * Math.PI) / 180)
+          : x3 + tLen * Math.cos(annotationAgle - arrowBaseAngle + (90 * Math.PI) / 180);
+      const t3y =
+        sourceY <= targetY
+          ? y3 - tLen * Math.sin(annotationAgle - arrowBaseAngle + (90 * Math.PI) / 180)
+          : y3 + tLen * Math.sin(annotationAgle - arrowBaseAngle + (90 * Math.PI) / 180);
+      const t4x =
+        sourceX <= targetX
+          ? x3 - tLen * Math.cos(annotationAgle + arrowBaseAngle - (90 * Math.PI) / 180)
+          : x3 + tLen * Math.cos(annotationAgle + arrowBaseAngle - (90 * Math.PI) / 180);
+      const t4y =
+        sourceY <= targetY
+          ? y3 - tLen * Math.sin(annotationAgle + arrowBaseAngle - (90 * Math.PI) / 180)
+          : y3 + tLen * Math.sin(annotationAgle + arrowBaseAngle - (90 * Math.PI) / 180);
       ctx.beginPath();
       ctx.moveTo(x3, y3);
-      ctx.arcTo(x2, y2, targetX, targetY, cornersRadius);
-      ctx.arcTo(targetX, targetY, x1, y1, cornersRadius);
-      ctx.arcTo(x1, y1, x3, y3, cornersRadius);
+      ctx.lineTo(t3x, t3y);
+      ctx.lineTo(t1x, t1y);
+      ctx.lineTo(t2x, t2y);
+      ctx.lineTo(t4x, t4y);
       ctx.closePath();
       ctx.fill();
-
-      ctx.beginPath();
-      ctx.lineCap = "butt";
-      ctx.moveTo(x3, y3);
-      ctx.lineTo(sourceX, sourceY);
-      ctx.closePath();
-      ctx.stroke();
     }
+    ctx.restore();
 
     const arrowBase = Math.sqrt(Math.pow(outSideLine, 2) - Math.pow(arrowHeight, 2));
     return {

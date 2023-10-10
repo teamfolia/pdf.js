@@ -469,7 +469,7 @@ class PDFViewer {
     if (Number.isNaN(parseFloat(val))) {
       return this._setScale(val, false);
     }
-    this._setScale(Math.min(3.0, Math.max(0.05, val)), false);
+    this._setScale(Math.min(4.0, Math.max(0.1, val)), false);
   }
 
   /**
@@ -2076,7 +2076,6 @@ class PDFViewer {
       newScale = Math.ceil(newScale * 100) / 100;
       newScale = Math.min(MAX_SCALE, newScale);
     } while (--steps > 0 && newScale < MAX_SCALE);
-    // console.log("increaseScale", newScale);
     this.currentScaleValue = newScale;
   }
 
@@ -2091,7 +2090,6 @@ class PDFViewer {
       newScale = Math.floor(newScale * 100) / 100;
       newScale = Math.max(MIN_SCALE, newScale);
     } while (--steps > 0 && newScale > MIN_SCALE);
-    // console.log("decreaseScale", newScale);
     this.currentScaleValue = newScale;
   }
 

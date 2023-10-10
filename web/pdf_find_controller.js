@@ -403,46 +403,46 @@ class PDFFindController {
         return;
       }
       this.#extractText();
-      this.#extractAnnots();
+      this.#extractAnnots().then(() => {
+        const findbarClosed = !this._highlightMatches;
+        const pendingTimeout = !!this._findTimeout;
 
-      const findbarClosed = !this._highlightMatches;
-      const pendingTimeout = !!this._findTimeout;
-
-      if (this._findTimeout) {
-        clearTimeout(this._findTimeout);
-        this._findTimeout = null;
-      }
-      if (!type) {
-        // Trigger the find action with a small delay to avoid starting the
-        // search when the user is still typing (saving resources).
-        this._findTimeout = setTimeout(() => {
-          this.#nextMatch();
+        if (this._findTimeout) {
+          clearTimeout(this._findTimeout);
           this._findTimeout = null;
-        }, FIND_TIMEOUT);
-      } else if (this._dirtyMatch) {
-        // Immediately trigger searching for non-'find' operations, when the
-        // current state needs to be reset and matches re-calculated.
-        this.#nextMatch();
-      } else if (type === "again") {
-        this.#nextMatch();
-
-        // When the findbar was previously closed, and `highlightAll` is set,
-        // ensure that the matches on all active pages are highlighted again.
-        if (findbarClosed && this._state.highlightAll) {
-          this.#updateAllPages();
         }
-      } else if (type === "highlightallchange") {
-        // If there was a pending search operation, synchronously trigger a new
-        // search *first* to ensure that the correct matches are highlighted.
-        if (pendingTimeout) {
+        if (!type) {
+          // Trigger the find action with a small delay to avoid starting the
+          // search when the user is still typing (saving resources).
+          this._findTimeout = setTimeout(() => {
+            this.#nextMatch();
+            this._findTimeout = null;
+          }, FIND_TIMEOUT);
+        } else if (this._dirtyMatch) {
+          // Immediately trigger searching for non-'find' operations, when the
+          // current state needs to be reset and matches re-calculated.
           this.#nextMatch();
+        } else if (type === "again") {
+          this.#nextMatch();
+
+          // When the findbar was previously closed, and `highlightAll` is set,
+          // ensure that the matches on all active pages are highlighted again.
+          if (findbarClosed && this._state.highlightAll) {
+            this.#updateAllPages();
+          }
+        } else if (type === "highlightallchange") {
+          // If there was a pending search operation, synchronously trigger a new
+          // search *first* to ensure that the correct matches are highlighted.
+          if (pendingTimeout) {
+            this.#nextMatch();
+          } else {
+            this._highlightMatches = true;
+          }
+          this.#updateAllPages(); // Update the highlighting on all active pages.
         } else {
-          this._highlightMatches = true;
+          this.#nextMatch();
         }
-        this.#updateAllPages(); // Update the highlighting on all active pages.
-      } else {
-        this.#nextMatch();
-      }
+      });
     });
   }
 
@@ -725,7 +725,31 @@ class PDFFindController {
     }
   }
 
-  #extractAnnots() {
+  async #extractAnnots() {
+    const pagesPromises = [];
+    for (let pageNumber = 0; pageNumber < this._pdfDocument.numPages; pageNumber++) {
+      pagesPromises[pageNumber] = this._dataProxy
+        .getObjects(pageNumber)
+        .then((annotations) =>
+          annotations.filter((anno) => anno.hasOwnProperty("rect") && anno.hasOwnProperty("text"))
+        )
+        .catch((err) => {
+          console.err(`Can not parse page #${pageNumber + 1} for search`);
+        });
+    }
+
+    return Promise.allSettled(pagesPromises).then((results) => {
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          this._pageAnnots[index] = result.value;
+        } else {
+          this._pageAnnots[index] = [];
+          console.error(`Unable to get annotations content for page ${index + 1}`, result.reason);
+        }
+      });
+    });
+
+    /**
     try {
       for (let pageNumber = 0; pageNumber < this._pdfDocument.numPages; pageNumber++) {
         const annotationsContent = this._dataProxy.getObjects(pageNumber);
@@ -737,6 +761,7 @@ class PDFFindController {
       this._pageAnnots[pageNumber] = [];
       console.error(`Unable to get annotations content for page ${pageNumber + 1}`, e.message);
     }
+    */
   }
 
   #extractText() {
