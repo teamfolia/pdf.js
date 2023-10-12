@@ -1,5 +1,5 @@
 <div class="folia-comment-header">
-  <button class="folia-comment-header-delete-btn hidden">
+  <button class="folia-comment-header-delete-btn">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M9.75 10.75V16.25M13.25 10.75V16.25M8.75 7.75V6.75C8.75 5.64543 9.64543 4.75 10.75 4.75H12.25C13.3546 4.75 14.25 5.64543 14.25 6.75V7.75M4.75 7.75H18.25M6.59115 17.4233L5.75 7.75H17.25L16.4088 17.4233C16.319 18.4568 15.4538 19.25 14.4164 19.25H8.58363C7.54622 19.25 6.68102 18.4568 6.59115 17.4233Z"
@@ -23,7 +23,7 @@
   </button>
 </div>
 
-<div class="folia-commnet-conversation"></div>
+<div class="folia-comment-conversation"></div>
 
 <div class="folia-comment-footer">
   <textarea rows="1" class="folia-comment-footer-textarea" placeholder="Type something..."></textarea>
@@ -106,7 +106,8 @@
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 5px;
     padding: 8px;
     width: 100%;
     /* border-bottom: 1px solid #f1f5f9; */
@@ -145,7 +146,7 @@
 
   /** comment body part */
 
-  .folia-commnet-conversation {
+  .folia-comment-conversation {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -177,7 +178,7 @@
     font-size: 14px;
     font-style: normal;
     font-weight: 400;
-    line-height: 16px;
+    /* line-height: 16px; */
     padding: 0 8px;
     color: #334155;
     width: 100%;

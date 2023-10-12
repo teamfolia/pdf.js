@@ -259,6 +259,12 @@
     border: solid 1px silver;
     user-select: all;
     background-color: #f1f5f9;
+    overflow: hidden;
+  }
+
+  .folia-reply-editor:empty::before {
+    content: "Type something…";
+    color: #94a3b8;
   }
 
   .folia-reply-done,

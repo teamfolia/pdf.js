@@ -860,6 +860,8 @@ export class FoliaPDFViewer {
   }
 
   pasteAsAnnotationIntoHoveredPage(annoType, annotationData) {
+    if (document.activeElement.tagName === "FOLIA-COMMENT") return;
+
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
       page.foliaPageLayer.pasteAsAnnotation(annoType, annotationData);

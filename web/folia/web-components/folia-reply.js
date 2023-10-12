@@ -10,7 +10,6 @@ class FoliaReply extends HTMLElement {
   #template = null;
   #createdAtRedrawTimer = null;
   #initialText = "";
-  #isInitialComment = false;
   #authorEmail;
 
   constructor() {
@@ -40,7 +39,7 @@ class FoliaReply extends HTMLElement {
         break;
       }
       case "created-at": {
-        this.drawCreatedAt(newValue);
+        this.composeCreatedAtAsLabel(newValue);
         break;
       }
       default:
@@ -78,11 +77,11 @@ class FoliaReply extends HTMLElement {
     clearTimeout(this.#createdAtRedrawTimer);
   }
 
-  drawCreatedAt(createdAt) {
+  composeCreatedAtAsLabel(createdAt) {
     clearTimeout(this.#createdAtRedrawTimer);
     const commentDate = this.shadowRoot.querySelector(".folia-reply-title-info-timestamp");
     commentDate.innerHTML = foliaDateFormat(createdAt);
-    this.#createdAtRedrawTimer = setTimeout(() => this.drawCreatedAt(createdAt), 1000);
+    this.#createdAtRedrawTimer = setTimeout(() => this.composeCreatedAtAsLabel(createdAt), 1000);
   }
 
   get text() {
@@ -90,20 +89,15 @@ class FoliaReply extends HTMLElement {
   }
 
   set text(text) {
-    this.shadowRoot.querySelector(".folia-reply-editor").innerText = text;
+    const editor = this.shadowRoot.querySelector(".folia-reply-editor");
+    if (!editor.hasAttribute("contenteditable")) {
+      editor.innerText = text;
+    }
     this.#initialText = text;
   }
 
   set error(err) {
     this.shadowRoot.querySelector(".folia-reply-error").classList.toggle("shown", Boolean(err));
-  }
-
-  get isInitialComment() {
-    return this.#isInitialComment;
-  }
-
-  set isInitialComment(status) {
-    this.#isInitialComment = status;
   }
 
   set canEdit(canEditStatus) {
@@ -123,7 +117,6 @@ class FoliaReply extends HTMLElement {
   get authorEmail() {
     return this.#authorEmail;
   }
-
   set authorEmail(email) {
     this.#authorEmail = email;
   }
@@ -199,7 +192,7 @@ class FoliaReply extends HTMLElement {
 
     this.#toggleMenuVisibility();
     setTimeout(() => {
-      setTextAreaDynamicHeight(editor);
+      // setTextAreaDynamicHeight(editor);
       editor.focus();
 
       // editor.setSelectionRange(editor.innerText.length, editor.innerText.length);
@@ -221,7 +214,7 @@ class FoliaReply extends HTMLElement {
     if (typeof this.onRemove === "function") {
       this.onRemove(this.id);
     }
-    if (!this.#isInitialComment) this.remove();
+    this.remove();
   }
 }
 

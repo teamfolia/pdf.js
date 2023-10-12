@@ -64,43 +64,19 @@ class FoliaComment extends HTMLElement {
 
   disconnectedCallback() {}
 
-  set initialComment(comment) {
-    // console.log("setup initial comment", this.#permissions);
-    let initialCommentEl = this.shadowRoot.getElementById(comment.id);
-    if (!initialCommentEl) {
-      const conversationBox = this.shadowRoot.querySelector(".folia-commnet-conversation");
-      const el = document.createElement("folia-reply");
-      el.setAttribute("id", comment.id);
-      initialCommentEl = conversationBox.insertAdjacentElement("afterbegin", el);
-    }
-    initialCommentEl.setAttribute("created-at", comment.createdAt);
-    initialCommentEl.setAttribute("author", comment.collaboratorName || comment.collaboratorEmail);
-    initialCommentEl.text = comment.text;
-    initialCommentEl.error = comment.error;
-    initialCommentEl.isInitialComment = true;
-    initialCommentEl.addedAt = comment.addedAt;
-    initialCommentEl.editedStatus = comment.status;
-    initialCommentEl.authorEmail = comment.collaboratorEmail;
-
-    initialCommentEl.onRemove = (commentId) => {
-      this.toggleDeleteDialog();
-    };
-    initialCommentEl.onChange = (commentId, text) => {
-      this.dispatchEvent(new CustomEvent("submit-comment", { detail: { commentId, text } }));
-    };
-    this.#initialComment = comment;
-    this.#applyPermissions();
-  }
-
   set replies(repliesList) {
     if (!Array.isArray(repliesList)) throw new Error("Property <replies> must be an array");
 
     const sortedRepliesList = repliesList.sort((replyA, replyB) => {
       return new Date(replyA.createdAt).getTime() - new Date(replyB.createdAt).getTime();
     });
-    const conversationBox = this.shadowRoot.querySelector(".folia-commnet-conversation");
-
-    for (const reply of sortedRepliesList) {
+    const conversationBox = this.shadowRoot.querySelector(".folia-comment-conversation");
+    conversationBox.querySelectorAll("folia-reply").forEach((replyEl) => {
+      if (!sortedRepliesList.map((obj) => obj.id).includes(replyEl.id)) {
+        replyEl.remove();
+      }
+    });
+    sortedRepliesList.forEach((reply, index) => {
       let replyEl = this.shadowRoot.getElementById(reply.id);
       if (!replyEl) {
         const el = document.createElement("folia-reply");
@@ -111,7 +87,6 @@ class FoliaComment extends HTMLElement {
       replyEl.setAttribute("author", reply.collaboratorName || reply.collaboratorEmail);
       replyEl.text = reply.text;
       replyEl.error = reply.error;
-      replyEl.isInitialComment = false;
       replyEl.addedAt = reply.addedAt;
       replyEl.editedStatus = reply.status;
       replyEl.authorEmail = reply.collaboratorEmail;
@@ -126,7 +101,7 @@ class FoliaComment extends HTMLElement {
       replyEl.onChange = (id, text) => {
         this.dispatchEvent(new CustomEvent("submit-replay", { detail: { id, text, edited: true } }));
       };
-    }
+    });
 
     this.#replies = repliesList.slice();
     this.#applyPermissions();
@@ -137,13 +112,21 @@ class FoliaComment extends HTMLElement {
       });
     }, 100);
   }
-
-  setPermissions(permissions = [], userEmail, userRole) {
-    // console.log("setPermissions", { permissions, userEmail, userRole });
-    this.#permissions = permissions.slice();
-    this.#userEmail = userEmail;
-    this.#userRole = userRole;
+  get replies() {
+    return this.#replies;
+  }
+  set permissions(props) {
+    this.#permissions = structuredClone(props.permissions);
+    this.#userEmail = props.userEmail;
+    this.#userRole = props.userRole;
     this.#applyPermissions();
+  }
+  get permissions() {
+    return {
+      permissions: this.#permissions,
+      userEmail: this.#userEmail,
+      userRole: this.#userRole,
+    };
   }
 
   #applyPermissions() {
@@ -158,15 +141,15 @@ class FoliaComment extends HTMLElement {
       el.classList.toggle("hidden", !canMakeReply);
     });
 
-    this.shadowRoot.querySelectorAll("folia-reply").forEach((replyEl) => {
+    this.shadowRoot.querySelectorAll("folia-reply").forEach((replyEl, index) => {
       const canEditReply = this.#userRole !== USER_ROLE.VIEWER && this.#userEmail === replyEl.authorEmail;
       const canDeleteReply =
         this.#userRole === USER_ROLE.OWNER ||
         this.#userRole === USER_ROLE.EDITOR ||
         (this.#userEmail === replyEl.authorEmail && this.#userRole !== USER_ROLE.VIEWER);
 
-      replyEl.canEdit = canEditReply;
-      replyEl.canDelete = replyEl.isInitialComment ? canDeleteComment : canDeleteReply;
+      replyEl.canEdit = index === 0 ? this.#userRole === USER_ROLE.OWNER : canEditReply;
+      replyEl.canDelete = index === 0 ? false : canDeleteReply;
     });
   }
 
@@ -189,7 +172,7 @@ class FoliaComment extends HTMLElement {
   submitReply(e) {
     if (e) e.stopPropagation();
     const sendReplyBtn = this.shadowRoot.querySelector(".folia-comment-footer-send-btn");
-    const conversationBox = this.shadowRoot.querySelector(".folia-commnet-conversation");
+    const conversationBox = this.shadowRoot.querySelector(".folia-comment-conversation");
     const editor = this.shadowRoot.querySelector(".folia-comment-footer-textarea");
     const text = editor.value;
     if (!text) return;
@@ -223,7 +206,7 @@ class FoliaComment extends HTMLElement {
         break;
       }
       case "remove-comment": {
-        this.dispatchEvent(new CustomEvent("remove", { detail: { commentId: this.#initialComment.id } }));
+        this.dispatchEvent(new CustomEvent("remove", { detail: { commentId: true } }));
         this.toggleDeleteDialog(false);
         break;
       }

@@ -117,8 +117,10 @@ class FoliaBaseAnnotation {
 
   update(annotationRawData, viewport, force = false) {
     this.viewport = this.viewport || viewport;
+    console.log("Update in viewer ERR:", this.annotationRawData.id, this.annotationRawData.error);
     this.annotationRawData.error = annotationRawData.error;
-    this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
+    this.updateErrorStatus();
+    this.annotationDIV.classList.toggle("no-permission", !this.canManage);
 
     const inputDate = new Date(annotationRawData.addedAt).getTime();
     const objectDate = new Date(this.annotationRawData.addedAt).getTime();
@@ -139,7 +141,7 @@ class FoliaBaseAnnotation {
   }
 
   updateErrorStatus() {
-    this.annotationDIV.classList.toggle("error-status", Boolean(this.annotationRawData.error));
+    this.annotationDIV.classList.toggle("error", Boolean(this.annotationRawData.error));
   }
 
   deleteFromCanvas() {
@@ -625,6 +627,7 @@ class FoliaBaseAnnotation {
   }
   get canManage() {
     const { permissions } = this.foliaPageLayer.dataProxy;
+    // console.log(permissions);
     if (this.annotationRawData.__typename === ANNOTATION_TYPES.COMMENT) {
       return (
         permissions.includes(PERMISSIONS.MANAGE_ANNOTATION) &&

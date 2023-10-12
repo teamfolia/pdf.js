@@ -347,17 +347,19 @@ class FoliaPageLayer {
     let annotationObject = this.annotationObjects.get(annotation.id);
     if (!annotationObject) {
       const AnnoClass = ANNOTATIONS_CLASSES[annotation.__typename];
-      annotationObject = new AnnoClass(this, annotation);
-      this.annotationObjects.set(annotation.id, annotationObject);
+      if (AnnoClass) {
+        annotationObject = new AnnoClass(this, annotation);
+        this.annotationObjects.set(annotation.id, annotationObject);
 
-      if (makeSelected) {
-        this.multipleSelect.toggleObject(annotationObject);
-        if (typeof annotationObject.startEditMode === "function") annotationObject.startEditMode();
+        if (makeSelected) {
+          this.multipleSelect.toggleObject(annotationObject);
+          if (typeof annotationObject.startEditMode === "function") annotationObject.startEditMode();
+        }
       }
     } else {
       annotationObject.update(annotation, this.viewport);
     }
-    annotationObject.markAsChanged();
+    if (annotationObject) annotationObject.markAsChanged();
   }
   render(viewport) {
     // console.log("render", this.pageNumber);

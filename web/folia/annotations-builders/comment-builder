@@ -1,11 +1,13 @@
 import FoliaCreateComment from "../web-components/folia-create-comment";
 import { toPdfPoint } from "../folia-util";
 import BaseBuilder from "./base-builder";
-import { ANNOTATION_TYPES } from "../constants";
+import { ANNOTATION_TYPES, USER_ROLE } from "../constants";
+import { v4 as uuid } from "uuid";
 
 class CommentBuilder extends BaseBuilder {
   constructor(...props) {
     super(...props);
+    this.annotationData = [];
   }
 
   resume() {
@@ -22,8 +24,7 @@ class CommentBuilder extends BaseBuilder {
   }
 
   prepareAnnotations2save() {
-    // console.log("comment builder.prepareAnnotations2save", this.annotationData);
-    return this.annotationData ? [this.annotationData] : [];
+    return this.annotationData;
   }
 
   getRelativePoint(e) {
@@ -76,10 +77,19 @@ class CommentBuilder extends BaseBuilder {
     createCommentEl.className = "folia-create-comment";
     createCommentEl.addEventListener("submit-comment", (e) => {
       const now = new Date().toISOString();
-      // console.log("post comment on ", { x, y }, e.detail);
-      this.annotationData = {
-        __typename: ANNOTATION_TYPES.COMMENT,
+      const commentId = uuid();
+      const initialReply = {
+        __typename: ANNOTATION_TYPES.REPLY,
+        id: uuid(),
+        commentId: commentId,
+        createdAt: now,
+        addedAt: now,
+        collaboratorName: this.foliaPageLayer.dataProxy.userName,
         text: e.detail.text,
+      };
+      const comment = {
+        __typename: ANNOTATION_TYPES.COMMENT,
+        id: commentId,
         createdAt: now,
         addedAt: now,
         anchorPoint: toPdfPoint(
@@ -87,9 +97,13 @@ class CommentBuilder extends BaseBuilder {
           this.foliaPageLayer.viewport.width,
           this.foliaPageLayer.viewport.height
         ),
-        replies: [],
+        replies: [initialReply],
         collaboratorName: this.foliaPageLayer.dataProxy.userName,
+        permissions: this.foliaPageLayer.dataProxy.permissions,
+        userRole: USER_ROLE.OWNER,
       };
+      // console.log("post comment on ", { x, y }, e.detail);
+      this.annotationData = [comment, initialReply];
       this.foliaPageLayer.eventBus.dispatch("stop-drawing");
     });
     commentPointer.appendChild(createCommentEl);

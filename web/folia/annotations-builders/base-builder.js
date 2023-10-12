@@ -35,7 +35,7 @@ class BaseBuilder {
     const page = this.foliaPageLayer.pageNumber;
 
     for (const data of this.prepareAnnotations2save()) {
-      const id = uuid();
+      const id = data.id || uuid();
       const annotation = {
         id,
         page,

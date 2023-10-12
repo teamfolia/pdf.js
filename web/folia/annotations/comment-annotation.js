@@ -31,7 +31,6 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
       collaboratorEmail,
       page,
       anchorPoint,
-      text,
     };
   }
 
@@ -49,13 +48,13 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
     // console.log("afer update", this.annotationRawData);
     const commentEl = this.annotationDIV.querySelector("folia-comment");
     if (commentEl) {
-      commentEl.initialComment = this.annotationRawData;
+      // commentEl.initialComment = this.annotationRawData;
       commentEl.replies = this.annotationRawData.replies.slice();
-      commentEl.setPermissions(
-        this.annotationRawData.permissions,
-        this.dataProxy.userEmail,
-        this.annotationRawData.userRole
-      );
+      commentEl.permissions = {
+        permissions: this.annotationRawData.permissions,
+        userEmail: this.dataProxy.userEmail,
+        userRole: this.annotationRawData.userRole,
+      };
     }
   }
 
@@ -77,6 +76,7 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
     avatarCtx.arc(10, 10, 10, 0, 2 * Math.PI);
     avatarCtx.fill();
 
+    // console.log("draw comment avatar", this.annotationRawData.replies);
     const repliesNumber = this.annotationRawData.replies.length;
     const text = repliesNumber === 0 ? "" : repliesNumber > 10 ? "10+" : repliesNumber;
     avatarCtx.font = "lighter 11px sans-serif";
@@ -102,15 +102,15 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
       const selected = mutation.target.classList.contains("selected");
       if (selected) {
         const comment = this.__comment || document.createElement("folia-comment");
-        comment.initialComment = this.annotationRawData;
         comment.replies = this.annotationRawData.replies.slice();
-        comment.setPermissions(
-          this.annotationRawData.permissions,
-          this.dataProxy.userEmail,
-          this.annotationRawData.userRole
-        );
+        comment.permissions = {
+          permissions: this.annotationRawData.permissions,
+          userEmail: this.dataProxy.userEmail,
+          userRole: this.annotationRawData.userRole,
+        };
 
         comment.addEventListener("submit-comment", (e) => {
+          return console.error("submit-comment", e);
           const addedAt = new Date().toISOString();
           const annotationData = {
             ...this.annotationRawData,
