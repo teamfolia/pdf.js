@@ -1,7 +1,7 @@
 import { FOLIA_LAYER_ROLES } from "../folia-page-layer";
 import FoliaBaseAnnotation from "./base-annotation";
-import { ANNOTATION_TYPES } from "../constants";
-import { toPdfRect, fromPdfRect, fromPdfPoint, toPdfPoint } from "../folia-util";
+import { ANNOTATION_TYPES, PERMISSIONS, USER_ROLE } from "../constants";
+import { toPdfRect, fromPdfRect, fromPdfPoint, toPdfPoint, getInitials } from "../folia-util";
 import FoliaComment from "../web-components/folia-comment";
 import FoliaCreateComment from "../web-components/folia-create-comment";
 import { v4 as uuid } from "uuid";
@@ -16,7 +16,13 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
     const observer = new MutationObserver((mutations) =>
       this.commentAnnotationElementMutaionCallback(mutations)
     );
-    observer.observe(this.annotationDIV, { attributes: true });
+    observer.observe(this.annotationDIV, { childList: true });
+
+    this.submitReplyBinded = this.submitReply.bind(this);
+    this.closeBinded = this.close.bind(this);
+    this.removeBinded = this.remove.bind(this);
+    this.changeReadStatusBinded = this.changeReadStatus.bind(this);
+    this.setAllRepliesAsUnreadBinded = this.setAllRepliesAsUnread.bind(this);
   }
 
   getRawData() {
@@ -46,15 +52,12 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
   update(annotationRawData, viewport, force = false) {
     super.update(annotationRawData, viewport, force);
     // console.log("afer update", this.annotationRawData);
-    const commentEl = this.annotationDIV.querySelector("folia-comment");
-    if (commentEl) {
-      // commentEl.initialComment = this.annotationRawData;
-      commentEl.replies = this.annotationRawData.replies.slice();
-      commentEl.permissions = {
-        permissions: this.annotationRawData.permissions,
-        userEmail: this.dataProxy.userEmail,
-        userRole: this.annotationRawData.userRole,
-      };
+    if (this.__comment) {
+      this.setAllRepliesAsRead();
+      this.__comment.replies = this.annotationRawData.replies.slice();
+      this.__comment.permissions = this.annotationRawData.permissions;
+      this.__comment.currentUserEmail = this.dataProxy.userEmail;
+      this.__comment.collaboratorEmail = this.annotationRawData.collaboratorEmail;
     }
   }
 
@@ -69,119 +72,179 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
 
   drawAvatar() {
     const avatar = document.createElement("canvas");
-    avatar.width = 20;
-    avatar.height = 20;
+    avatar.width = 100;
+    avatar.height = 100;
     const avatarCtx = avatar.getContext("2d");
     avatarCtx.fillStyle = "lightgreen";
-    avatarCtx.arc(10, 10, 10, 0, 2 * Math.PI);
+    avatarCtx.arc(50, 50, 43, 0, 2 * Math.PI);
     avatarCtx.fill();
 
-    // console.log("draw comment avatar", this.annotationRawData.replies);
+    const { collaboratorName, collaboratorEmail } = this.annotationRawData;
+    const userInitials = getInitials(collaboratorName || collaboratorEmail);
+
     const repliesNumber = this.annotationRawData.replies.length;
-    const text = repliesNumber === 0 ? "" : repliesNumber > 10 ? "10+" : repliesNumber;
-    avatarCtx.font = "lighter 11px sans-serif";
+    const text = userInitials;
+    // const text = repliesNumber === 0 ? "" : repliesNumber > 10 ? "10+" : repliesNumber;
+    avatarCtx.font = "36px sans-serif";
     avatarCtx.fillStyle = "black";
     const textRect = avatarCtx.measureText(text);
-    avatarCtx.fillText(text, avatar.width / 2 - textRect.width / 2, 14, 20);
+    avatarCtx.fillText(text, avatar.width / 2 - textRect.width / 2, 62);
 
-    this.annotationDIV.style.background = `white url("${avatar.toDataURL()}") no-repeat center`;
+    this.annotationDIV.style.backgroundSize = "contain";
+    this.annotationDIV.style.backgroundColor = "white";
+    this.annotationDIV.style.backgroundRepeat = "no-repeat";
+    this.annotationDIV.style.backgroundPosition = "center";
+    this.annotationDIV.style.backgroundImage = `url("${avatar.toDataURL()}")`;
     this.annotationDIV.classList.toggle(
       "error",
       Boolean(this.annotationRawData.error) ||
         this.annotationRawData.replies.some((reply) => Boolean(reply.error))
     );
+    const isUnread = this.annotationRawData.replies.some((reply) => !reply.isRead);
+    this.annotationDIV.classList.toggle("unread", isUnread);
   }
 
   commentAnnotationElementMutaionCallback(mutations) {
     // here we observe <selected> class of this.annotationDIV
-    const isThisTarget = mutations.some((mutation) => mutation.target === this.annotationDIV);
-    if (!isThisTarget) return;
-
     mutations.forEach((mutation) => {
-      if (mutation.type !== "attributes" || mutation.attributeName !== "class") return;
-      const selected = mutation.target.classList.contains("selected");
-      if (selected) {
-        const comment = this.__comment || document.createElement("folia-comment");
-        comment.replies = this.annotationRawData.replies.slice();
-        comment.permissions = {
-          permissions: this.annotationRawData.permissions,
-          userEmail: this.dataProxy.userEmail,
-          userRole: this.annotationRawData.userRole,
-        };
+      if (mutation.target !== this.annotationDIV) return;
+      const stepanAdded = Array.from(mutation.addedNodes).some((el) => el.classList.contains("stepan"));
+      const stepanRemoved = Array.from(mutation.removedNodes).some((el) => el.classList.contains("stepan"));
+      if (stepanAdded) {
+        console.log("set replies & permissions here.");
+        this.setAllRepliesAsRead();
 
-        comment.addEventListener("submit-comment", (e) => {
-          return console.error("submit-comment", e);
-          const addedAt = new Date().toISOString();
-          const annotationData = {
-            ...this.annotationRawData,
-            addedAt,
-            status: "EDITED",
-            text: e.detail.text,
-          };
-          // console.log("submit-comment", e.detail, annotationData);
-          this.foliaPageLayer.commitObjectChanges(annotationData);
-          // this.foliaPageLayer.eventBus.dispatch("stop-drawing");
-        });
+        this.__comment = document.createElement("folia-comment");
+        this.__comment.addEventListener("submit-replay", this.submitReplyBinded);
+        this.__comment.addEventListener("close", this.closeBinded);
+        this.__comment.addEventListener("remove", this.removeBinded);
+        this.__comment.addEventListener("change-read-status", this.changeReadStatusBinded);
+        this.__comment.addEventListener("mark-all-as-unread", this.setAllRepliesAsUnreadBinded);
 
-        comment.addEventListener("submit-replay", (e) => {
-          const now = new Date().toISOString();
-          let annotationData = null;
-          if (!e.detail.id) {
-            annotationData = {
-              __typename: ANNOTATION_TYPES.REPLY,
-              id: uuid(),
-              addedAt: now,
-              createdAt: now,
-              collaboratorEmail: this.dataProxy.userEmail,
-              collaboratorName: this.dataProxy.userName,
-              commentId: this.annotationRawData.id,
-              page: this.annotationRawData.page,
-              status: "NOT_EDITED",
-              text: e.detail.text,
-            };
-            this.annotationRawData.replies = this.annotationRawData.replies.concat(annotationData);
-            comment.replies = this.annotationRawData.replies;
-            // console.log("submit-replay new", { detail: e.detail, annotationData });
-          } else {
-            const replyData = this.annotationRawData.replies.find((reply) => reply.id === e.detail.id);
-            annotationData = {
-              ...replyData,
-              status: replyData?.edited || e.detail.edited ? "EDITED" : "NOT_EDITED",
-              addedAt: now,
-              text: e.detail.text,
-            };
-            // console.log("submit-replay edit", { detail: e.detail, annotationData });
-          }
-          this.foliaPageLayer.commitObjectChanges(annotationData);
-          this.drawAvatar();
-        });
-
-        comment.addEventListener("close", () => {
-          this.foliaPageLayer.multipleSelect.clear();
-          if (this.__comment) this.__comment.remove();
-        });
-
-        comment.addEventListener("remove", (e) => {
-          // console.log("remove object", e.detail, this);
-          const { commentId, replyId } = e.detail;
-          if (commentId) {
-            this.foliaPageLayer.deleteSelectedAnnotations(this);
-          } else if (replyId) {
-            const deletedAt = new Date().toISOString();
-            this.foliaPageLayer.commitObjectChanges({ deletedAt, id: replyId });
-            this.annotationRawData.replies = this.annotationRawData.replies.filter((reply) => {
-              return reply.id !== replyId;
-            });
-            this.drawAvatar();
-          }
-        });
-
-        this.__comment = this.annotationDIV.appendChild(comment);
-      } else {
-        if (this.__comment) this.__comment.remove();
-        this.__comment = null;
+        this.__comment.currentUserEmail = this.dataProxy.userEmail;
+        this.__comment.collaboratorEmail = this.annotationRawData.collaboratorEmail;
+        this.__comment.replies = this.annotationRawData.replies;
+        this.__comment.permissions = this.annotationRawData.permissions;
+        this.annotationDIV.appendChild(this.__comment);
+        // if (this.annotationDIV.querySelectorAll("folia-comment").length === 0) {
+        // }
+      } else if (stepanRemoved) {
+        // console.log("remove folia-comment");
+        if (this.__comment) {
+          this.__comment.removeEventListener("submit-replay", this.submitReplyBinded);
+          this.__comment.removeEventListener("close", this.closeBinded);
+          this.__comment.removeEventListener("remove", this.removeBinded);
+          this.__comment.removeEventListener("change-read-status", this.changeReadStatusBinded);
+          this.__comment.removeEventListener("mark-all-as-unread", this.setAllRepliesAsReadBinded);
+          this.__comment.remove();
+          this.__comment = null;
+        }
       }
     });
+  }
+
+  submitReply(e) {
+    const addedAt = e.detail.addedAt || new Date().toISOString();
+
+    if (!e.detail.id) {
+      const id = uuid();
+      const annotationData = {
+        __typename: ANNOTATION_TYPES.REPLY,
+        id,
+        addedAt: addedAt,
+        createdAt: addedAt,
+        collaboratorEmail: this.dataProxy.userEmail,
+        collaboratorName: this.dataProxy.userName,
+        commentId: this.annotationRawData.id,
+        page: this.annotationRawData.page,
+        status: "NOT_EDITED",
+        text: e.detail.text,
+        isRead: true,
+      };
+      this.annotationRawData.replies = this.annotationRawData.replies.concat(annotationData);
+      this.__comment.replies = this.annotationRawData.replies;
+      // console.log("submit-replay new", { detail: e.detail, annotationData });
+      this.foliaPageLayer.commitObjectChanges(annotationData);
+      // this.changeReadStatus({ detail: { replyId: id, isRead: true } });
+    } else {
+      const replyData = this.annotationRawData.replies.find((reply) => reply.id === e.detail.id);
+      replyData.status = replyData?.edited || e.detail.edited ? "EDITED" : "NOT_EDITED";
+      replyData.addedAt = addedAt;
+      replyData.text = e.detail.text;
+      // console.log("submit-replay edit", { detail: e.detail, replyData });
+      this.foliaPageLayer.commitObjectChanges(replyData);
+    }
+  }
+
+  close(e) {
+    this.foliaPageLayer.multipleSelect.clear();
+    if (this.__comment) this.__comment.remove();
+  }
+
+  remove(e) {
+    // console.log("remove object", e.detail, this);
+    const { commentId, replyId } = e.detail;
+    if (commentId) {
+      this.foliaPageLayer.deleteSelectedAnnotations(this);
+    } else if (replyId) {
+      const deletedAt = new Date().toISOString();
+      this.foliaPageLayer.commitObjectChanges({ deletedAt, id: replyId });
+      this.annotationRawData.replies = this.annotationRawData.replies.filter((reply) => {
+        return reply.id !== replyId;
+      });
+      this.drawAvatar();
+    }
+  }
+
+  changeReadStatus(e) {
+    const { replyId, isRead } = e.detail;
+    // console.log("annot::send to viewer", replyId, isRead);
+    const addedAt = new Date().toISOString();
+    this.foliaPageLayer.eventBus.dispatch("set-replies-read-status", [{ replyId, isRead, addedAt }]);
+    const reply = this.annotationRawData.replies.find((reply) => reply.id === replyId);
+    if (reply) reply.isRead = isRead;
+
+    this.drawAvatar();
+  }
+
+  setAllRepliesAsRead() {
+    this.changeAllReadStatuses(true);
+  }
+  setAllRepliesAsUnread() {
+    this.changeAllReadStatuses(false);
+    if (this.__comment) {
+      this.__comment.replies = this.annotationRawData.replies;
+    }
+  }
+
+  changeAllReadStatuses(isRead = true) {
+    const now = new Date().toISOString();
+    const statuses = this.annotationRawData.replies
+      .filter((r) => r.isRead !== isRead)
+      .map((r) => ({
+        replyId: r.id,
+        isRead: isRead,
+        addedAt: now,
+      }));
+    // console.log("changeAllReadStatuses as", isRead, statuses);
+
+    if (statuses.length > 0) {
+      this.foliaPageLayer.eventBus.dispatch("set-replies-read-status", statuses);
+      this.annotationRawData.replies.forEach((reply) => {
+        const status = statuses.find((status) => reply.id === status.replyId);
+        if (status) {
+          reply.isRead = status.isRead;
+        }
+      });
+    }
+    this.drawAvatar();
+  }
+
+  get canManage() {
+    const isCommentOwner =
+      this.foliaPageLayer.dataProxy.userEmail === this.annotationRawData.collaboratorEmail;
+    const { permissions } = this.foliaPageLayer.dataProxy;
+    return isCommentOwner && permissions.includes(PERMISSIONS.MANAGE_OWN_COMMENT);
   }
 }
 

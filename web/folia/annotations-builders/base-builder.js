@@ -45,7 +45,9 @@ class BaseBuilder {
         newbie: true,
         ...data,
       };
-
+      const allowedUndoRedo = ![ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.REPLY].includes(
+        annotation.__typename
+      );
       const makeSelected = [ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.TEXT_BOX].includes(
         annotation.__typename
       );
@@ -55,7 +57,9 @@ class BaseBuilder {
       if (shouldBeCommitted) {
         this.foliaPageLayer.commitObjectChanges(annotation);
       }
-      this.foliaPageLayer.undoRedoManager.creatingObject(annotation);
+      if (allowedUndoRedo) {
+        this.foliaPageLayer.undoRedoManager.creatingObject(annotation);
+      }
     }
 
     this.foliaPageLayer.undoRedoManager.removeToolUndoRedoItems();

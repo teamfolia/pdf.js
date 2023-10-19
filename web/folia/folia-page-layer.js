@@ -334,7 +334,10 @@ class FoliaPageLayer {
     const deletedObjects = object ? [object] : this.multipleSelect.getObjects();
     deletedObjects.map((obj) => {
       if (!obj.canDelete) return;
-      this.undoRedoManager.deletingObject(obj.getRawData());
+      const allowedUndoRedo = ![ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.REPLY].includes(
+        obj.annotationRawData.__typename
+      );
+      if (allowedUndoRedo) this.undoRedoManager.deletingObject(obj.getRawData());
       this.deleteAnnotationObject(obj);
     });
   }

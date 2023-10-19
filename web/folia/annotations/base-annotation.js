@@ -117,7 +117,7 @@ class FoliaBaseAnnotation {
 
   update(annotationRawData, viewport, force = false) {
     this.viewport = this.viewport || viewport;
-    console.log("Update in viewer ERR:", this.annotationRawData.id, this.annotationRawData.error);
+    // console.log("Update in viewer ERR:", this.annotationRawData.id, this.annotationRawData.error);
     this.annotationRawData.error = annotationRawData.error;
     this.updateErrorStatus();
     this.annotationDIV.classList.toggle("no-permission", !this.canManage);
@@ -170,6 +170,9 @@ class FoliaBaseAnnotation {
     this.setCornersVisibility(this.canManage);
     this.foliaLayer.classList.add("selected");
     this.annotationDIV.classList.add("selected");
+    const stepan = document.createElement("span");
+    stepan.className = "stepan";
+    this.annotationDIV.appendChild(stepan);
     this.canvas?.classList.add("selected");
     // this.canvas && this.canvas.classList.add("selected");
     this.isSelected = true;
@@ -178,10 +181,12 @@ class FoliaBaseAnnotation {
     this.setCornersVisibility(false);
     this.foliaLayer.classList.remove("selected");
     this.annotationDIV.classList.remove("selected");
+    this.annotationDIV.querySelectorAll("span.stepan").forEach((el) => el.remove());
     this.canvas?.classList.remove("selected");
 
     this.isSelected = false;
     delete this.annotationRawData.doNotCommit;
+
     if (this.isDirty) this.foliaPageLayer.commitObjectChanges(this.getRawData());
   }
 
@@ -627,13 +632,6 @@ class FoliaBaseAnnotation {
   }
   get canManage() {
     const { permissions } = this.foliaPageLayer.dataProxy;
-    // console.log(permissions);
-    if (this.annotationRawData.__typename === ANNOTATION_TYPES.COMMENT) {
-      return (
-        permissions.includes(PERMISSIONS.MANAGE_ANNOTATION) &&
-        this.annotationRawData.collaboratorEmail === this.dataProxy.userEmail
-      );
-    }
     return permissions.includes(PERMISSIONS.MANAGE_ANNOTATION);
   }
   get canDelete() {

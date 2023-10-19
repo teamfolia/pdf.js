@@ -1,3 +1,4 @@
+import { USER_ROLE } from "../constants";
 import { foliaDateFormat, setTextAreaDynamicHeight } from "../folia-util";
 import reply_html from "./folia-reply.html";
 
@@ -10,7 +11,12 @@ class FoliaReply extends HTMLElement {
   #template = null;
   #createdAtRedrawTimer = null;
   #initialText = "";
-  #authorEmail;
+  #isInitial = false;
+  #canEdit = false;
+  #canDelete = false;
+  #isEdited = false;
+  #addedAt = "";
+  #isRead = false;
 
   constructor() {
     super();
@@ -54,16 +60,17 @@ class FoliaReply extends HTMLElement {
     const replyMenuBtn = this.shadowRoot.querySelector(".folia-reply-title-menu-btn");
     replyMenuBtn.onclick = () => this.#toggleMenuVisibility();
 
+    const iconEl = this.shadowRoot.querySelector(".folia-reply-title-icon");
     const optionsOverlay = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-options-overlay");
     const optionEdit = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-option.edit");
     const optionDelete = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-option.delete");
 
-    optionsOverlay.addEventListener("click", this.optionsOverlayClickBinded, true);
-    optionEdit.addEventListener("click", this.editReplyBinded, true);
-    optionDelete.addEventListener("click", this.deleteReplyBinded, true);
+    iconEl.classList.toggle("unread", !this.#isRead);
+    optionsOverlay.addEventListener("click", this.optionsOverlayClickBinded, { passive: false });
+    optionEdit.addEventListener("click", this.editReplyBinded, { passive: false });
+    optionDelete.addEventListener("click", this.deleteReplyBinded, { passive: false });
 
-    const editor = this.shadowRoot.querySelector(".folia-reply-editor");
-    // setTimeout(() => setTextAreaDynamicHeight(editor), 0);
+    this.composeEditedStatusLabel();
   }
 
   disconnectedCallback() {
@@ -77,6 +84,13 @@ class FoliaReply extends HTMLElement {
     clearTimeout(this.#createdAtRedrawTimer);
   }
 
+  composeEditedStatusLabel() {
+    const editedStatusLabel = this.shadowRoot.querySelector(".folia-reply-edited-label");
+    editedStatusLabel.classList.toggle("shown", this.#isEdited);
+    // editedStatusLabel.innerHTML = "Edited " + foliaDateFormat(this.#addedAt);
+    editedStatusLabel.innerHTML = "Edited";
+  }
+
   composeCreatedAtAsLabel(createdAt) {
     clearTimeout(this.#createdAtRedrawTimer);
     const commentDate = this.shadowRoot.querySelector(".folia-reply-title-info-timestamp");
@@ -87,7 +101,6 @@ class FoliaReply extends HTMLElement {
   get text() {
     return this.shadowRoot.querySelector(".folia-reply-editor").innerText;
   }
-
   set text(text) {
     const editor = this.shadowRoot.querySelector(".folia-reply-editor");
     if (!editor.hasAttribute("contenteditable")) {
@@ -99,26 +112,57 @@ class FoliaReply extends HTMLElement {
   set error(err) {
     this.shadowRoot.querySelector(".folia-reply-error").classList.toggle("shown", Boolean(err));
   }
+  get error() {
+    return null;
+  }
 
-  set canEdit(canEditStatus) {
+  set isInitial(value) {
+    this.#isInitial = value;
+  }
+  get isInitial() {
+    return this.#isInitial;
+  }
+
+  set canEdit(value) {
+    this.#canEdit = value;
     const optionEdit = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-option.edit");
-    optionEdit.classList.toggle("disabled", !canEditStatus);
+    optionEdit.classList.toggle("disabled", !this.#canEdit);
+  }
+  get canEdit() {
+    return this.#canEdit;
   }
 
-  set canDelete(canDeleteStatus) {
+  set canDelete(value) {
+    this.#canDelete = value;
     const optionDelete = this.shadowRoot.querySelector(".folia-reply-title-menu-btn-option.delete");
-    optionDelete.classList.toggle("disabled", !canDeleteStatus);
+    optionDelete.classList.toggle("disabled", !this.#canDelete);
+  }
+  get canDelete() {
+    return this.#canDelete;
   }
 
-  set addedAt(date) {}
-
-  set editedStatus(status) {}
-
-  get authorEmail() {
-    return this.#authorEmail;
+  set addedAt(value) {
+    this.#addedAt = value;
   }
-  set authorEmail(email) {
-    this.#authorEmail = email;
+  get addedAt() {
+    return this.#addedAt;
+  }
+
+  set editedStatus(value) {
+    this.#isEdited = value === "EDITED";
+    this.composeEditedStatusLabel();
+  }
+  get editedStatus() {
+    return this.#isEdited;
+  }
+
+  set isRead(value) {
+    this.#isRead = Boolean(value);
+    const iconEl = this.shadowRoot.querySelector(".folia-reply-title-icon");
+    iconEl.classList.toggle("unread", !this.#isRead);
+  }
+  get isRead() {
+    return this.#isRead;
   }
 
   #toggleMenuVisibility() {
@@ -150,7 +194,6 @@ class FoliaReply extends HTMLElement {
       doneButton.toggleAttribute("disabled", true);
       editor.innerText = this.#initialText;
       window.getSelection().removeAllRanges();
-      // setTextAreaDynamicHeight(editor);
       editor.toggleAttribute("contenteditable", false);
       buttonsBox.classList.toggle("hidden", true);
     };
@@ -160,11 +203,14 @@ class FoliaReply extends HTMLElement {
       buttonsBox.classList.toggle("hidden", true);
       editor.toggleAttribute("contenteditable", false);
 
-      // setTextAreaDynamicHeight(editor);
       const text = editor.innerText;
       if (this.#initialText === text) return;
-      if (typeof this.onChange === "function") this.onChange(this.id, text);
+
       this.#initialText = text;
+      this.#isEdited = true;
+      this.#addedAt = new Date().toISOString();
+      this.composeEditedStatusLabel();
+      if (typeof this.onChange === "function") this.onChange(this.id, text, this.#addedAt);
     };
 
     editor.toggleAttribute("contenteditable", true);
@@ -215,6 +261,21 @@ class FoliaReply extends HTMLElement {
       this.onRemove(this.id);
     }
     this.remove();
+  }
+
+  markReplyAsRead() {
+    this.isRead = true;
+    this.submitReadStatus();
+  }
+
+  markReplyAsUnread() {
+    this.isRead = false;
+    this.submitReadStatus();
+  }
+
+  submitReadStatus() {
+    // console.log("reply::submitReadStatus", this.id, this.isRead);
+    if (typeof this.onChangeReadStatus === "function") this.onChangeReadStatus(this.id, this.isRead);
   }
 }
 

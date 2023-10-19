@@ -295,6 +295,18 @@ body {
   display: none !important;
 }
 
+.comment-pointer.unread::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #f04e23;
+  border: solid white 2px;
+}
+
 .folia-comment {
   position: absolute;
   left: 35px;

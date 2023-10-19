@@ -1,14 +1,24 @@
 <div class="folia-comment-header">
-  <button class="folia-comment-header-delete-btn">
+  <button class="folia-comment-header-menu-btn">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
-        d="M9.75 10.75V16.25M13.25 10.75V16.25M8.75 7.75V6.75C8.75 5.64543 9.64543 4.75 10.75 4.75H12.25C13.3546 4.75 14.25 5.64543 14.25 6.75V7.75M4.75 7.75H18.25M6.59115 17.4233L5.75 7.75H17.25L16.4088 17.4233C16.319 18.4568 15.4538 19.25 14.4164 19.25H8.58363C7.54622 19.25 6.68102 18.4568 6.59115 17.4233Z"
-        stroke="#F43F5E"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        d="M12.5 7C12.5 7.27614 12.2761 7.5 12 7.5C11.7239 7.5 11.5 7.27614 11.5 7C11.5 6.72386 11.7239 6.5 12 6.5C12.2761 6.5 12.5 6.72386 12.5 7Z"
+        stroke="#64748B"
+      />
+      <path
+        d="M12.5 12C12.5 12.2761 12.2761 12.5 12 12.5C11.7239 12.5 11.5 12.2761 11.5 12C11.5 11.7239 11.7239 11.5 12 11.5C12.2761 11.5 12.5 11.7239 12.5 12Z"
+        stroke="#64748B"
+      />
+      <path
+        d="M12.5 17C12.5 17.2761 12.2761 17.5 12 17.5C11.7239 17.5 11.5 17.2761 11.5 17C11.5 16.7239 11.7239 16.5 12 16.5C12.2761 16.5 12.5 16.7239 12.5 17Z"
+        stroke="#64748B"
       />
     </svg>
+    <div class="folia-comment-header-menu-btn-options-overlay hidden"></div>
+    <ul class="folia-comment-header-menu-btn-options hidden">
+      <li class="folia-comment-header-menu-btn-option unread">Mark all as unread</li>
+      <li class="folia-comment-header-menu-btn-option delete">Delete thread</li>
+    </ul>
   </button>
   <button class="folia-comment-header-close-btn">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -113,8 +123,8 @@
     /* border-bottom: 1px solid #f1f5f9; */
   }
 
+  .folia-comment-header-menu-btn,
   .folia-comment-header-close-btn,
-  .folia-comment-header-delete-btn,
   .folia-comment-dialog-close-btn {
     display: flex;
     align-items: center;
@@ -127,21 +137,82 @@
     cursor: pointer;
     padding: 0;
   }
+
+  /* .folia-comment-header-menu-btn:active,
   .folia-comment-header-close-btn:active,
-  .folia-comment-header-delete-btn:active,
   .folia-comment-dialog-close-btn:active {
     transform: translate(1px, 1px);
-  }
+  } */
+
+  .folia-comment-header-menu-btn:hover,
   .folia-comment-header-close-btn:hover,
-  .folia-comment-header-delete-btn:hover,
   .folia-comment-dialog-close-btn:hover {
     background-color: #f1f1f1;
   }
 
+  .folia-comment-header-menu-btn.hidden,
   .folia-comment-header-close-btn.hidden,
-  .folia-comment-header-delete-btn.hidden,
   .folia-comment-dialog-close-btn.hidden {
-    visibility: hidden;
+    /* visibility: hidden; */
+    display: none;
+  }
+
+  .folia-comment-header-menu-btn-options-overlay {
+    position: fixed;
+    z-index: 2;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    /* background-color: rgba(0, 0, 0, 0.2); */
+    cursor: default;
+  }
+  .folia-comment-header-menu-btn-options-overlay.hidden {
+    display: none;
+  }
+
+  .folia-comment-header-menu-btn-options {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    z-index: 3;
+    top: 5px;
+    right: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(51, 65, 85, 0.15);
+    background: white;
+    box-shadow: 0px 8px 20px 0px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    margin: 0;
+    padding: 4px 0;
+  }
+  .folia-comment-header-menu-btn-options.hidden {
+    display: none;
+  }
+
+  .folia-comment-header-menu-btn-option {
+    max-width: 120px;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 15px;
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-bottom: 5px;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .folia-comment-header-menu-btn-option:not(.disabled):hover {
+    background-color: #f1f1f1;
+  }
+  .folia-comment-header-menu-btn-option.disabled {
+    color: silver;
+    cursor: not-allowed;
+  }
+
+  .folia-comment-title-menu-btn-option.hidden {
+    display: none;
   }
 
   /** comment body part */
@@ -178,7 +249,7 @@
     font-size: 14px;
     font-style: normal;
     font-weight: 400;
-    /* line-height: 16px; */
+    line-height: 16px;
     padding: 0 8px;
     color: #334155;
     width: 100%;

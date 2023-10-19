@@ -36,6 +36,8 @@
 <!-- <textarea rows="1" class="folia-reply-text-area" readonly></textarea> -->
 <div class="folia-reply-editor"></div>
 
+<span class="folia-reply-edited-label">Edited by 1 day ago</span>
+
 <div class="folia-reply-message-buttons hidden">
   <button class="folia-reply-done" disabled>✔︎</button>
   <button class="folia-reply-cancel">✘</button>
@@ -102,6 +104,17 @@
     font-weight: 400;
     line-height: 15px;
     font-size: 12px;
+  }
+  .folia-reply-title-icon.unread:before {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: 1px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    /* background-color: transparent; */
+    background-color: #f04e23;
   }
   .folia-reply-title-info {
     display: flex;
@@ -201,6 +214,10 @@
     cursor: not-allowed;
   }
 
+  .folia-reply-title-menu-btn-option.hidden {
+    display: none;
+  }
+
   .folia-reply-message-buttons {
     display: flex;
     align-items: center;
@@ -265,6 +282,16 @@
   .folia-reply-editor:empty::before {
     content: "Type something…";
     color: #94a3b8;
+  }
+
+  .folia-reply-edited-label {
+    display: none;
+    text-align: right;
+    color: gray;
+    text-transform: lowercase;
+  }
+  .folia-reply-edited-label.shown {
+    display: inline-block;
   }
 
   .folia-reply-done,

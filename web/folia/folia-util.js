@@ -229,3 +229,13 @@ export const addAnnotationEl = (containerEl, annotationEl) => {
   }
   return containerEl.appendChild(annotationEl);
 };
+
+export const getInitials = (username = "") => {
+  const dividers = [" ", ".", "_", "-", "+"];
+  const name = username.toUpperCase().split("@")[0];
+  const nameDividerPosition = [...name].findIndex((ch, index) => {
+    return dividers.includes(ch);
+  });
+
+  return name[0] + name[Math.max(0, nameDividerPosition) + 1];
+};

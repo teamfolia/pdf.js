@@ -85,7 +85,9 @@ class CommentBuilder extends BaseBuilder {
         createdAt: now,
         addedAt: now,
         collaboratorName: this.foliaPageLayer.dataProxy.userName,
+        collaboratorEmail: this.foliaPageLayer.dataProxy.userEmail,
         text: e.detail.text,
+        isRead: true,
       };
       const comment = {
         __typename: ANNOTATION_TYPES.COMMENT,
@@ -100,7 +102,7 @@ class CommentBuilder extends BaseBuilder {
         replies: [initialReply],
         collaboratorName: this.foliaPageLayer.dataProxy.userName,
         permissions: this.foliaPageLayer.dataProxy.permissions,
-        userRole: USER_ROLE.OWNER,
+        userRole: this.foliaPageLayer.dataProxy.userRole,
       };
       // console.log("post comment on ", { x, y }, e.detail);
       this.annotationData = [comment, initialReply];
