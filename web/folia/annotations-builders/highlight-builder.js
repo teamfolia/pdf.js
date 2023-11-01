@@ -21,7 +21,7 @@ class HighlightBuilder extends BaseBuilder {
 
     setTimeout(() => {
       if (!this.canvas) {
-        this.pdfCanvas = this.foliaPageLayer.pageDiv.querySelector("div.canvasWrapper>canvas");
+        this.pdfCanvas = this.foliaPageLayer.parentNode.querySelector("div.canvasWrapper>canvas");
         this.canvas = this.pdfCanvas.cloneNode();
         this.canvas.style.cursor = "text";
         this.canvas.className = "annotation-builder-container";
@@ -31,7 +31,7 @@ class HighlightBuilder extends BaseBuilder {
         this.canvas.onmouseup = this.onMouseUp.bind(this);
         this.canvas.onmouseout = this.onMouseUp.bind(this);
       }
-      this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+      this.foliaPageLayer.parentNode.appendChild(this.canvas);
       this.calcTextBlocks();
     }, 0);
   }
@@ -82,9 +82,9 @@ class HighlightBuilder extends BaseBuilder {
   }
 
   calcTextBlocks() {
-    const textLayer = this.foliaPageLayer.pageDiv.querySelector(".textLayer");
+    const textLayer = this.foliaPageLayer.parentNode.querySelector(".textLayer");
     const layerRect = textLayer.getBoundingClientRect();
-    const textElements = this.foliaPageLayer.pageDiv.querySelectorAll(".textLayer span");
+    const textElements = this.foliaPageLayer.parentNode.querySelectorAll(".textLayer span");
     for (const el of textElements) {
       const symbolsAreas = [];
       el.textContent.split("").forEach((letter, index) => {
@@ -118,7 +118,7 @@ class HighlightBuilder extends BaseBuilder {
     this.mouseIsDown = true;
     this.startPoint = this.getRelativePoint(e);
     this.selectedBlocks = [];
-    this.draw();
+    // this.draw();
   }
 
   onMouseMove(e) {
@@ -143,7 +143,7 @@ class HighlightBuilder extends BaseBuilder {
       );
     });
 
-    this.draw();
+    // this.draw();
   }
 
   onMouseUp(e) {
@@ -183,15 +183,15 @@ class HighlightBuilder extends BaseBuilder {
         page: this.foliaPageLayer.pageNumber,
         data: this.groups.slice(),
       };
-      this.undoRedoManager.addToolStep(prevState, newState);
+      this.undoRedoManager?.addToolStep(prevState, newState);
     }
-    this.draw();
+    // this.draw();
   }
 
-  draw() {
+  draw(ctx) {
     const pixelRatio = window.devicePixelRatio;
-    const ctx = this.canvas.getContext("2d");
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // const ctx = this.canvas.getContext("2d");
+    // ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     const selected = { color: this.preset.color, blocks: this.selectedBlocks };
     for (const group of [...this.groups, selected]) {
       const { color, blocks } = group;
@@ -245,7 +245,7 @@ class HighlightBuilder extends BaseBuilder {
 
   applyUndoRedo(groups) {
     this.groups = groups.slice();
-    this.draw();
+    // this.draw();
     this.path = [];
   }
 }

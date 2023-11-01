@@ -14,17 +14,17 @@ class ArrowBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
       this.canvas.className = "annotation-builder-container arrow-builder";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
-      this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
-      this.canvas.style.height = this.foliaPageLayer.pageDiv.clientHeight + "px";
+      this.canvas.width = this.foliaPageLayer.parentNode.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.foliaPageLayer.parentNode.clientHeight * window.devicePixelRatio;
+      this.canvas.style.width = this.foliaPageLayer.parentNode.clientWidth + "px";
+      this.canvas.style.height = this.foliaPageLayer.parentNode.clientHeight + "px";
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
       this.canvas.onmouseout = this.onMouseOut.bind(this);
     }
-    this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    this.foliaPageLayer.parentNode.appendChild(this.canvas);
     this.drawingStarted = false;
     this.mouseHasBeenMoved = false;
   }
@@ -59,7 +59,7 @@ class ArrowBuilder extends BaseBuilder {
   }
   applyUndoRedo(arrows) {
     this.arrows = arrows.slice();
-    this.draw();
+    // this.draw();
   }
 
   startDrawing(sourcePoint) {
@@ -86,8 +86,8 @@ class ArrowBuilder extends BaseBuilder {
     this.mouseHasBeenMoved = false;
 
     const newState = { page: this.foliaPageLayer.pageNumber, data: this.arrows.slice() };
-    this.undoRedoManager.addToolStep(prevState, newState);
-    window.requestAnimationFrame(() => this.draw());
+    this.undoRedoManager?.addToolStep(prevState, newState);
+    // window.requestAnimationFrame(() => this.draw());
   }
 
   onMouseDown(e) {
@@ -108,7 +108,7 @@ class ArrowBuilder extends BaseBuilder {
     if (!this.drawingStarted) return;
     this.mouseHasBeenMoved = true;
     this.currentArrow.targetPoint = this.getRelativePoint(e);
-    window.requestAnimationFrame(() => this.draw());
+    // window.requestAnimationFrame(() => this.draw());
   }
 
   onMouseUp(e) {
@@ -124,14 +124,16 @@ class ArrowBuilder extends BaseBuilder {
     if (this.drawingStarted) this.stopDrawing();
   }
 
-  draw() {
-    const ctx = this.canvas.getContext("2d");
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.currentArrow && this.drawArrow(ctx, this.currentArrow, true);
+  draw(ctx) {
+    // const ctx = this.canvas.getContext("2d");
+    // ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.arrows.forEach((arrow) => this.drawArrow(ctx, arrow));
+    this.currentArrow && this.drawArrow(ctx, this.currentArrow, true);
   }
 
   drawArrow(ctx, arrowData, isCurrent = false) {
+    if (!arrowData.sourcePoint || !arrowData.targetPoint) return;
+
     const lineWidth = arrowData.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const sourceX = arrowData.sourcePoint.x * window.devicePixelRatio;
     const sourceY = arrowData.sourcePoint.y * window.devicePixelRatio;
@@ -179,7 +181,7 @@ class ArrowBuilder extends BaseBuilder {
         ? targetY - (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle)
         : targetY + (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle);
 
-    ctx.save();
+    // ctx.save();
     if (isCurrent) ctx.globalAlpha = 0.75;
     ctx.strokeStyle = hexColor2RGBA(arrowData.color);
     ctx.fillStyle = hexColor2RGBA(arrowData.color);
@@ -246,7 +248,7 @@ class ArrowBuilder extends BaseBuilder {
       ctx.closePath();
       ctx.fill();
     }
-    ctx.restore();
+    // ctx.restore();
   }
 }
 

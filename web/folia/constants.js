@@ -1,3 +1,28 @@
+export const ROLE_PAGE = "ROLE_PAGE";
+export const ROLE_OBJECT = "ROLE_OBJECT";
+export const ROLE_CORNER_LT = "ROLE_CORNER_LT";
+export const ROLE_CORNER_LB = "ROLE_CORNER_LB";
+export const ROLE_CORNER_RT = "ROLE_CORNER_RT";
+export const ROLE_CORNER_RB = "ROLE_CORNER_RB";
+export const ROLE_ARROW_SOURCE = "ROLE_ARROW_SOURCE";
+export const ROLE_ARROW_TARGET = "ROLE_ARROW_TARGET";
+export const ROLE_TEXTBOX_LEFT_TOP = "ROLE_TEXTBOX_LEFT_TOP";
+export const ROLE_TEXTBOX_RIGHT_TOP = "ROLE_TEXTBOX_RIGHT_TOP";
+export const ROLE_TEXTBOX_LEFT_BOTTOM = "ROLE_TEXTBOX_LEFT_BOTTOM";
+export const ROLE_TEXTBOX_RIGHT_BOTTOM = "ROLE_TEXTBOX_RIGHT_BOTTOM";
+export const ROLE_EDITOR = "ROLE_EDITOR";
+
+export const CORNER_CLASSES = {
+  ROLE_CORNER_LT: "corner-lt",
+  ROLE_CORNER_LB: "corner-lb",
+  ROLE_CORNER_RT: "corner-rt",
+  ROLE_CORNER_RB: "corner-rb",
+  ROLE_TEXTBOX_LEFT_TOP: "corner-lt",
+  ROLE_TEXTBOX_RIGHT_TOP: "corner-rt",
+  ROLE_TEXTBOX_LEFT_BOTTOM: "corner-lb",
+  ROLE_TEXTBOX_RIGHT_BOTTOM: "corner-rb",
+};
+
 export const TOOLS = {
   NO_SELECTED_TOOL: "NO_SELECTED_TOOL",
   ERASER: "ERASER",

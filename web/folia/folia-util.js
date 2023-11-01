@@ -101,6 +101,7 @@ export const toPdfPath = (path, viewportWidth, viewporHeight) => {
   }, []);
 };
 
+// deprecated
 export const shiftRect = (rect, shiftValue) => {
   const outRect = rect.slice();
   outRect[0] += rect[0] - shiftValue > 0 ? -shiftValue : shiftValue;
@@ -108,6 +109,7 @@ export const shiftRect = (rect, shiftValue) => {
   return outRect;
 };
 
+// deprecated
 export const shiftArrow = (inSource, inTarget, shiftValue) => {
   const left = Math.min(inSource.x, inTarget.x);
   const top = Math.min(inSource.y, inTarget.y);
@@ -140,6 +142,7 @@ export const shiftArrow = (inSource, inTarget, shiftValue) => {
   return { sourcePoint: outSource, targetPoint: outTarget };
 };
 
+// deprecated
 export const shiftInk = (inPaths, shiftValue) => {
   const { left, top, right, bottom } = [].concat.apply([], inPaths).reduce(
     (acc, point) => {
@@ -238,4 +241,27 @@ export const getInitials = (username = "") => {
   });
 
   return name[0] + name[Math.max(0, nameDividerPosition) + 1];
+};
+
+export const getRelativePoint = (e) => {
+  return {
+    x: e.layerX,
+    y: e.layerY,
+  };
+  // let reference;
+  // const offset = {
+  //   left: e.target.offsetLeft - e.target.scrollLeft,
+  //   top: e.target.offsetTop - e.target.scrollTop,
+  // };
+  // reference = e.target.offsetParent;
+  // do {
+  //   offset.left += reference.offsetLeft - reference.scrollLeft;
+  //   offset.top += reference.offsetTop - reference.scrollTop;
+  //   reference = reference.offsetParent;
+  // } while (reference);
+
+  // return {
+  //   x: Math.round(e.pageX - offset.left),
+  //   y: Math.round(e.pageY - offset.top),
+  // };
 };

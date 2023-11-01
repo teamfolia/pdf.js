@@ -30,21 +30,21 @@ class TextBoxBuilder extends BaseBuilder {
       this.builderContainer.onmousemove = this.onMouseMove.bind(this);
       this.builderContainer.onmouseup = this.onMouseUp.bind(this);
     }
-    this.foliaPageLayer.pageDiv.appendChild(this.builderContainer);
+    this.foliaPageLayer.parentNode.appendChild(this.builderContainer);
     this.calculateMinTextHeight(TextBoxBuilder.placeholderText);
   }
 
   prepareAnnotations2save() {
-    // console.log("prepareAnnotations2save", this.stopPoint, this.startPoint);
-    if (!this.stopPoint || !this.startPoint) return [];
+    // console.log("prepareAnnotations2save", this.endPoint, this.beginPoint);
+    if (!this.endPoint || !this.beginPoint) return [];
     const rect = [
-      this.startPoint.x,
-      this.startPoint.y,
+      this.beginPoint.x,
+      this.beginPoint.y,
       Math.min(
         this.rectIsCustom
-          ? Math.max(this.stopPoint.x - this.startPoint.x, this.defaultWidth)
+          ? Math.max(this.endPoint.x - this.beginPoint.x, this.defaultWidth)
           : this.defaultWidth,
-        this.viewport.width - this.startPoint.x - 15
+        this.viewport.width - this.beginPoint.x - 15
       ),
       this.minHeight,
     ];
@@ -97,48 +97,50 @@ class TextBoxBuilder extends BaseBuilder {
     e.stopPropagation();
     this.rectIsCustom = false;
     this.mouseIsDown = true;
-    this.startPoint = this.getRelativePoint(e);
+    this.beginPoint = this.getRelativePoint(e);
+    this.endPoint = this.getRelativePoint(e);
   }
 
   onMouseMove(e) {
     if (!this.mouseIsDown) return;
     e.stopPropagation();
     this.rectIsCustom = true;
-    this.stopPoint = this.getRelativePoint(e);
-    requestAnimationFrame(() => this.draw());
+    this.endPoint = this.getRelativePoint(e);
+    // requestAnimationFrame(() => this.draw());
   }
 
   onMouseUp(e) {
     e.stopPropagation();
     this.mouseIsDown = false;
-    this.stopPoint = this.getRelativePoint(e);
+    this.endPoint = this.getRelativePoint(e);
     this.foliaPageLayer.eventBus.dispatch("stop-drawing");
     // this.createEditor();
     // requestAnimationFrame(() => (this.builderContainer.style.backgroundImage = ""));
   }
 
-  draw() {
+  draw(ctx) {
+    if (!this.beginPoint || !this.endPoint) return;
     this.rect = [
-      Math.min(this.startPoint.x, this.stopPoint.x),
-      Math.min(this.startPoint.y, this.stopPoint.y),
-      Math.abs(this.stopPoint.x - this.startPoint.x),
-      Math.abs(this.stopPoint.y - this.startPoint.y),
+      Math.min(this.beginPoint.x, this.endPoint.x) * window.devicePixelRatio,
+      Math.min(this.beginPoint.y, this.endPoint.y) * window.devicePixelRatio,
+      Math.abs(this.endPoint.x - this.beginPoint.x) * window.devicePixelRatio,
+      Math.abs(this.endPoint.y - this.beginPoint.y) * window.devicePixelRatio,
     ];
 
-    const canvas = document.createElement("canvas");
-    canvas.width = this.viewport.width;
-    canvas.height = this.viewport.height;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.beginPath();
+    // const canvas = document.createElement("canvas");
+    // canvas.width = this.viewport.width;
+    // canvas.height = this.viewport.height;
+    // const ctx = canvas.getContext("2d");
+    // ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // ctx.save();
+    // ctx.beginPath();
     ctx.strokeStyle = "silver";
-    ctx.lineWidth = 1 * this.viewport.scale;
+    ctx.lineWidth = 2 * window.devicePixelRatio;
     ctx.setLineDash([2, 2]);
     ctx.strokeRect(...this.rect);
-    ctx.closePath();
-    ctx.restore();
-    this.builderContainer.style.backgroundImage = `url("${canvas.toDataURL()}")`;
+    // ctx.closePath();
+    // ctx.restore();
+    // this.builderContainer.style.backgroundImage = `url("${canvas.toDataURL()}")`;
   }
 }
 

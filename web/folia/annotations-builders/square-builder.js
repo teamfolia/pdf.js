@@ -17,17 +17,17 @@ class SquareBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
       this.canvas.className = "annotation-builder-container square-builder";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
-      this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
-      this.canvas.style.height = this.foliaPageLayer.pageDiv.clientHeight + "px";
+      this.canvas.width = this.foliaPageLayer.parentNode.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.foliaPageLayer.parentNode.clientHeight * window.devicePixelRatio;
+      this.canvas.style.width = this.foliaPageLayer.parentNode.clientWidth + "px";
+      this.canvas.style.height = this.foliaPageLayer.parentNode.clientHeight + "px";
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
       this.canvas.onmouseout = this.onMouseOut.bind(this);
     }
-    this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    this.foliaPageLayer.parentNode.appendChild(this.canvas);
     this.drawingStarted = false;
     this.mouseHasBeenMoved = false;
   }
@@ -55,7 +55,7 @@ class SquareBuilder extends BaseBuilder {
   }
   applyUndoRedo(squares) {
     this.squares = squares.slice();
-    this.draw();
+    // this.draw();
   }
 
   startDrawing(point) {
@@ -63,6 +63,7 @@ class SquareBuilder extends BaseBuilder {
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
       startPoint: point,
+      endPoint: point,
     };
     this.drawingStarted = true;
   }
@@ -82,8 +83,8 @@ class SquareBuilder extends BaseBuilder {
     this.mouseHasBeenMoved = false;
 
     const newState = { page: this.foliaPageLayer.pageNumber, data: this.squares.slice() };
-    this.undoRedoManager.addToolStep(prevState, newState);
-    window.requestAnimationFrame(() => this.draw());
+    this.undoRedoManager?.addToolStep(prevState, newState);
+    // window.requestAnimationFrame(() => this.draw());
   }
 
   onMouseDown(e) {
@@ -105,7 +106,7 @@ class SquareBuilder extends BaseBuilder {
     this.mouseHasBeenMoved = true;
     const point = this.getRelativePoint(e);
     this.currentSquare.endPoint = point;
-    window.requestAnimationFrame(() => this.draw());
+    // window.requestAnimationFrame(() => this.draw());
   }
 
   onMouseUp(e) {
@@ -122,11 +123,11 @@ class SquareBuilder extends BaseBuilder {
     if (this.drawingStarted) this.stopDrawing();
   }
 
-  draw() {
-    const ctx = this.canvas.getContext("2d");
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.currentSquare && this.drawSquare(ctx, this.currentSquare, true);
+  draw(ctx) {
+    // const ctx = this.canvas.getContext("2d");
+    // ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.squares.forEach((circle) => this.drawSquare(ctx, circle));
+    this.currentSquare && this.drawSquare(ctx, this.currentSquare, true);
   }
 
   drawSquare(ctx, squareData, isCurrent = false) {

@@ -14,12 +14,13 @@ class CommentBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("div");
       this.canvas.className = "annotation-builder-container";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight;
+      this.canvas.width = this.foliaPageLayer.parentNode.clientWidth;
+      this.canvas.height = this.foliaPageLayer.parentNode.clientHeight;
       this.canvas.onclick = this.onMouseClick.bind(this);
-      this.canvas.style.cursor = `url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxwYXRoIGQ9Ik0wIDEwQzAgNC40NzcxNiA0LjQ3NzE2IDAgMTAgMEgxMC42NjY3QzE1LjgyMTMgMCAyMCA0LjE3ODY4IDIwIDkuMzMzMzNWOS4zMzMzM0MyMCAxNS4yMjQ0IDE1LjIyNDQgMjAgOS4zMzMzNSAyMEgwVjEwWiIgZmlsbD0ibm9uZSIvPgogICAgPHBhdGggZD0iTTEwIDAuNzVIMTAuNjY2N0MxNS40MDcxIDAuNzUgMTkuMjUgNC41OTI4OSAxOS4yNSA5LjMzMzMzQzE5LjI1IDE0LjgxMDIgMTQuODEwMiAxOS4yNSA5LjMzMzM1IDE5LjI1SDAuNzVWMTBDMC43NSA0Ljg5MTM3IDQuODkxMzcgMC43NSAxMCAwLjc1WiIgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8L3N2Zz4K") 0 20, move`;
+      // this.canvas.style.cursor = `url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxwYXRoIGQ9Ik0wIDEwQzAgNC40NzcxNiA0LjQ3NzE2IDAgMTAgMEgxMC42NjY3QzE1LjgyMTMgMCAyMCA0LjE3ODY4IDIwIDkuMzMzMzNWOS4zMzMzM0MyMCAxNS4yMjQ0IDE1LjIyNDQgMjAgOS4zMzMzNSAyMEgwVjEwWiIgZmlsbD0ibm9uZSIvPgogICAgPHBhdGggZD0iTTEwIDAuNzVIMTAuNjY2N0MxNS40MDcxIDAuNzUgMTkuMjUgNC41OTI4OSAxOS4yNSA5LjMzMzMzQzE5LjI1IDE0LjgxMDIgMTQuODEwMiAxOS4yNSA5LjMzMzM1IDE5LjI1SDAuNzVWMTBDMC43NSA0Ljg5MTM3IDQuODkxMzcgMC43NSAxMCAwLjc1WiIgc3Ryb2tlPSIjMzM0MTU1IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8L3N2Zz4K") 0 20, move`;
+      this.canvas.style.cursor = `url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgZmlsdGVyPSJ1cmwoI2ZpbHRlcjBfZF8yNDk5NV8xMzA2NDYpIj4KPHBhdGggZD0iTTEwLjc1IDI0QzEwLjc1IDE0LjQ3MzEgMTguNDczMSA2Ljc1IDI4IDYuNzVDMzcuNTI2OSA2Ljc1IDQ1LjI1IDE0LjQ3NDEgNDUuMjUgMjQuMDAxMUM0NS4yNSAzMy41MjgxIDM3LjUyNjkgNDEuMjUyMiAyOCA0MS4yNTIySDEwLjc1VjI0WiIgZmlsbD0iIzI5OTBGRiIgc3Ryb2tlPSIjRTJFOEYwIiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8L2c+CjxkZWZzPgo8ZmlsdGVyIGlkPSJmaWx0ZXIwX2RfMjQ5OTVfMTMwNjQ2IiB4PSItMiIgeT0iLTIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgZmlsdGVyVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBjb2xvci1pbnRlcnBvbGF0aW9uLWZpbHRlcnM9InNSR0IiPgo8ZmVGbG9vZCBmbG9vZC1vcGFjaXR5PSIwIiByZXN1bHQ9IkJhY2tncm91bmRJbWFnZUZpeCIvPgo8ZmVDb2xvck1hdHJpeCBpbj0iU291cmNlQWxwaGEiIHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAxMjcgMCIgcmVzdWx0PSJoYXJkQWxwaGEiLz4KPGZlTW9ycGhvbG9neSByYWRpdXM9IjIiIG9wZXJhdG9yPSJkaWxhdGUiIGluPSJTb3VyY2VBbHBoYSIgcmVzdWx0PSJlZmZlY3QxX2Ryb3BTaGFkb3dfMjQ5OTVfMTMwNjQ2Ii8+CjxmZU9mZnNldCBkeT0iNCIvPgo8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CjxmZUNvbXBvc2l0ZSBpbjI9ImhhcmRBbHBoYSIgb3BlcmF0b3I9Im91dCIvPgo8ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMC4xNiAwIi8+CjxmZUJsZW5kIG1vZGU9Im5vcm1hbCIgaW4yPSJCYWNrZ3JvdW5kSW1hZ2VGaXgiIHJlc3VsdD0iZWZmZWN0MV9kcm9wU2hhZG93XzI0OTk1XzEzMDY0NiIvPgo8ZmVCbGVuZCBtb2RlPSJub3JtYWwiIGluPSJTb3VyY2VHcmFwaGljIiBpbjI9ImVmZmVjdDFfZHJvcFNoYWRvd18yNDk5NV8xMzA2NDYiIHJlc3VsdD0ic2hhcGUiLz4KPC9maWx0ZXI+CjwvZGVmcz4KPC9zdmc+Cg==") 10 32, move`;
     }
-    this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    this.foliaPageLayer.parentNode.appendChild(this.canvas);
     localStorage.removeItem("folia-create-comment");
   }
 
@@ -35,7 +36,7 @@ class CommentBuilder extends BaseBuilder {
     };
     reference = e.currentTarget.offsetParent;
     do {
-      offset.left += reference.offsetLeft;
+      offset.left += reference.offsetLeft - reference.scrollLeft;
       offset.top += reference.offsetTop - reference.scrollTop;
       reference = reference.offsetParent;
     } while (reference);
@@ -51,7 +52,6 @@ class CommentBuilder extends BaseBuilder {
     e.stopPropagation();
 
     let { x, y } = this.getRelativePoint(e);
-    // x -= 20;
     y -= 25;
 
     let commentPointer = this.canvas.querySelector(".comment-pointer");
@@ -63,15 +63,9 @@ class CommentBuilder extends BaseBuilder {
     commentPointer.style.left = `${x}px`;
     commentPointer.style.top = `${y}px`;
 
-    const avatar = document.createElement("canvas");
-    avatar.width = 20;
-    avatar.height = 20;
-    const avatarCtx = avatar.getContext("2d");
-    avatarCtx.fillStyle = "lightgreen";
-    avatarCtx.arc(10, 10, 10, 0, 2 * Math.PI);
-    avatarCtx.fill();
-
-    commentPointer.style.background = `white url("${avatar.toDataURL()}") no-repeat center`;
+    // const userInitialsEl = document.createElement("div");
+    // userInitialsEl.className = "user-initials";
+    // commentPointer.appendChild(userInitialsEl);
 
     const createCommentEl = document.createElement("folia-create-comment");
     createCommentEl.className = "folia-create-comment";
@@ -84,8 +78,8 @@ class CommentBuilder extends BaseBuilder {
         commentId: commentId,
         createdAt: now,
         addedAt: now,
-        collaboratorName: this.foliaPageLayer.dataProxy.userName,
-        collaboratorEmail: this.foliaPageLayer.dataProxy.userEmail,
+        collaboratorName: this.foliaPageLayer.userName,
+        collaboratorEmail: this.foliaPageLayer.userEmail,
         text: e.detail.text,
         isRead: true,
       };
@@ -100,9 +94,9 @@ class CommentBuilder extends BaseBuilder {
           this.foliaPageLayer.viewport.height
         ),
         replies: [initialReply],
-        collaboratorName: this.foliaPageLayer.dataProxy.userName,
-        permissions: this.foliaPageLayer.dataProxy.permissions,
-        userRole: this.foliaPageLayer.dataProxy.userRole,
+        collaboratorName: this.foliaPageLayer.userName,
+        permissions: this.foliaPageLayer.permissions,
+        userRole: this.foliaPageLayer.userRole,
       };
       // console.log("post comment on ", { x, y }, e.detail);
       this.annotationData = [comment, initialReply];
@@ -112,6 +106,8 @@ class CommentBuilder extends BaseBuilder {
 
     this.canvas.appendChild(commentPointer);
   }
+
+  draw() {}
 }
 
 export default CommentBuilder;

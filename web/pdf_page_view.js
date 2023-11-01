@@ -52,6 +52,7 @@ import {
 import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
+import { FoliaPage } from "./folia/web-components/folia-page.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -218,10 +219,10 @@ class PDFPageView {
   async _renderFoliaPageLayer() {
     let error = null;
     try {
-      await this.foliaPageLayer.render(this.viewport);
+      // console.log("_renderFoliaPageLayer -> render", this.viewport.width, this.viewport.height);
+      await this.foliaPageLayer.startRender(this.viewport);
     } catch (ex) {
       console.error("_renderFoliaPageLayer:", ex);
-      // console.error(`_renderFoliaPageLayer: "${ex}".`);
       error = ex;
     } finally {
       this.eventBus.dispatch("foliapagelayerrendered", {
@@ -344,7 +345,8 @@ class PDFPageView {
 
     // console.log("page reset", this.foliaPageLayer);
     const childNodes = div.childNodes,
-      foliaLayer = this.foliaPageLayer?.foliaLayer,
+      foliaLayer = this.foliaPageLayer,
+      // foliaLayer = this.foliaPageLayer?.foliaLayer,
       zoomLayerNode = (keepZoomLayer && this.zoomLayer) || null,
       annotationLayerNode = (keepAnnotationLayer && this.annotationLayer?.div) || null,
       annotationEditorLayerNode = (keepAnnotationEditorLayer && this.annotationEditorLayer?.div) || null,
@@ -527,7 +529,7 @@ class PDFPageView {
     if (this.foliaPageLayer) {
       this.foliaPageLayer.cancel();
       // console.log("foliaPageLayer.cancel");
-      this.foliaPageLayer = null;
+      // this.foliaPageLayer = null;
     }
     if (this.annotationLayer && (!keepAnnotationLayer || !this.annotationLayer.div)) {
       this.annotationLayer.cancel();
@@ -614,6 +616,11 @@ class PDFPageView {
       textLayerDiv.style.transformOrigin = "0% 0%";
     }
 
+    if (this.foliaPageLayer) {
+      // console.log("cssTransform", this.viewport.width, this.viewport.height);
+      this._renderFoliaPageLayer();
+    }
+
     if (redrawAnnotationLayer && this.annotationLayer) {
       this._renderAnnotationLayer();
     }
@@ -671,7 +678,8 @@ class PDFPageView {
     canvasWrapper.style.height = div.style.height;
     canvasWrapper.classList.add("canvasWrapper");
 
-    const lastDivBeforeTextDiv = this.annotationLayer?.div || this.annotationEditorLayer?.div;
+    const lastDivBeforeTextDiv =
+      this.annotationLayer?.div || this.annotationEditorLayer?.div || this.foliaPageLayer;
 
     if (lastDivBeforeTextDiv) {
       // The annotation layer needs to stay on top.
@@ -723,6 +731,13 @@ class PDFPageView {
       pdfPage,
       viewport: this.viewport,
     });
+    if (!div.querySelector("folia-page")) div.appendChild(this.foliaPageLayer);
+    this.foliaPageLayer.resume();
+    // this.foliaPageLayer ||= this.foliaPageLayerFactory.createFoliaPageLayer({
+    //   pageDiv: div,
+    //   pdfPage,
+    //   viewport: this.viewport,
+    // });
     // console.log("====>", this.foliaPageLayer);
 
     if (this.xfaLayer?.div) {

@@ -4,9 +4,6 @@ import { UndoRedo } from "../undo-redo";
 import { ANNOTATION_TYPES } from "../constants";
 
 class BaseBuilder {
-  pageDiv;
-  pageNumber;
-
   canvas;
   preset = {};
 
@@ -19,7 +16,7 @@ class BaseBuilder {
     this.asset = BuildingClass.asset;
     this.undoRedoManager = undoRedoManager;
     this.resume();
-    this.undoRedoManager.updateUI();
+    this.undoRedoManager?.updateUI();
   }
 
   prepareAnnotations2save() {
@@ -30,7 +27,8 @@ class BaseBuilder {
   stop() {
     // console.log("base builder.stop");
     if (this.removeOnClickListener) this.removeOnClickListener();
-    const collaboratorEmail = this.foliaPageLayer.dataProxy.userEmail;
+    const collaboratorEmail = this.foliaPageLayer.userEmail;
+    const collaboratorName = this.foliaPageLayer.userName;
     const addedAt = new Date().toISOString();
     const page = this.foliaPageLayer.pageNumber;
 
@@ -40,39 +38,35 @@ class BaseBuilder {
         id,
         page,
         collaboratorEmail,
+        collaboratorName,
         addedAt,
+        createdAt: addedAt,
         deleted: false,
         newbie: true,
         ...data,
       };
-      const allowedUndoRedo = ![ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.REPLY].includes(
-        annotation.__typename
-      );
       const makeSelected = [ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.TEXT_BOX].includes(
         annotation.__typename
       );
       const shouldBeCommitted = !("doNotCommit" in annotation);
 
-      this.foliaPageLayer.addAnnotationObject(annotation, makeSelected);
+      const annoObj = this.foliaPageLayer.addAnnotationObject(annotation, makeSelected);
+      const annoData = annoObj?.toObjectData() || annotation;
       if (shouldBeCommitted) {
-        this.foliaPageLayer.commitObjectChanges(annotation);
+        this.foliaPageLayer.eventBus.dispatch("objects-were-updated", [annoData]);
       }
-      if (allowedUndoRedo) {
-        this.foliaPageLayer.undoRedoManager.creatingObject(annotation);
-      }
+      this.foliaPageLayer.eventBus.dispatch("undo-redo-collect", { action: "add", currentState: annoData });
     }
 
-    this.foliaPageLayer.undoRedoManager.removeToolUndoRedoItems();
-    this.foliaPageLayer.pageDiv
+    this.foliaPageLayer.undoRedoManager?.removeToolUndoRedoItems();
+    this.foliaPageLayer.parentNode
       .querySelectorAll(".annotation-builder-container")
       .forEach((el) => el.remove());
     this.canvas = null;
     this.newbieAnnotationsData = [];
   }
 
-  applyUndoRedo() {
-    // console.log("Base method of applyUndoRedo");
-  }
+  applyUndoRedo() {}
 
   applyPreset(preset) {
     for (const [key, value] of Object.entries(preset)) {

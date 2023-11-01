@@ -17,10 +17,10 @@ class ObjectEraser {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
       this.canvas.className = "annotation-builder-container eraser off";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
-      this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
-      this.canvas.style.height = this.foliaPageLayer.pageDiv.clientHeight + "px";
+      this.canvas.width = this.foliaPageLayer.parentNode.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.foliaPageLayer.parentNode.clientHeight * window.devicePixelRatio;
+      this.canvas.style.width = this.foliaPageLayer.parentNode.clientWidth + "px";
+      this.canvas.style.height = this.foliaPageLayer.parentNode.clientHeight + "px";
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
@@ -29,11 +29,11 @@ class ObjectEraser {
       this.canvas.style.backgroundColor = "rgba(0, 0, 0, 0)";
     }
 
-    this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    this.foliaPageLayer.parentNode.appendChild(this.canvas);
   }
 
   stop() {
-    this.foliaPageLayer.pageDiv
+    this.foliaPageLayer.parentNode
       .querySelectorAll(".annotation-builder-container")
       .forEach((el) => el.remove());
     this.canvas = null;
@@ -63,14 +63,14 @@ class ObjectEraser {
     const sensitivity = 0;
     const intersected = new Set();
     const { x, y } = mouseEvent;
-    for (const [annoId, anno] of this.foliaPageLayer.annotationObjects) {
-      if (!anno) continue;
-      if (["CommentAnnotation"].includes(anno.annotationRawData.__typename)) continue;
-      if (anno.isDeleted) continue;
+    for (const annoObject of this.foliaPageLayer.objects) {
+      if (!annoObject) continue;
+      if (["CommentAnnotation"].includes(annoObject.__typename)) continue;
+      if (annoObject.isDeleted) continue;
 
-      const { left, top, right, bottom } = anno.annotationDIV.getBoundingClientRect();
+      const { left, top, right, bottom } = annoObject.annotationUI?.getBoundingClientRect();
       if (x + 12 > left && x + 5 < right && y + 21 > top && y + 21 < bottom) {
-        intersected.add(anno);
+        intersected.add(annoObject);
       }
     }
 
@@ -78,14 +78,14 @@ class ObjectEraser {
   }
 
   onMouseOver(e) {
-    this.showPointer = true;
-    this.drawPointer(e);
+    // this.showPointer = true;
+    // this.drawPointer(e);
   }
 
   onMouseOut(e) {
-    this.showPointer = false;
-    this.drawPointer(e);
-    this.foliaPageLayer.eventBus.dispatch("stop-drawing");
+    // this.showPointer = false;
+    // this.drawPointer(e);
+    // this.foliaPageLayer.eventBus.dispatch("stop-drawing");
   }
 
   onMouseDown(e) {
@@ -100,14 +100,14 @@ class ObjectEraser {
     if (this.startErasing) {
       this.mouseMoved = true;
       const objects = this.findOutIntersects(e);
-      objects.forEach((anno) => this.foliaPageLayer.deleteSelectedAnnotations(anno));
+      objects.forEach((annoObject) => this.foliaPageLayer.deleteSelectedObjects(annoObject));
     }
   }
 
   onMouseUp(e) {
     if (!this.mouseMoved) {
-      const object = Array.from(this.findOutIntersects(e)).pop();
-      if (object) this.foliaPageLayer.deleteSelectedAnnotations(object);
+      const annoObject = Array.from(this.findOutIntersects(e)).pop();
+      if (annoObject) this.foliaPageLayer.deleteSelectedObjects(annoObject);
     }
     this.startErasing = false;
     this.mouseMoved = false;

@@ -210,6 +210,7 @@ class FoliaCommentAnnotation extends FoliaBaseAnnotation {
   setAllRepliesAsRead() {
     this.changeAllReadStatuses(true);
   }
+
   setAllRepliesAsUnread() {
     this.changeAllReadStatuses(false);
     if (this.__comment) {

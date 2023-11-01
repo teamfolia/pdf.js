@@ -16,7 +16,7 @@
     </svg>
     <div class="folia-comment-header-menu-btn-options-overlay hidden"></div>
     <ul class="folia-comment-header-menu-btn-options hidden">
-      <li class="folia-comment-header-menu-btn-option unread">Mark all as unread</li>
+      <li class="folia-comment-header-menu-btn-option unread hidden">Mark as unread</li>
       <li class="folia-comment-header-menu-btn-option delete">Delete thread</li>
     </ul>
   </button>
@@ -209,6 +209,9 @@
   .folia-comment-header-menu-btn-option.disabled {
     color: silver;
     cursor: not-allowed;
+  }
+  .folia-comment-header-menu-btn-option.hidden {
+    display: none;
   }
 
   .folia-comment-title-menu-btn-option.hidden {

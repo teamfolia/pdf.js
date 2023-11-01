@@ -13,12 +13,12 @@ class ImageBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("div");
       this.canvas.className = "annotation-builder-container";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight;
+      this.canvas.width = this.foliaPageLayer.parentNode.clientWidth;
+      this.canvas.height = this.foliaPageLayer.parentNode.clientHeight;
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
     }
-    this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    this.foliaPageLayer.parentNode.appendChild(this.canvas);
 
     const image = new Image();
     image.style.width = "100%";
@@ -95,20 +95,18 @@ class ImageBuilder extends BaseBuilder {
     e.stopPropagation();
     if (!this.placeholder) return;
     const point = this.getRelativePoint(e);
-    this.placeholder.style.display = "block";
-    window.requestAnimationFrame(() => this.draw(point));
-  }
-
-  draw(point) {
     let left = point.x - this.placeholder.clientWidth - 5;
     let top = point.y - this.placeholder.clientHeight - 5;
 
     if (left < 5) left = 5;
     if (top < 5) top = 5;
 
+    this.placeholder.style.display = "block";
     this.placeholder.style.left = left + "px";
     this.placeholder.style.top = top + "px";
   }
+
+  draw(ctx) {}
 }
 
 export default ImageBuilder;

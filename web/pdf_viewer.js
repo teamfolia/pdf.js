@@ -80,8 +80,9 @@ import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
+import { FoliaPage } from "./folia/web-components/folia-page.js";
 
-const DEFAULT_CACHE_SIZE = 10;
+const DEFAULT_CACHE_SIZE = 5;
 const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const PagesCountLimit = {
@@ -1638,17 +1639,25 @@ class PDFViewer {
     viewport,
     annotationStorage = this.pdfDocument?.annotationStorage,
   }) {
-    return new FoliaPageLayer({
-      pageDiv,
-      pdfPage,
-      viewport,
-      annotationStorage,
-      dataProxy: this.dataProxy,
-      undoRedoManager: this.undoRedoManager,
-      eventBus: this.eventBus,
-      annotationBuilderClass: this.annotationBuilderClass,
-      pdfViewerScale: this._currentScale,
-    });
+    const foliaPageLayer = document.createElement("folia-page");
+    foliaPageLayer.viewport = viewport;
+    foliaPageLayer.eventBus = this.eventBus;
+    foliaPageLayer.pageNumber = pdfPage.pageNumber - 1;
+    foliaPageLayer.annotationBuilderClass = this.annotationBuilderClass;
+    foliaPageLayer.undoRedoManager = this.undoRedoManager;
+    return foliaPageLayer;
+
+    // return new FoliaPageLayer({
+    //   pageDiv,
+    //   pdfPage,
+    //   viewport,
+    //   annotationStorage,
+    //   dataProxy: this.dataProxy,
+    //   undoRedoManager: this.undoRedoManager,
+    //   eventBus: this.eventBus,
+    //   annotationBuilderClass: this.annotationBuilderClass,
+    //   pdfViewerScale: this._currentScale,
+    // });
   }
 
   /**

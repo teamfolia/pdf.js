@@ -36,11 +36,6 @@ import FoliaInkAnnotation from "./annotations/ink-annotation";
 import FoliaSquareAnnotation from "./annotations/square-annotation";
 import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
 
-// import Worker from "worker-loader!../../build/dist/build/pdf.worker.js";
-// window.pdfjsWorker = Worker();
-// console.log("import", { GlobalWorkerOptions, worker: window.pdfjsWorker });
-// console.log("import", window.pdfjsWorker.terminate);
-
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
@@ -54,6 +49,7 @@ function keyDownHandler(e) {
   // console.log("foliaPdfViewer -> keyDownHandler", target.nodeName);
   if (target.nodeName === "TEXTAREA") return;
   if (target.nodeName === "INPUT") return;
+  if (target.nodeName === "FOLIA-PAGE") return;
   if (target.nodeName === "FOLIA-REPLY") return;
   if (target.nodeName === "FOLIA-COMMENT") return;
   if (target.nodeName === "FOLIA-CREATE-COMMENT") return;
@@ -63,7 +59,7 @@ function keyDownHandler(e) {
     case "Backspace": {
       e.preventDefault();
       e.stopPropagation();
-      this.deleteSelectedAnnotations();
+      this.eventBus.dispatch("delete-selected-objects");
       break;
     }
     case "-": {
@@ -104,7 +100,7 @@ function keyDownHandler(e) {
       if (ctrlKey || metaKey) {
         e.preventDefault();
         e.stopPropagation();
-        this.duplicateSelectedAnnotations();
+        this.eventBus.dispatch("duplicate-selected-objects");
       }
       break;
     }
@@ -132,7 +128,7 @@ function keyDownHandler(e) {
       e.stopPropagation();
       console.log("pressed Ctrl + X");
       this.copySelectedAnnotations2Clipboard();
-      this.deleteSelectedAnnotations();
+      this.deleteSelectedObjects();
       break;
     }
     case "A":
@@ -140,7 +136,7 @@ function keyDownHandler(e) {
       if (ctrlKey || metaKey) {
         e.preventDefault();
         e.stopPropagation();
-        this.selectAllHoveredPageAnnotations();
+        this.eventBus.dispatch("select-all-objects");
       }
       break;
     }
@@ -287,7 +283,7 @@ export class FoliaPDFViewer {
       l10n: null,
       annotationEditorMode: 0,
       textLayerMode: 1,
-      annotationMode: AnnotationMode.ENABLE,
+      annotationMode: 0,
       annotationEditorMode: -1,
       imageResourcesPath: "./images/",
       enablePrintAutoRotate: true,
@@ -591,11 +587,13 @@ export class FoliaPDFViewer {
     this.undoRedoManager.redo();
   }
   zoomIn(steps = 1) {
+    // console.log("zoomIn");
     this.stopDrawing();
     this.pdfViewer.increaseScale(steps);
     this.pdfViewer.update();
   }
   zoomOut(steps = 1) {
+    // console.log("zoomOut");
     this.stopDrawing();
     this.pdfViewer.decreaseScale(steps);
     this.pdfViewer.update();
@@ -613,27 +611,18 @@ export class FoliaPDFViewer {
       page.foliaPageLayer.updateToolDrawingProperties(data);
     });
   }
-  updateObjectsDrawingProperties(properties) {
-    const promises = [];
-    this.pdfViewer._pages.map((page) => {
-      if (!page.foliaPageLayer) return;
-      promises.concat(page.foliaPageLayer.updateObjectsDrawingProperties(properties));
-    });
-
-    return Promise.allSettled(promises);
-  }
-  refreshFoliaLayers() {
-    this.pdfViewer._pages.map((page) => {
-      if (!page.foliaPageLayer) return;
-      page.foliaPageLayer.refresh();
-    });
-  }
-  // revertChanges(annotationId) {
+  // updateObjectsDrawingProperties(properties) {
   //   this.pdfViewer._pages.map((page) => {
   //     if (!page.foliaPageLayer) return;
-  //     page.foliaPageLayer.revertChanges(annotationId);
+  //     page.foliaPageLayer.updateObjectsDrawingProperties(properties);
   //   });
   // }
+  refreshFoliaLayers() {
+    // this.pdfViewer._pages.map((page) => {
+    //   if (!page.foliaPageLayer) return;
+    //   page.foliaPageLayer.refresh();
+    // });
+  }
   loadImageAsset(completeCallback) {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
@@ -698,15 +687,12 @@ export class FoliaPDFViewer {
   }
 
   resetObjectsSeletion() {
-    this.pdfViewer._pages.map((page) => {
-      if (!page.foliaPageLayer) return;
-      page.foliaPageLayer.resetObjectsSeletion();
-    });
+    this.eventBus.dispatch("reset-objects-selection");
   }
-  deleteSelectedAnnotations() {
+  deleteSelectedObjects() {
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
-      page.foliaPageLayer.deleteSelectedAnnotations();
+      page.foliaPageLayer.deleteSelectedObjects();
     });
   }
   selectAnnotationObject(_page, objectId) {
@@ -737,24 +723,24 @@ export class FoliaPDFViewer {
     this.eventBus.on("foliapagelayerrendered", evenListener);
     this.pdfViewer.currentPageNumber = page;
   }
-  resetObjectsSeletion() {
-    this.pdfViewer._pages.map((page) => {
-      if (!page.foliaPageLayer) return;
-      page.foliaPageLayer.resetObjectsSeletion();
-    });
-  }
-  duplicateSelectedAnnotations() {
-    this.pdfViewer._pages.map((page) => {
-      if (!page.foliaPageLayer) return;
-      page.foliaPageLayer.duplicateSelectedAnnotations();
-    });
-  }
-  selectAllHoveredPageAnnotations() {
-    this.pdfViewer._pages.map((page) => {
-      if (!page.foliaPageLayer) return;
-      if (page.foliaPageLayer.pageIsHovered) page.foliaPageLayer.selectAll();
-    });
-  }
+  // resetObjectsSeletion() {
+  //   this.pdfViewer._pages.map((page) => {
+  //     if (!page.foliaPageLayer) return;
+  //     page.foliaPageLayer.resetObjectsSeletion();
+  //   });
+  // }
+  // duplicateSelectedAnnotations() {
+  //   this.pdfViewer._pages.map((page) => {
+  //     if (!page.foliaPageLayer) return;
+  //     page.foliaPageLayer.duplicateSelectedAnnotations();
+  //   });
+  // }
+  // selectAllHoveredPageAnnotations() {
+  //   this.pdfViewer._pages.map((page) => {
+  //     if (!page.foliaPageLayer) return;
+  //     if (page.foliaPageLayer.pageIsActive) page.foliaPageLayer.selectAll();
+  //   });
+  // }
 
   copySelectedAnnotations2Clipboard() {
     const selectedAnnotations = this.pdfViewer._pages

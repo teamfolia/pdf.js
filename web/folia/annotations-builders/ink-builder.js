@@ -17,16 +17,16 @@ class InkBuilder extends BaseBuilder {
     if (!this.canvas) {
       this.canvas = document.createElement("canvas");
       this.canvas.className = "annotation-builder-container";
-      this.canvas.width = this.foliaPageLayer.pageDiv.clientWidth * window.devicePixelRatio;
-      this.canvas.height = this.foliaPageLayer.pageDiv.clientHeight * window.devicePixelRatio;
-      this.canvas.style.width = this.foliaPageLayer.pageDiv.clientWidth + "px";
-      this.canvas.style.height = this.foliaPageLayer.pageDiv.clientHeight + "px";
+      this.canvas.width = this.foliaPageLayer.parentNode.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.foliaPageLayer.parentNode.clientHeight * window.devicePixelRatio;
+      this.canvas.style.width = this.foliaPageLayer.parentNode.clientWidth + "px";
+      this.canvas.style.height = this.foliaPageLayer.parentNode.clientHeight + "px";
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
     }
-    this.foliaPageLayer.pageDiv.appendChild(this.canvas);
+    this.foliaPageLayer.parentNode.appendChild(this.canvas);
   }
 
   prepareAnnotations2save() {
@@ -116,7 +116,7 @@ class InkBuilder extends BaseBuilder {
     });
 
     // window.requestAnimationFrame(() => this.drawAll());
-    this.drawAll();
+    // this.drawAll();
   }
   onMouseUp(e) {
     e.preventDefault();
@@ -130,24 +130,22 @@ class InkBuilder extends BaseBuilder {
       path: this.simplifyPath(this.drawingPath.path),
     });
     const newState = { page: this.foliaPageLayer.pageNumber, data: this.paths.slice() };
-    this.undoRedoManager.addToolStep(prevState, newState);
+    this.undoRedoManager?.addToolStep(prevState, newState);
     this.drawingPath = null;
-    // window.requestAnimationFrame(() => this.drawAll());
-    this.drawAll();
+    // this.drawAll();
   }
 
   applyUndoRedo(paths) {
-    // console.log("applyUndoRedo", paths);
     this.paths = paths.slice();
     this.path = [];
-    this.drawAll();
+    // this.drawAll();
   }
 
-  drawSegment(color, _lineWidth, path) {
+  drawSegment(ctx, color, _lineWidth, path) {
     if (path.length === 0) return;
     const lineWidth = _lineWidth * this.viewport.scale * window.devicePixelRatio;
-    const ctx = this.canvas.getContext("2d");
-    ctx.save();
+    // const ctx = this.canvas.getContext("2d");
+    // ctx.save();
     ctx.strokeStyle = hexColor2RGBA(color);
     ctx.fillStyle = hexColor2RGBA(color);
 
@@ -176,18 +174,23 @@ class InkBuilder extends BaseBuilder {
     ctx.closePath();
   }
 
-  drawAll() {
-    const ctx = this.canvas.getContext("2d");
-    /* ---- great hack for clear a canvas, it much more faster than common way */
-    // ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.canvas.width = this.canvas.width;
-    /* ---- end of hack */
+  // drawAll() {}
+
+  draw(ctx) {
+    // const ctx = this.canvas.getContext("2d");
+    // this.canvas.width = this.canvas.width;
     this.paths.forEach(({ color, lineWidth, path }) => {
-      this.drawSegment(color, lineWidth, path);
+      this.drawSegment(ctx, color, lineWidth, path);
     });
     if (this.drawingPath) {
       // console.log("PATH", this.drawingPath);
-      this.drawSegment(this.preset.color, this.preset.lineWidth, this.simplifyPath(this.drawingPath.path));
+      this.drawSegment(
+        ctx,
+        this.preset.color,
+        this.preset.lineWidth,
+        this.drawingPath.path
+        // this.simplifyPath(this.drawingPath.path)
+      );
     }
   }
 }

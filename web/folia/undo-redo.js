@@ -20,9 +20,13 @@ class CreatingAnnotation {
       allowNegativeOffset: true,
     });
 
-    const annoObject = page.foliaPageLayer.annotationObjects.get(this.state.id);
-    if (!annoObject) return;
-    page.foliaPageLayer.deleteAnnotationObject(annoObject);
+    const annoObject = page.foliaPageLayer.objects.find((obj) => obj.id === this.state.id);
+    const now = new Date().toISOString();
+    annoObject.update({
+      addedAt: now,
+      deletedAt: now,
+    });
+    this.manager.foliaPdfViewer.eventBus.dispatch("objects-were-updated", [annoObject.toObjectData()]);
   }
 
   redo() {
@@ -39,17 +43,16 @@ class CreatingAnnotation {
 
     const state = structuredClone(this.state);
     state.addedAt = new Date().toISOString();
-
-    page.foliaPageLayer.addAnnotationObject(state);
-    page.foliaPageLayer.commitObjectChanges(state);
+    const annoObject = page.foliaPageLayer.addAnnotationObject(state);
+    this.manager.foliaPdfViewer.eventBus.dispatch("objects-were-updated", [annoObject.toObjectData()]);
   }
 }
 
 class UpdatingAnnotation {
   constructor(undoRedoManager, prevState, newState) {
     this.manager = undoRedoManager;
-    this.prevState = Object.assign({}, prevState);
-    this.newState = Object.assign({}, newState);
+    this.prevState = structuredClone(prevState);
+    this.newState = structuredClone(newState);
     this._location = this.manager.foliaPdfViewer.pdfViewer._location;
   }
 
@@ -67,14 +70,11 @@ class UpdatingAnnotation {
       allowNegativeOffset: true,
     });
 
-    const annoObject = page.foliaPageLayer.annotationObjects.get(this.prevState.id);
-    if (!annoObject) return;
     const state = structuredClone(this.prevState);
+    const annoObject = page.foliaPageLayer.objects.find((obj) => obj.id === state.id);
     state.addedAt = new Date().toISOString();
-    annoObject.update(state, null, true);
-    annoObject.markAsChanged();
-    page.foliaPageLayer.commitObjectChanges(annoObject.getRawData());
-    // console.log("UpdatingAnnotation.undo -> update", annoObject.id);
+    annoObject.update(state);
+    this.manager.foliaPdfViewer.eventBus.dispatch("objects-were-updated", [annoObject.toObjectData()]);
   }
 
   redo() {
@@ -91,21 +91,18 @@ class UpdatingAnnotation {
       allowNegativeOffset: true,
     });
 
-    const annoObject = page.foliaPageLayer.annotationObjects.get(this.newState.id);
-    if (!annoObject) return;
     const state = structuredClone(this.newState);
+    const annoObject = page.foliaPageLayer.objects.find((obj) => obj.id === state.id);
     state.addedAt = new Date().toISOString();
-    annoObject.update(state, null, true);
-    annoObject.markAsChanged();
-    page.foliaPageLayer.commitObjectChanges(annoObject.getRawData());
-    // console.log("UpdatingAnnotation.redo -> update", annoObject.id);
+    annoObject.update(state);
+    this.manager.foliaPdfViewer.eventBus.dispatch("objects-were-updated", [annoObject.toObjectData()]);
   }
 }
 
 class DeletingAnnotation {
   constructor(undoRedoManager, prevState) {
     this.manager = undoRedoManager;
-    this.prevState = Object.assign({}, prevState);
+    this.prevState = structuredClone(prevState);
     this._location = this.manager.foliaPdfViewer.pdfViewer._location;
   }
 
@@ -128,8 +125,8 @@ class DeletingAnnotation {
     if (state.__typename === ANNOTATION_TYPES.IMAGE) {
       state.newbie = true;
     }
-    page.foliaPageLayer.addAnnotationObject(state);
-    page.foliaPageLayer.commitObjectChanges(state);
+    const annoObject = page.foliaPageLayer.addAnnotationObject(state);
+    this.manager.foliaPdfViewer.eventBus.dispatch("objects-were-updated", [annoObject.toObjectData()]);
   }
 
   redo() {
@@ -146,10 +143,14 @@ class DeletingAnnotation {
       allowNegativeOffset: true,
     });
 
-    const annoObject = page.foliaPageLayer.annotationObjects.get(this.prevState.id);
-    if (!annoObject) return;
-    page.foliaPageLayer.deleteAnnotationObject(annoObject);
-    // console.log("DeletingAnnotation.redo -> delete", this.prevState.id);
+    const annoObject = page.foliaPageLayer.objects.find((obj) => obj.id === this.prevState.id);
+    const now = new Date().toISOString();
+    annoObject.update({
+      addedAt: now,
+      deletedAt: now,
+    });
+
+    this.manager.foliaPdfViewer.eventBus.dispatch("objects-were-updated", [annoObject.toObjectData()]);
   }
 }
 
@@ -169,12 +170,6 @@ class ToolUndoRedo {
     if (!page) return;
     if (!page.foliaPageLayer) return setTimeout(() => this.undo(), 100);
 
-    // this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
-    //   pageNumber: this.prevState.page + 1,
-    //   destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
-    //   allowNegativeOffset: true,
-    // });
-
     const builder = page.foliaPageLayer.annotationBuilder;
     if (!builder) return;
     builder.applyUndoRedo(this.prevState.data);
@@ -188,12 +183,6 @@ class ToolUndoRedo {
     if (!page) return;
     if (!page.foliaPageLayer) return setTimeout(() => this.undo(), 100);
 
-    // this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
-    //   pageNumber: this.prevState.page + 1,
-    //   destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
-    //   allowNegativeOffset: false,
-    // });
-
     const builder = page.foliaPageLayer.annotationBuilder;
     if (!builder) return;
     builder.applyUndoRedo(this.newState.data);
@@ -205,17 +194,34 @@ export class UndoRedo {
     this.foliaPdfViewer = foliaPdfViewer;
     this.undoStack = [];
     this.redoStack = [];
+    this.foliaPdfViewer.eventBus.on("undo-redo-collect", this.objectsChangeObserver.bind(this));
+  }
+
+  static NotAplicableAnnotations = [ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.REPLY];
+
+  objectsChangeObserver(objectsData) {
+    const { action, previousState, currentState } = objectsData;
+    switch (action) {
+      case "add":
+        return this.creatingObject(currentState);
+      case "update":
+        return this.updatingObject(previousState, currentState);
+      case "delete":
+        return this.deletingObject(previousState);
+    }
   }
 
   creatingObject(objectData) {
+    if (UndoRedo.NotAplicableAnnotations.includes(objectData.__typename)) return;
     const command = new CreatingAnnotation(this, objectData);
-    // this.undoStack = [...this.undoStack.filter((item) => !(item instanceof ToolUndoRedo)), command];
     this.undoStack.push(command);
     this.redoStack = [];
     this.updateUI();
   }
 
   updatingObject(previousData, nextData) {
+    // console.log("updatingObject", previousData, nextData);
+    if (UndoRedo.NotAplicableAnnotations.includes(previousData.__typename)) return;
     const command = new UpdatingAnnotation(this, previousData, nextData);
     this.undoStack.push(command);
     this.redoStack = [];
@@ -223,7 +229,7 @@ export class UndoRedo {
   }
 
   deletingObject(objectData) {
-    // console.log("deletingObject", objectData);
+    if (UndoRedo.NotAplicableAnnotations.includes(objectData.__typename)) return;
     const command = new DeletingAnnotation(this, objectData);
     this.undoStack.push(command);
     this.redoStack = [];
@@ -231,6 +237,7 @@ export class UndoRedo {
   }
 
   addToolStep(previousData, nextData) {
+    // console.log("addToolStep", { previousData, nextData });
     const command = new ToolUndoRedo(this, previousData, nextData);
     this.undoStack.push(command);
     this.redoStack = [];

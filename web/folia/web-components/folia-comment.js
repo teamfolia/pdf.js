@@ -1,4 +1,3 @@
-import def from "ajv/dist/vocabularies/discriminator";
 import { setTextAreaDynamicHeight } from "../folia-util";
 import html from "./folia-comment.html";
 import reply from "./folia-reply";
@@ -10,6 +9,8 @@ class FoliaComment extends HTMLElement {
   #permissions = [];
   #currentUserEmail = "";
   #collaboratorEmail = "";
+
+  scrollingRepliesAfterOpen = false;
 
   constructor() {
     super();
@@ -187,7 +188,6 @@ class FoliaComment extends HTMLElement {
       replyEl.collaboratorEmail = reply.collaboratorEmail;
 
       replyEl.onChangeReadStatus = (replyId, isRead) => {
-        // console.log("comment::send change-read-status");
         const detail = { replyId, isRead };
         this.dispatchEvent(new CustomEvent("change-read-status", { detail }));
       };
@@ -203,13 +203,19 @@ class FoliaComment extends HTMLElement {
     });
 
     this.#replies = repliesList.slice();
+    if (this.#replies.some((reply) => !reply.isRead)) {
+      this.dispatchEvent(new CustomEvent("mark-all-as-read"));
+    }
     this.#applyPermissions();
-    setTimeout(() => {
-      conversationBox.scrollTo({
-        top: conversationBox.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 100);
+    if (!this.scrollingRepliesAfterOpen) {
+      setTimeout(() => {
+        conversationBox.scrollTo({
+          top: conversationBox.scrollHeight,
+          behavior: "smooth",
+        });
+      }, 100);
+      this.scrollingRepliesAfterOpen = true;
+    }
   }
   get replies() {
     return this.#replies;
@@ -247,9 +253,9 @@ class FoliaComment extends HTMLElement {
       this.#permissions.includes(PERMISSIONS.DELETE_FOREIGN_COMMENT);
     const canMakeReply = this.#permissions.includes(PERMISSIONS.MANAGE_ANNOTATION);
 
-    this.shadowRoot.querySelectorAll(".folia-comment-header-menu-btn-option.unread").forEach((el) => {
-      el.classList.toggle("disabled", !canMakeReply);
-    });
+    // this.shadowRoot.querySelectorAll(".folia-comment-header-menu-btn-option.unread").forEach((el) => {
+    //   el.classList.toggle("disabled", !canMakeReply);
+    // });
     this.shadowRoot.querySelectorAll(".folia-comment-header-menu-btn-option.delete").forEach((el) => {
       el.classList.toggle("disabled", !canDeleteComment);
     });
@@ -263,7 +269,7 @@ class FoliaComment extends HTMLElement {
       const canEditReply = isReplyOwner && this.#permissions.includes(PERMISSIONS.MANAGE_ANNOTATION);
       const canDeleteReply = replyEl.isInitial
         ? false
-        : this.#permissions.includes(PERMISSIONS.MANAGE_ANNOTATION) ||
+        : (isReplyOwner && this.#permissions.includes(PERMISSIONS.MANAGE_ANNOTATION)) ||
           this.#permissions.includes(PERMISSIONS.DELETE_FOREIGN_ANNOTATION);
 
       replyEl.canEdit = canEditReply;
@@ -283,14 +289,14 @@ class FoliaComment extends HTMLElement {
   deleteDialogOnClick(e) {
     e.stopPropagation();
     e.preventDefault();
-    // console.log("deleteDialogOnClick", e.target, e.target.dataset["role"]);
+
     switch (e.target.dataset["role"]) {
       case "close-dialog": {
         this.toggleDeleteDialog(false);
         break;
       }
       case "remove-comment": {
-        this.dispatchEvent(new CustomEvent("remove", { detail: { commentId: true } }));
+        this.dispatchEvent(new CustomEvent("remove", { detail: { commentId: this.id } }));
         this.toggleDeleteDialog(false);
         break;
       }

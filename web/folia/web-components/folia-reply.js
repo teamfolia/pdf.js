@@ -1,5 +1,5 @@
 import { USER_ROLE } from "../constants";
-import { foliaDateFormat, setTextAreaDynamicHeight } from "../folia-util";
+import { foliaDateFormat, getInitials, setTextAreaDynamicHeight } from "../folia-util";
 import reply_html from "./folia-reply.html";
 
 const STATUS = {
@@ -39,9 +39,9 @@ class FoliaReply extends HTMLElement {
     switch (name) {
       case "author": {
         const userName = this.shadowRoot.querySelector(".folia-reply-title-info-username");
-        const userAvatar = this.shadowRoot.querySelector(".folia-reply-title-icon");
+        const userInitials = this.shadowRoot.querySelector(".folia-reply-title-icon-initials");
         userName.innerHTML = newValue;
-        userAvatar.innerText = `${newValue}`.substring(0, 2).toUpperCase();
+        userInitials.innerText = getInitials(newValue);
         break;
       }
       case "created-at": {
@@ -257,25 +257,18 @@ class FoliaReply extends HTMLElement {
     if (e.target.classList.contains("disabled")) return;
 
     this.#toggleMenuVisibility();
-    if (typeof this.onRemove === "function") {
-      this.onRemove(this.id);
-    }
+    if (typeof this.onRemove === "function") this.onRemove(this.id);
     this.remove();
   }
 
   markReplyAsRead() {
     this.isRead = true;
-    this.submitReadStatus();
+    if (typeof this.onChangeReadStatus === "function") this.onChangeReadStatus(this.id, true);
   }
 
   markReplyAsUnread() {
     this.isRead = false;
-    this.submitReadStatus();
-  }
-
-  submitReadStatus() {
-    // console.log("reply::submitReadStatus", this.id, this.isRead);
-    if (typeof this.onChangeReadStatus === "function") this.onChangeReadStatus(this.id, this.isRead);
+    if (typeof this.onChangeReadStatus === "function") this.onChangeReadStatus(this.id, false);
   }
 }
 
