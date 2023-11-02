@@ -11,7 +11,7 @@ class ImageObject extends BaseAnnoObject {
     const { rect, content, filename, newbie } = annoData;
     this.lineWidth = 0;
     this.no_corners = false;
-    this.useFixedAspectRaio = true;
+    this.useFixedAspectRatio = true;
 
     this.rect = rect;
     this.content = content;

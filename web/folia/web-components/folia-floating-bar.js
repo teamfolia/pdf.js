@@ -1,7 +1,6 @@
 import { foliaDateFormat } from "../folia-util";
 import { colord } from "colord";
 import foliaFloatingBarHtml from "./folia-floating-bar.html";
-import { COLLABORATOR_PERMISSIONS } from "../../../../folia_2/src/core/constants";
 
 const FONT_FAMILY = {
   SANS_SERIF: "SANS_SERIF",
@@ -39,7 +38,6 @@ const NO_PANEL = "NO_PANEL";
 
 class FoliaFloatingBar extends HTMLElement {
   #objectData;
-  #permissions = [];
   #eventBus;
   #openedPanel;
   #color;
@@ -109,8 +107,6 @@ class FoliaFloatingBar extends HTMLElement {
     this.opacitySlider = this.shadowRoot.getElementById("opacity-slider");
     this.strokeSlider.addEventListener("input", this.strokeSliderOnInputBinded);
     this.opacitySlider.addEventListener("input", this.opacitySliderOnInputBinded);
-
-    this.usePermissions();
   }
 
   disconnectedCallback() {
@@ -214,37 +210,23 @@ class FoliaFloatingBar extends HTMLElement {
     }, 0);
   }
 
-  usePermissions() {
-    const canDelete = this.#permissions.some((permission) => {
-      return (
-        permission === COLLABORATOR_PERMISSIONS.MANAGE_ANNOTATION ||
-        permission === COLLABORATOR_PERMISSIONS.DELETE_FOREIGN_ANNOTATION
-      );
-    });
-    const canChange = this.#permissions.some((permission) => {
-      return permission === COLLABORATOR_PERMISSIONS.MANAGE_ANNOTATION;
-    });
-
-    this.deleteBtn.toggleAttribute("disabled", !canDelete);
-
-    this.strokeBtn.toggleAttribute("disabled", !canChange);
-    this.colorBtn.toggleAttribute("disabled", !canChange);
-    this.duplicateBtn.toggleAttribute("disabled", !canChange);
-    this.stampBtn.toggleAttribute("disabled", !canChange);
-    this.boldBtn.toggleAttribute("disabled", !canChange);
-    this.alignLeftBtn.toggleAttribute("disabled", !canChange);
-    this.alignCenterBtn.toggleAttribute("disabled", !canChange);
-    this.alignRightBtn.toggleAttribute("disabled", !canChange);
-    this.fontFamilyBtn.toggleAttribute("disabled", !canChange);
-    this.fontSizeBtn.toggleAttribute("disabled", !canChange);
+  get canDelete() {}
+  set canDelete(value) {
+    this.deleteBtn.toggleAttribute("disabled", !value);
   }
 
-  get permissions() {
-    return this.#permissions;
-  }
-  set permissions(value = []) {
-    this.#permissions = Array.from(value);
-    this.usePermissions();
+  get canManage() {}
+  set canManage(value) {
+    this.strokeBtn.toggleAttribute("disabled", !value);
+    this.colorBtn.toggleAttribute("disabled", !value);
+    this.duplicateBtn.toggleAttribute("disabled", !value);
+    this.stampBtn.toggleAttribute("disabled", !value);
+    this.boldBtn.toggleAttribute("disabled", !value);
+    this.alignLeftBtn.toggleAttribute("disabled", !value);
+    this.alignCenterBtn.toggleAttribute("disabled", !value);
+    this.alignRightBtn.toggleAttribute("disabled", !value);
+    this.fontFamilyBtn.toggleAttribute("disabled", !value);
+    this.fontSizeBtn.toggleAttribute("disabled", !value);
   }
 
   get eventBus() {

@@ -372,7 +372,6 @@ class FoliaPage extends HTMLElement {
     for (const object of this.#objects) {
       object.permissions = data.permissions;
     }
-    if (this.floatingBar) this.floatingBar.permissions = this.#permissions;
   }
 
   pageShouldRender = false;
@@ -492,6 +491,7 @@ class FoliaPage extends HTMLElement {
     console.log("deleteSelectedObjects");
     const deletedObjects = annoObject ? [annoObject] : this.#multipleSelection.values();
     for (const object of deletedObjects) {
+      if (!object.canDelete) continue;
       object.changeManually({ deletedAt: new Date().toISOString() });
     }
     this.resetObjectsSelection();
@@ -616,8 +616,6 @@ class FoliaPage extends HTMLElement {
 
   // ---------- custom outside methods ----------
   showFloatingBar(visible = false) {
-    this.floatingBar.permissions = this.#permissions;
-
     const objects = Array.from(this.#multipleSelection)
       .filter((object) => {
         return !(object instanceof CommentObject);
@@ -628,6 +626,8 @@ class FoliaPage extends HTMLElement {
 
     if (!this.floatingBar) return;
     if (visible && objects.length > 0) {
+      this.floatingBar.canDelete = objects.at(-1)?.canDelete;
+      this.floatingBar.canManage = objects.at(-1)?.canManage;
       this.floatingBar.show(objects);
     } else {
       this.floatingBar.hide();

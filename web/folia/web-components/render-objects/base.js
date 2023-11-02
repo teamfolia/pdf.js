@@ -59,7 +59,7 @@ class BaseAnnoObject {
     this.eventBus = eventBus;
     this.no_corners = false;
     this.staticObject = false;
-    this.useFixedAspectRaio = false;
+    this.useFixedAspectRatio = false;
   }
 
   update(annoData) {
@@ -203,7 +203,8 @@ class BaseAnnoObject {
       sourcePoint: this.sourcePoint && fromPdfPoint(this.sourcePoint, width, height),
       targetPoint: this.targetPoint && fromPdfPoint(this.targetPoint, width, height),
       bounds: this.getBoundingRect(),
-      aspectRatio: this.getBoundingRect().width / this.getBoundingRect().height,
+      aspectRatioW: this.getBoundingRect().width / this.getBoundingRect().height,
+      aspectRatioH: this.getBoundingRect().height / this.getBoundingRect().width,
     };
   }
 
@@ -240,27 +241,27 @@ class BaseAnnoObject {
     this.changeManually(annoData, this.startPosition.objectData);
   }
 
-  resize(deltaX, deltaY, corner, useAspectRatio = false) {
+  resize(deltaX, deltaY, corner, shiftKey = false) {
     if (!this.viewport) throw new Error("not found viewport");
     if (!this.canManage) return;
 
     const { width, height } = this.viewport;
-    const { rect, bounds } = this.startPosition;
+    const { rect, bounds, aspectRatioW, aspectRatioH } = this.startPosition;
     const annoData = {
       addedAt: new Date().toISOString(),
     };
     const safeArea = Math.max(10, ((this.lineWidth * this.viewport.scale) / 2) * 3);
+    const isProportional = shiftKey ? !this.useFixedAspectRatio : this.useFixedAspectRatio;
 
-    // console.log("resize object", deltaX, deltaY, corner, aspectRatio);
     switch (corner) {
       case ROLE_CORNER_LT: {
         annoData.rect = toPdfRect(
-          this.useFixedAspectRaio || useAspectRatio
+          isProportional
             ? [
                 Math.min(bounds.right - safeArea, Math.max(safeArea, rect[0] + deltaX)),
-                Math.min(bounds.bottom - safeArea, Math.max(safeArea, rect[1] + deltaY)),
+                Math.min(bounds.bottom - safeArea, Math.max(safeArea, rect[1] + deltaX / aspectRatioW)),
                 Math.max(safeArea, rect[2] - deltaX),
-                Math.max(safeArea, rect[3] - deltaY),
+                Math.max(safeArea, rect[3] - deltaX / aspectRatioW),
               ]
             : [
                 Math.min(bounds.right - safeArea, Math.max(safeArea, rect[0] + deltaX)),
@@ -275,12 +276,12 @@ class BaseAnnoObject {
       }
       case ROLE_CORNER_RT: {
         annoData.rect = toPdfRect(
-          this.useFixedAspectRaio || useAspectRatio
+          isProportional
             ? [
                 rect[0],
-                Math.min(bounds.bottom - safeArea, Math.max(safeArea, rect[1] + deltaY)),
+                Math.min(bounds.bottom - safeArea, Math.max(safeArea, rect[1] - deltaX / aspectRatioW)),
                 Math.max(safeArea, rect[2] + deltaX),
-                Math.max(safeArea, rect[3] - deltaY),
+                Math.max(safeArea, rect[3] + deltaX / aspectRatioW),
               ]
             : [
                 rect[0],
@@ -295,12 +296,12 @@ class BaseAnnoObject {
       }
       case ROLE_CORNER_RB: {
         annoData.rect = toPdfRect(
-          this.useFixedAspectRaio || useAspectRatio
+          isProportional
             ? [
                 rect[0], //                       -
                 rect[1], //                       -
                 Math.max(safeArea, rect[2] + deltaX),
-                Math.max(safeArea, rect[3] + deltaY),
+                Math.max(safeArea, rect[3] + deltaX / aspectRatioW),
               ]
             : [
                 rect[0], //                       -
@@ -315,12 +316,12 @@ class BaseAnnoObject {
       }
       case ROLE_CORNER_LB: {
         annoData.rect = toPdfRect(
-          this.useFixedAspectRaio || useAspectRatio
+          isProportional
             ? [
                 Math.min(bounds.right - safeArea, Math.max(safeArea, rect[0] + deltaX)),
                 rect[1],
                 Math.max(safeArea, rect[2] - deltaX),
-                Math.max(safeArea, rect[3] + deltaY),
+                Math.max(safeArea, rect[3] - deltaX / aspectRatioW),
               ]
             : [
                 Math.min(bounds.right - safeArea, Math.max(safeArea, rect[0] + deltaX)),
@@ -468,8 +469,8 @@ class BaseAnnoObject {
   }
 
   get canDelete() {
-    const isAnnotationOwn = this.collaboratorEmail === this.userEmail;
-    return isAnnotationOwn
+    const isAnnotationOwner = this.collaboratorEmail === this.userEmail;
+    return isAnnotationOwner
       ? this.#permissions.includes(PERMISSIONS.MANAGE_ANNOTATION)
       : this.#permissions.includes(PERMISSIONS.DELETE_FOREIGN_ANNOTATION);
   }
