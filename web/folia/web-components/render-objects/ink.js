@@ -129,6 +129,8 @@ class InkObject extends BaseAnnoObject {
 
   move(deltaX = 0, deltaY = 0) {
     if (!this.viewport) throw new Error("not found viewport");
+    if (!this.canManage) return;
+
     const { width, height } = this.viewport;
     const annoData = {
       addedAt: new Date().toISOString(),
@@ -160,6 +162,7 @@ class InkObject extends BaseAnnoObject {
   }
 
   resize(deltaX, deltaY, corner) {
+    if (!this.canManage) return;
     console.log("ink resize object", deltaX, deltaY, corner, this.id);
   }
 }

@@ -1,6 +1,7 @@
 import { foliaDateFormat } from "../folia-util";
 import { colord } from "colord";
 import foliaFloatingBarHtml from "./folia-floating-bar.html";
+import { COLLABORATOR_PERMISSIONS } from "../../../../folia_2/src/core/constants";
 
 const FONT_FAMILY = {
   SANS_SERIF: "SANS_SERIF",
@@ -38,6 +39,7 @@ const NO_PANEL = "NO_PANEL";
 
 class FoliaFloatingBar extends HTMLElement {
   #objectData;
+  #permissions = [];
   #eventBus;
   #openedPanel;
   #color;
@@ -78,13 +80,17 @@ class FoliaFloatingBar extends HTMLElement {
     this.bar = this.shadowRoot.querySelector(".folia-floating-bar");
     this.strokeBtn = this.shadowRoot.querySelector(".bar-button.stroke");
     this.colorBtn = this.shadowRoot.querySelector(".bar-button.color");
-    this.infoBtn = this.shadowRoot.querySelector(".bar-button.info");
+    this.duplicateBtn = this.shadowRoot.querySelector(".bar-button.duplicate");
+    this.stampBtn = this.shadowRoot.querySelector(".bar-button.stamp");
+    this.deleteBtn = this.shadowRoot.querySelector(".bar-button.delete");
     this.boldBtn = this.shadowRoot.querySelector(".bar-button.bold");
     this.alignLeftBtn = this.shadowRoot.querySelector(".bar-button.align-left");
     this.alignCenterBtn = this.shadowRoot.querySelector(".bar-button.align-center");
     this.alignRightBtn = this.shadowRoot.querySelector(".bar-button.align-right");
     this.fontFamilyBtn = this.shadowRoot.querySelector(".font-family");
     this.fontSizeBtn = this.shadowRoot.querySelector(".font-size");
+
+    this.infoBtn = this.shadowRoot.querySelector(".bar-button.info");
 
     this.strokePanel = this.shadowRoot.querySelector(".folia-floating-bar-stroke-panel");
     this.colorPanel = this.shadowRoot.querySelector(".folia-floating-bar-color-panel");
@@ -103,6 +109,8 @@ class FoliaFloatingBar extends HTMLElement {
     this.opacitySlider = this.shadowRoot.getElementById("opacity-slider");
     this.strokeSlider.addEventListener("input", this.strokeSliderOnInputBinded);
     this.opacitySlider.addEventListener("input", this.opacitySliderOnInputBinded);
+
+    this.usePermissions();
   }
 
   disconnectedCallback() {
@@ -204,6 +212,39 @@ class FoliaFloatingBar extends HTMLElement {
       }
       this.bar.classList.toggle("shown", true);
     }, 0);
+  }
+
+  usePermissions() {
+    const canDelete = this.#permissions.some((permission) => {
+      return (
+        permission === COLLABORATOR_PERMISSIONS.MANAGE_ANNOTATION ||
+        permission === COLLABORATOR_PERMISSIONS.DELETE_FOREIGN_ANNOTATION
+      );
+    });
+    const canChange = this.#permissions.some((permission) => {
+      return permission === COLLABORATOR_PERMISSIONS.MANAGE_ANNOTATION;
+    });
+
+    this.deleteBtn.toggleAttribute("disabled", !canDelete);
+
+    this.strokeBtn.toggleAttribute("disabled", !canChange);
+    this.colorBtn.toggleAttribute("disabled", !canChange);
+    this.duplicateBtn.toggleAttribute("disabled", !canChange);
+    this.stampBtn.toggleAttribute("disabled", !canChange);
+    this.boldBtn.toggleAttribute("disabled", !canChange);
+    this.alignLeftBtn.toggleAttribute("disabled", !canChange);
+    this.alignCenterBtn.toggleAttribute("disabled", !canChange);
+    this.alignRightBtn.toggleAttribute("disabled", !canChange);
+    this.fontFamilyBtn.toggleAttribute("disabled", !canChange);
+    this.fontSizeBtn.toggleAttribute("disabled", !canChange);
+  }
+
+  get permissions() {
+    return this.#permissions;
+  }
+  set permissions(value = []) {
+    this.#permissions = Array.from(value);
+    this.usePermissions();
   }
 
   get eventBus() {
@@ -376,6 +417,8 @@ class FoliaFloatingBar extends HTMLElement {
     const role = e.target.dataset["role"];
     const value = e.target.dataset["value"];
     // console.log("fb onClick", { role, value });
+    if (e.target.hasAttribute("disabled")) return;
+
     switch (role) {
       case "stroke-width": {
         this.openedPanel = this.openedPanel === STROKE_PANEL ? NO_PANEL : STROKE_PANEL;

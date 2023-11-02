@@ -77,26 +77,17 @@ class ObjectEraser {
     return intersected;
   }
 
-  onMouseOver(e) {
-    // this.showPointer = true;
-    // this.drawPointer(e);
-  }
+  onMouseOver(e) {}
 
-  onMouseOut(e) {
-    // this.showPointer = false;
-    // this.drawPointer(e);
-    // this.foliaPageLayer.eventBus.dispatch("stop-drawing");
-  }
+  onMouseOut(e) {}
 
   onMouseDown(e) {
     this.canvas.classList.replace("off", "on");
     this.startErasing = true;
     this.mouseMoved = false;
-    this.drawPointer(e);
   }
 
   onMouseMove(e) {
-    this.drawPointer(e);
     if (this.startErasing) {
       this.mouseMoved = true;
       const objects = this.findOutIntersects(e);
@@ -111,14 +102,11 @@ class ObjectEraser {
     }
     this.startErasing = false;
     this.mouseMoved = false;
-    this.drawPointer(e);
+
     this.canvas.classList.replace("on", "off");
   }
 
-  drawPointer(e) {
-    if (!this.canvas) return;
-    const ctx = this.canvas.getContext("2d");
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  draw(ctx) {
     if (this.showPointer) {
       const point = this.getRelativePoint(e);
       const x = point.x * window.devicePixelRatio;

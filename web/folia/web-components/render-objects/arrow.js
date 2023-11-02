@@ -279,6 +279,8 @@ class ArrowObject extends BaseAnnoObject {
 
   move(deltaX = 0, deltaY = 0) {
     if (!this.viewport) throw new Error("not found viewport");
+    if (!this.canManage) return;
+
     const { width, height } = this.viewport;
     const left = Math.min(this.startPosition.sourcePoint.x, this.startPosition.targetPoint.x);
     const top = Math.min(this.startPosition.sourcePoint.y, this.startPosition.targetPoint.y);
@@ -318,6 +320,8 @@ class ArrowObject extends BaseAnnoObject {
 
   resize(deltaX, deltaY, arrowPoint) {
     if (!this.viewport) throw new Error("not found viewport");
+    if (!this.canManage) return;
+
     const { width, height } = this.viewport;
     const { sourcePoint, targetPoint } = this.startPosition;
     const { minArrowLength, annotationAgle } = this.arrowDimensions;

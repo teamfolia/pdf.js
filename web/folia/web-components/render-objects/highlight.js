@@ -112,10 +112,12 @@ class HighlightObject extends BaseAnnoObject {
   }
 
   move() {
+    if (!this.canManage) return;
     // do nothing due to static object
   }
 
   resize() {
+    if (!this.canManage) return;
     // do nothing due to static object
   }
 }

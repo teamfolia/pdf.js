@@ -1,11 +1,11 @@
 <div class="folia-floating-bar">
   <div class="text-box-property">
-    <span class="font-family" data-role="font-family-panel">
+    <button class="font-family" data-role="font-family-panel">
       <span id="font-family-value" data-role="font-family-panel">Sans-serif</span>
-    </span>
-    <span class="font-size" data-role="font-size-panel">
+    </button>
+    <button class="font-size" data-role="font-size-panel">
       <span id="font-size-value" data-role="font-size-panel">12</span>
-    </span>
+    </button>
     <div class="divider"></div>
   </div>
   <button class="bar-button stroke" data-role="stroke-width"></button>
@@ -125,14 +125,12 @@
 
   .folia-floating-bar.trasparent {
     display: flex;
-    /* visibility: hidden; */
     opacity: 0;
     animation-name: showingBar;
     animation-duration: 0.3s;
   }
   .folia-floating-bar.shown {
     display: flex;
-    /* visibility: visible; */
     opacity: 1;
   }
 
@@ -192,12 +190,15 @@
   .color-property.shown {
     display: flex;
   }
+
   .font-family,
   .font-size {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    border: none;
+    background-color: transparent;
     white-space: nowrap;
     color: var(--gray-600, #475569);
     font-family: Inter;
@@ -210,6 +211,15 @@
   }
   .font-family {
     min-width: 100px;
+  }
+  .font-family:enabled:active,
+  .font-size:enabled:active {
+    transform: translate(1px, 1px);
+  }
+  .font-family:disabled,
+  .font-size:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
   }
 
   .font-family:after,
@@ -269,8 +279,11 @@
   .folia-floating-bar-font-size-panel.shown {
     display: flex;
   }
+  .folia-floating-bar-font-family-panel {
+    left: 15px;
+  }
   .folia-floating-bar-font-size-panel {
-    left: 99px;
+    left: 120px;
   }
   #font-family-value {
     flex-grow: 1;
@@ -342,11 +355,16 @@
 
     --anno-color: #f1f1f1;
   }
+  .bar-button:disabled,
+  .color-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
   .bar-button:hover {
     background-color: #f1f1f1;
   }
-  .bar-button:active,
-  .color-button:active {
+  .bar-button:enabled:active,
+  .color-button:enabled:active {
     transform: translate(1px, 1px);
   }
   .bar-button.hidden {

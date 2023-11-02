@@ -209,6 +209,8 @@ class BaseAnnoObject {
 
   move(deltaX = 0, deltaY = 0) {
     if (!this.viewport) throw new Error("not found viewport");
+    if (!this.canManage) return;
+
     const { width, height, scale } = this.viewport;
     const annoData = {
       addedAt: new Date().toISOString(),
@@ -240,6 +242,8 @@ class BaseAnnoObject {
 
   resize(deltaX, deltaY, corner, useAspectRatio = false) {
     if (!this.viewport) throw new Error("not found viewport");
+    if (!this.canManage) return;
+
     const { width, height } = this.viewport;
     const { rect, bounds } = this.startPosition;
     const annoData = {
@@ -439,6 +443,7 @@ class BaseAnnoObject {
 
   set permissions(value) {
     this.#permissions = value;
+    if (this.commentEl) this.commentEl.permissions = this.#permissions;
   }
   get permissions() {
     return this.#permissions;

@@ -177,6 +177,7 @@ class FoliaPage extends HTMLElement {
     const floatingBar = document.createElement("folia-floating-bar");
     this.floatingBar = this.shadowRoot.appendChild(floatingBar);
     this.floatingBar.eventBus = this.#eventBus;
+    this.floatingBar.permissions = this.#permissions;
     this.floatingBar.onChange = (propertyName, propertyValue) => {
       for (const object of this.#multipleSelection) {
         object.changeManually({
@@ -371,6 +372,7 @@ class FoliaPage extends HTMLElement {
     for (const object of this.#objects) {
       object.permissions = data.permissions;
     }
+    if (this.floatingBar) this.floatingBar.permissions = this.#permissions;
   }
 
   pageShouldRender = false;
@@ -614,6 +616,8 @@ class FoliaPage extends HTMLElement {
 
   // ---------- custom outside methods ----------
   showFloatingBar(visible = false) {
+    this.floatingBar.permissions = this.#permissions;
+
     const objects = Array.from(this.#multipleSelection)
       .filter((object) => {
         return !(object instanceof CommentObject);

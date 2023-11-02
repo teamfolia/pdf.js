@@ -20,7 +20,6 @@ class BaseBuilder {
   }
 
   prepareAnnotations2save() {
-    // console.log("base builder.prepareAnnotations2save");
     return [];
   }
 
