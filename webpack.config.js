@@ -20,6 +20,11 @@ module.exports = {
         test: /\.worker\.js$/,
         use: { loader: "worker-loader" },
       },
+      {
+        test: /\.(graphql|gql)$/,
+        exclude: /node_modules/,
+        loader: "graphql-tag/loader",
+      },
     ],
   },
   entry: "./web/folia/viewer.js",

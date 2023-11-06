@@ -155,7 +155,7 @@ class FoliaPage extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log("connectedCallback", this.pageNumber);
+    // console.log("connectedCallback", this.pageNumber);
     this.setAttribute("data-role", ROLE_PAGE);
 
     this.viewerContainer = document.getElementById("viewerContainer");
@@ -194,7 +194,7 @@ class FoliaPage extends HTMLElement {
     cancelAnimationFrame(this.AnimationFrameTimer);
     this.floatingBar.remove();
     this.floatingBar = null;
-    console.log("disconnectedCallback", this.pageNumber);
+    // console.log("disconnectedCallback", this.pageNumber);
 
     this.viewerContainer.removeEventListener("mousedown", this.#onMouseDownBinded, { passive: false });
     this.viewerContainer.removeEventListener("mousemove", this.#onMouseMoveBinded, { passive: false });
