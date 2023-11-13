@@ -1,4 +1,4 @@
-import { ANNOTATION_WEIGHT } from "./constants";
+import { ANNOTATION_WEIGHT, FONT_FAMILY, FONT_WEIGHT, RENDERING_ORDER } from "./constants";
 
 export const hexColor2pdf = (hexColor = "#F04E23DC") => {
   const hex = hexColor.toLowerCase().split("").slice(1).join("");
@@ -264,4 +264,159 @@ export const getRelativePoint = (e) => {
   //   x: Math.round(e.pageX - offset.left),
   //   y: Math.round(e.pageY - offset.top),
   // };
+};
+
+export const setRectNewPosition = (rect, viewport, position, _lineWidth = 0) => {
+  const lineWidth = _lineWidth * viewport.scale;
+  const viewportRect = fromPdfRect(rect, viewport.width, viewport.height);
+  return toPdfRect(
+    [
+      Math.max(
+        lineWidth / 2,
+        Math.min(position.x - viewportRect[2] / 2, viewport.width - viewportRect[2] - lineWidth / 2)
+      ),
+      Math.max(
+        lineWidth / 2,
+        Math.min(position.y - viewportRect[3] / 2, viewport.height - viewportRect[3] - lineWidth / 2)
+      ),
+      viewportRect[2],
+      viewportRect[3],
+    ],
+    viewport.width,
+    viewport.height
+  );
+};
+
+export const setArrowNewPosition = (_sourcePoint, _targetPoint, viewport, position, _lineWidth = 0) => {
+  const sourcePoint = fromPdfPoint(_sourcePoint, viewport.width, viewport.height);
+  const targetPoint = fromPdfPoint(_targetPoint, viewport.width, viewport.height);
+  const lineWidth = _lineWidth * viewport.scale;
+
+  const arrowRect = [
+    Math.min(sourcePoint.x, targetPoint.x),
+    Math.min(sourcePoint.y, targetPoint.y),
+    Math.max(sourcePoint.x, targetPoint.x) - Math.min(sourcePoint.x, targetPoint.x),
+    Math.max(sourcePoint.y, targetPoint.y) - Math.min(sourcePoint.y, targetPoint.y),
+  ];
+  const directionX = Math.sign(targetPoint.x - sourcePoint.x);
+  const directionY = Math.sign(targetPoint.y - sourcePoint.y);
+
+  const deltaX = arrowRect[0] - position.x + arrowRect[2] / 2;
+  const deltaY = arrowRect[1] - position.y + arrowRect[3] / 2;
+
+  // prettier-ignore
+  const newArrowRect = [
+    Math.min(
+      Math.max(arrowRect[0] - deltaX, lineWidth / 2),
+      viewport.width - arrowRect[2] - lineWidth / 2
+    ),
+    Math.min(
+      Math.max(arrowRect[1] - deltaY, lineWidth / 2),
+      viewport.height - arrowRect[3] - lineWidth / 2
+    ),
+    arrowRect[2],
+    arrowRect[3],
+  ];
+
+  return {
+    targetPoint: toPdfPoint(
+      {
+        x: directionX === -1 ? newArrowRect[0] : newArrowRect[0] + newArrowRect[2],
+        y: directionY === -1 ? newArrowRect[1] : newArrowRect[1] + newArrowRect[3],
+      },
+      viewport.width,
+      viewport.height
+    ),
+    sourcePoint: toPdfPoint(
+      {
+        x: directionX === -1 ? newArrowRect[0] + newArrowRect[2] : newArrowRect[0],
+        y: directionY === -1 ? newArrowRect[1] + newArrowRect[3] : newArrowRect[1],
+      },
+      viewport.width,
+      viewport.height
+    ),
+  };
+};
+
+export const setPathsNewPosition = (_paths, viewport, position, _lineWidth = 0) => {
+  const lineWidth = _lineWidth * viewport.scale;
+  const { left, top, right, bottom } = _paths.flat().reduce(
+    (acc, path, index, arr) => {
+      if (index % 2 !== 0) {
+        const point = [arr[index - 1], arr[index]];
+        const viewportPoint = fromPdfPoint(point, viewport.width, viewport.height);
+        return {
+          left: Math.min(acc.left, viewportPoint.x),
+          top: Math.min(acc.top, viewportPoint.y),
+          right: Math.max(acc.right, viewportPoint.x),
+          bottom: Math.max(acc.bottom, viewportPoint.y),
+        };
+      } else {
+        return acc;
+      }
+    },
+    { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
+  );
+
+  const posLeft = Math.max(
+    lineWidth / 2,
+    Math.min(position.x - (right - left) / 2, viewport.width - (right - left) - lineWidth / 2)
+  );
+  const posTop = Math.max(
+    lineWidth / 2,
+    Math.min(position.y - (bottom - top) / 2, viewport.height - (bottom - top) - lineWidth / 2)
+  );
+
+  const paths = _paths.map((path) => {
+    const viewportPath = fromPdfPath(path, viewport.width, viewport.height).map((point) => {
+      return {
+        x: point.x - left + posLeft,
+        y: point.y - top + posTop,
+      };
+    });
+    return toPdfPath(viewportPath, viewport.width, viewport.height);
+  });
+  return paths;
+};
+
+export const setTextRectNewPosition = (viewport, text, _fontFamily, _fontSize, _fontWeight) => {
+  const fontFamily = FONT_FAMILY[_fontFamily];
+  const fontSize = _fontSize * viewport.scale;
+  const fontWeight = FONT_WEIGHT[_fontWeight];
+
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext("2d");
+  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+  const textRect = ctx.measureText(text);
+
+  return toPdfRect(
+    [0, 0, textRect.width, textRect.fontBoundingBoxAscent + textRect.fontBoundingBoxDescent],
+    viewport.width,
+    viewport.height
+  );
+};
+
+export const sortObjects = (obj1, obj2) => {
+  // console.log(obj1.addedAt, obj2.addedAt);
+  const date1 = new Date(obj1.addedAt);
+  const date2 = new Date(obj2.addedAt);
+  return date1.getTime() - date2.getTime();
+
+  // if (obj1.__typename === obj2.__typename) {
+  // } else {
+  //   const index1 = RENDERING_ORDER.findIndex((objType) => objType === obj1.__typename);
+  //   const index2 = RENDERING_ORDER.findIndex((objType) => objType === obj2.__typename);
+  //   return index2 - index1;
+  // }
+};
+
+export const areArraysSimilar = (arr1, arr2) => {
+  if (!Array.isArray(arr1)) return false;
+  if (!Array.isArray(arr2)) return false;
+  if (arr1.length !== arr2.length) return false;
+  return arr1.every((arr1item, arr1index) => {
+    return arr2[arr1index] === arr1item;
+  });
 };

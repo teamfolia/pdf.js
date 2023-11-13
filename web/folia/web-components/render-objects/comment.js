@@ -1,7 +1,7 @@
 import { v4 as uuid } from "uuid";
 import { fromPdfPoint, getInitials, toPdfPoint } from "../../folia-util";
 import BaseAnnoObject from "./base";
-import { ANNOTATION_TYPES, PERMISSIONS, ROLE_OBJECT } from "../../constants";
+import { ANNOTATION_TYPES, PERMISSIONS, ROLE_OBJECT, USER_ROLE } from "../../constants";
 
 import FoliaComment from "../folia-comment";
 import FoliaReply from "../folia-reply";
@@ -35,7 +35,10 @@ class CommentObject extends BaseAnnoObject {
       this.anchorPoint = anchorPoint;
       this.replies = replies;
 
-      if (this.commentEl) this.commentEl.replies = this.replies;
+      if (this.commentEl) {
+        this.setAllRepliesAsRead();
+        this.commentEl.replies = this.replies;
+      }
     }
   }
 
@@ -73,7 +76,7 @@ class CommentObject extends BaseAnnoObject {
     }
 
     const hasError = Boolean(this.error) || this.replies.some((reply) => Boolean(reply.error));
-    const isUnread = this.replies.some((reply) => !reply.isRead);
+    const isUnread = this.userRole !== USER_ROLE.PUBLIC_VIEWER && this.replies.some((reply) => !reply.isRead);
     this.annotationUI.classList.toggle("error", hasError);
     this.annotationUI.classList.toggle("unread", isUnread);
     if (!this.observer) {
@@ -126,6 +129,7 @@ class CommentObject extends BaseAnnoObject {
     );
 
     this.changeManually(annoData, this.startPosition.objectData);
+    this.commentEl?.adjustPosition();
   }
 
   resize(deltaX, deltaY, corner, useAspectRatio = false) {}
@@ -152,12 +156,13 @@ class CommentObject extends BaseAnnoObject {
 
         this.commentEl.currentUserEmail = this.userEmail;
         this.commentEl.collaboratorEmail = this.collaboratorEmail;
-        this.commentEl.replies = this.replies;
         this.commentEl.permissions = this.permissions;
+        this.commentEl.userRole = this.userRole;
+        this.commentEl.replies = this.replies;
         this.annotationUI.appendChild(this.commentEl);
         //
       } else if (stepanRemoved) {
-        console.log("remove folia-comment");
+        // console.log("remove folia-comment");
         if (this.commentEl) {
           this.commentEl.removeEventListener("submit-replay", this.submitReplyBinded);
           this.commentEl.removeEventListener("close", this.closeBinded);
@@ -210,7 +215,7 @@ class CommentObject extends BaseAnnoObject {
   remove(e) {
     const { commentId, replyId } = e.detail;
     if (commentId) {
-      console.log("remove comment", { commentId, replyId }, this.replies);
+      // console.log("remove comment", { commentId, replyId }, this.replies);
       this.changeManually({ deletedAt: new Date().toISOString() });
       this.eventBus.dispatch(
         "objects-were-updated",
@@ -218,23 +223,16 @@ class CommentObject extends BaseAnnoObject {
           return { ...reply, deletedAt: new Date().toISOString() };
         })
       );
-      // this.foliaPageLayer.deleteSelectedAnnotations(this);
     } else if (replyId) {
       const reply = this.replies.find((r) => r.id === replyId);
       reply.deletedAt = new Date().toISOString();
-      console.log("remove reply", { commentId, replyId }, reply);
       this.eventBus.dispatch("objects-were-updated", [reply]);
-      // this.foliaPageLayer.commitObjectChanges({ deletedAt, id: replyId });
-      // this.annotationRawData.replies = this.annotationRawData.replies.filter((reply) => {
-      //   return reply.id !== replyId;
-      // });
     }
   }
 
   changeReadStatus(e) {
     const { replyId, isRead } = e.detail;
     const commentId = this.id;
-    // console.log("annot::send to viewer", replyId, isRead);
     const addedAt = new Date().toISOString();
     this.eventBus.dispatch("set-replies-read-status", [{ commentId, replyId, isRead, addedAt }]);
     const reply = this.annotationRawData.replies.find((reply) => reply.id === replyId);
@@ -242,10 +240,12 @@ class CommentObject extends BaseAnnoObject {
   }
 
   setAllRepliesAsRead() {
+    if (this.userRole === USER_ROLE.PUBLIC_VIEWER) return;
     this.changeAllReadStatuses(true);
   }
 
   setAllRepliesAsUnread() {
+    if (this.userRole === USER_ROLE.PUBLIC_VIEWER) return;
     this.changeAllReadStatuses(false);
     if (this.commentEl) {
       this.commentEl.replies = this.replies;
@@ -263,7 +263,6 @@ class CommentObject extends BaseAnnoObject {
         isRead: isRead,
         addedAt: now,
       }));
-    // console.log("changeAllReadStatuses as", isRead, statuses);
 
     if (statuses.length > 0) {
       this.eventBus.dispatch("set-replies-read-status", statuses);
@@ -274,11 +273,16 @@ class CommentObject extends BaseAnnoObject {
         }
       });
     }
+    // console.log("changeAllReadStatuses as", isRead, this.replies);
   }
 
   get canManage() {
     const isCommentOwner = this.userEmail === this.collaboratorEmail;
     return isCommentOwner;
+  }
+
+  get isEditing() {
+    return !!this.commentEl;
   }
 }
 

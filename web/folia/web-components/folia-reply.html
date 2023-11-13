@@ -36,7 +36,7 @@
 <!-- <textarea rows="1" class="folia-reply-text-area" readonly></textarea> -->
 <div class="folia-reply-editor"></div>
 
-<span class="folia-reply-edited-label">Edited by 1 day ago</span>
+<span class="folia-reply-edited-label"></span>
 
 <div class="folia-reply-message-buttons hidden">
   <button class="folia-reply-done" disabled>✔︎</button>
@@ -83,6 +83,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 8px;
+    user-select: none;
   }
   .folia-reply-title-icon {
     position: relative;
@@ -289,6 +290,13 @@
     text-align: right;
     color: gray;
     text-transform: lowercase;
+
+    color: #64748b;
+    font-size: 12px;
+    font-family: Inter, sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
   }
   .folia-reply-edited-label.shown {
     display: inline-block;

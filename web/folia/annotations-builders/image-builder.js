@@ -76,7 +76,7 @@ class ImageBuilder extends BaseBuilder {
         rect: toPdfRect([left, top, width, height], this.viewport.width, this.viewport.height),
         filename: this.asset.name,
         content: base64content.split(",")[1],
-        newbie: true,
+        // newbie: true,
       };
       this.foliaPageLayer.eventBus.dispatch("stop-drawing");
     });

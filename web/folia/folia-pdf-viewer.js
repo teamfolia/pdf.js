@@ -55,94 +55,129 @@ function keyDownHandler(e) {
   if (target.nodeName === "FOLIA-CREATE-COMMENT") return;
   if (target.nodeName === "DIV" && target.hasAttribute("contenteditable")) return;
 
-  switch (key) {
-    case "Backspace": {
-      e.preventDefault();
-      e.stopPropagation();
-      this.eventBus.dispatch("delete-selected-objects");
-      break;
-    }
-    case "-": {
-      if (ctrlKey || metaKey) {
+  if (ctrlKey || metaKey) {
+    switch (key) {
+      case "-": {
         e.preventDefault();
         e.stopPropagation();
         this.zoomOut();
+        break;
       }
-      break;
-    }
-    case "=": {
-      if (ctrlKey || metaKey) {
+      case "=": {
         e.preventDefault();
         e.stopPropagation();
         this.zoomIn();
+        break;
       }
-      break;
-    }
-    case "0": {
-      if (ctrlKey || metaKey) {
+      case "0": {
         e.preventDefault();
         e.stopPropagation();
         this.zoomReset();
+        break;
       }
-      break;
-    }
-    case "Z":
-    case "z": {
-      if (ctrlKey || metaKey) {
+      case "Z":
+      case "z": {
         e.preventDefault();
         e.stopPropagation();
         shiftKey ? this.redo() : this.undo();
+        break;
       }
-      break;
-    }
-    case "D":
-    case "d": {
-      if (ctrlKey || metaKey) {
+      case "D":
+      case "d": {
         e.preventDefault();
         e.stopPropagation();
         this.eventBus.dispatch("duplicate-selected-objects");
+        break;
       }
-      break;
-    }
-    case "f":
-    case "F": {
-      if (ctrlKey || metaKey) {
+      case "f":
+      case "F": {
         e.preventDefault();
         e.stopPropagation();
-        // console.log("pressed Ctrl + F");
         this.eventBus.dispatch("open-search-bar");
+        break;
       }
-      break;
-    }
-    case "c":
-    case "C": {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("pressed Ctrl + C");
-      this.copySelectedAnnotations2Clipboard();
-      break;
-    }
-    case "x":
-    case "X": {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("pressed Ctrl + X");
-      this.copySelectedAnnotations2Clipboard();
-      this.deleteSelectedObjects();
-      break;
-    }
-    case "A":
-    case "a": {
-      if (ctrlKey || metaKey) {
+      case "c":
+      case "C": {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("pressed Ctrl + C");
+        this.copyCutSelectedAnnotations2Clipboard();
+        break;
+      }
+      case "x":
+      case "X": {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("pressed Ctrl + X");
+        this.copyCutSelectedAnnotations2Clipboard(true);
+        break;
+      }
+      case "A":
+      case "a": {
         e.preventDefault();
         e.stopPropagation();
         this.eventBus.dispatch("select-all-objects");
+        break;
       }
-      break;
+      default:
+        break;
     }
-
-    default:
-      break;
+  } else {
+    switch (key) {
+      case "Backspace": {
+        e.preventDefault();
+        e.stopPropagation();
+        this.eventBus.dispatch("delete-selected-objects");
+        break;
+      }
+      case "A":
+      case "a": {
+        this.eventBus.dispatch("select-tool", "select");
+        break;
+      }
+      case "P":
+      case "p": {
+        this.eventBus.dispatch("select-tool", "pencil");
+        break;
+      }
+      case "H":
+      case "h": {
+        this.eventBus.dispatch("select-tool", "highlight");
+        break;
+      }
+      case "T":
+      case "t": {
+        this.eventBus.dispatch("select-tool", "text-box");
+        break;
+      }
+      case "U":
+      case "u": {
+        this.eventBus.dispatch("select-tool", "shape");
+        break;
+      }
+      case "S":
+      case "s": {
+        this.eventBus.dispatch("select-tool", "stamp");
+        break;
+      }
+      case "I":
+      case "i": {
+        this.eventBus.dispatch("select-tool", "image");
+        break;
+      }
+      case "C":
+      case "c": {
+        this.eventBus.dispatch("select-tool", "comment");
+        break;
+      }
+      case "E":
+      case "e": {
+        this.eventBus.dispatch("select-tool", "eraser");
+        break;
+      }
+      default:
+        break;
+    }
   }
 }
 
@@ -245,9 +280,6 @@ export class FoliaPDFViewer {
   }
 
   async init(uiConfig, dataProxy) {
-    // window.pdfjsWorker = await import("pdfjs-worker");
-    // console.log("init", window.pdfjsWorker);
-
     this.dataProxy = dataProxy;
     this.uiConfig = uiConfig;
 
@@ -723,83 +755,80 @@ export class FoliaPDFViewer {
     this.eventBus.on("foliapagelayerrendered", evenListener);
     this.pdfViewer.currentPageNumber = page;
   }
-  // resetObjectsSeletion() {
-  //   this.pdfViewer._pages.map((page) => {
-  //     if (!page.foliaPageLayer) return;
-  //     page.foliaPageLayer.resetObjectsSeletion();
-  //   });
-  // }
-  // duplicateSelectedAnnotations() {
-  //   this.pdfViewer._pages.map((page) => {
-  //     if (!page.foliaPageLayer) return;
-  //     page.foliaPageLayer.duplicateSelectedAnnotations();
-  //   });
-  // }
-  // selectAllHoveredPageAnnotations() {
-  //   this.pdfViewer._pages.map((page) => {
-  //     if (!page.foliaPageLayer) return;
-  //     if (page.foliaPageLayer.pageIsActive) page.foliaPageLayer.selectAll();
-  //   });
-  // }
 
-  copySelectedAnnotations2Clipboard() {
+  copyCutSelectedAnnotations2Clipboard(deleteSelected = false) {
     const selectedAnnotations = this.pdfViewer._pages
       .map((page) => {
-        if (!page.foliaPageLayer) return [];
-        return page.foliaPageLayer.multipleSelect.getObjects();
+        if (!page.foliaPageLayer || !page.foliaPageLayer.canManage) return [];
+        return page.foliaPageLayer.selectedObjects;
       })
       .flat();
 
-    const selectedAnno = selectedAnnotations[selectedAnnotations.length - 1];
-    if (!selectedAnno) return;
+    const allowed2copy = [
+      ANNOTATION_TYPES.ARROW,
+      ANNOTATION_TYPES.CIRCLE,
+      ANNOTATION_TYPES.IMAGE,
+      ANNOTATION_TYPES.INK,
+      ANNOTATION_TYPES.SQUARE,
+      ANNOTATION_TYPES.TEXT_BOX,
+    ];
+    const clipboardData = [];
+    const type = "text/plain";
 
-    const canCopy =
-      selectedAnno instanceof FoliaInkAnnotation ||
-      selectedAnno instanceof FoliaArrowAnnotation ||
-      selectedAnno instanceof FoliaCircleAnnotation ||
-      selectedAnno instanceof FoliaSquareAnnotation ||
-      selectedAnno instanceof FoliaTextBoxAnnotation ||
-      selectedAnno instanceof FoliaImageAnnotation;
+    for (const annoObject of selectedAnnotations) {
+      if (!allowed2copy.includes(annoObject.__typename)) {
+        this.eventBus.dispatch("toast", {
+          type: "WARN_TOAST",
+          title: `${annoObject.__typename} can not be ${deleteSelected ? "cutted" : "copied"}.`,
+        });
+        clipboardData.length = 0;
+        break;
+      }
 
-    if (canCopy) {
-      const type = "text/plain";
-      const annoData = selectedAnno.getRawData();
+      const annoData = annoObject.toObjectData();
       annoData.id = "";
       annoData.collaboratorEmail = "";
       annoData.addedAt = "";
       annoData.page = -1;
-      const clipboardData = [
+
+      clipboardData.push(
         new ClipboardItem({
           [type]: new Blob([JSON.stringify(annoData)], { type }),
-        }),
-      ];
+        })
+      );
+    }
 
-      // console.log("copyFolia", annoData);
-      navigator.permissions.query({ name: "clipboard-write" }).then((result) => {
+    if (!clipboardData.length) return;
+
+    return navigator.permissions
+      .query({ name: "clipboard-write" })
+      .then((result) => {
         if (result.state === "granted" || result.state === "prompt") {
-          return (
-            navigator.clipboard
-              .write(clipboardData)
-              // .then(() => console.log("selected annotation has been copied"))
-              .catch(console.error)
-          );
+          return navigator.clipboard.write(clipboardData).then(() => {
+            if (deleteSelected) {
+              this.eventBus.dispatch("delete-selected-objects");
+            } else {
+              this.eventBus.dispatch("reset-objects-selection");
+            }
+            this.eventBus.dispatch("toast", {
+              type: "SUCCESS_TOAST",
+              title: `Selected annotation has been ${deleteSelected ? "cut" : "copied"}`,
+            });
+          });
         } else {
           return Promise.reject("clipboard is not accessible");
         }
+      })
+      .catch((error) => {
+        console.warn(error, this.eventBus);
+        this.eventBus.dispatch("toast", {
+          type: "WARN_TOAST",
+          message: error.message,
+        });
       });
-    } else {
-      console.log("This data is not supported to copy into clipboard");
-    }
   }
 
   pasteIntoFolia(e) {
-    if (
-      e.target.hasAttribute("contenteditable") ||
-      e.target.nodeName === "INPUT" ||
-      e.target.nodeName === "TEXTAREA"
-    )
-      return;
-
     navigator.clipboard
       .read()
       .then((clipboardItems) => {
@@ -820,9 +849,11 @@ export class FoliaPDFViewer {
               annoData = JSON.parse(text);
             } catch (e) {}
             if (annoData.hasOwnProperty("__typename")) {
-              this.pasteAsAnnotationIntoHoveredPage(annoData.__typename, annoData);
+              this.eventBus.dispatch("paste-from-clipboard", [annoData]);
             } else {
-              this.pasteAsAnnotationIntoHoveredPage(ANNOTATION_TYPES.TEXT_BOX, { text: annoData });
+              this.eventBus.dispatch("paste-from-clipboard", [
+                { __typename: ANNOTATION_TYPES.TEXT_BOX, text },
+              ]);
             }
           });
         } else if (blob.type === "image/png") {
@@ -830,12 +861,15 @@ export class FoliaPDFViewer {
           fr.onload = () => {
             const image = new Image();
             image.onload = () => {
-              this.pasteAsAnnotationIntoHoveredPage(ANNOTATION_TYPES.IMAGE, {
-                filename: "from clipboard",
-                image: fr.result,
-                imageWidth: image.naturalWidth,
-                imageHeight: image.naturalHeight,
-              });
+              this.eventBus.dispatch("paste-from-clipboard", [
+                {
+                  __typename: ANNOTATION_TYPES.IMAGE,
+                  filename: "from clipboard",
+                  image: fr.result,
+                  imageWidth: image.naturalWidth,
+                  imageHeight: image.naturalHeight,
+                },
+              ]);
             };
             image.src = fr.result;
           };
@@ -843,16 +877,6 @@ export class FoliaPDFViewer {
         }
       })
       .catch(console.error);
-  }
-
-  pasteAsAnnotationIntoHoveredPage(annoType, annotationData) {
-    // console.log(document.activeElement.tagName);
-    if (["FOLIA-CREATE-COMMENT", "FOLIA-COMMENT"].includes(document.activeElement.tagName)) return;
-
-    this.pdfViewer._pages.map((page) => {
-      if (!page.foliaPageLayer) return;
-      page.foliaPageLayer.pasteAsAnnotation(annoType, annotationData);
-    });
   }
 
   search(query) {

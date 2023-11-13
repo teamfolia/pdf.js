@@ -268,9 +268,17 @@ body {
   background-size: contain;
 }
 
+@keyframes showing {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .folia-create-comment {
   position: absolute;
-  left: 35px;
   top: -15px;
 
   display: flex;
@@ -282,6 +290,17 @@ body {
   box-shadow: 0px 8px 20px 0px rgba(0, 0, 0, 0.1);
   cursor: default;
   z-index: 2;
+  animation: showing 0.2s ease-in-out;
+}
+
+.folia-create-comment.invisible {
+  opacity: 0;
+}
+.folia-create-comment.right-side {
+  left: 40px;
+}
+.folia-create-comment.left-side {
+  right: 40px;
 }
 
 .comment-pointer {

@@ -9,6 +9,8 @@ class BaseBuilder {
 
   static initialPreset = {};
 
+  resetDrawingBinded = this.resetDrawing.bind(this);
+
   constructor(foliaPageLayer, BuildingClass, undoRedoManager) {
     this.foliaPageLayer = foliaPageLayer;
     this.viewport = foliaPageLayer.viewport.clone({ dontFlip: true });
@@ -17,6 +19,12 @@ class BaseBuilder {
     this.undoRedoManager = undoRedoManager;
     this.resume();
     this.undoRedoManager?.updateUI();
+
+    this.foliaPageLayer.eventBus.on("reset-drawing", this.resetDrawingBinded);
+  }
+
+  resetDrawing(callerPage) {
+    console.log("reset-drawing base", { callerPage, currentPage: this.foliaPageLayer.pageNumber });
   }
 
   prepareAnnotations2save() {
@@ -24,6 +32,7 @@ class BaseBuilder {
   }
 
   stop() {
+    this.foliaPageLayer.eventBus.off("reset-drawing", this.resetDrawingBinded);
     // console.log("base builder.stop");
     if (this.removeOnClickListener) this.removeOnClickListener();
     const collaboratorEmail = this.foliaPageLayer.userEmail;
@@ -41,7 +50,7 @@ class BaseBuilder {
         addedAt,
         createdAt: addedAt,
         deleted: false,
-        newbie: true,
+        // newbie: true,
         ...data,
       };
       const makeSelected = [ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.TEXT_BOX].includes(
@@ -52,7 +61,7 @@ class BaseBuilder {
       const annoObj = this.foliaPageLayer.addAnnotationObject(annotation, makeSelected);
       const annoData = annoObj?.toObjectData() || annotation;
       if (shouldBeCommitted) {
-        this.foliaPageLayer.eventBus.dispatch("objects-were-updated", [annoData]);
+        this.foliaPageLayer.eventBus.dispatch("objects-were-updated", [{ ...annoData, newbie: true }]);
       }
       this.foliaPageLayer.eventBus.dispatch("undo-redo-collect", { action: "add", currentState: annoData });
     }

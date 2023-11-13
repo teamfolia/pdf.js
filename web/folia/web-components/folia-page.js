@@ -1,8 +1,11 @@
 import { v4 as uuid } from "uuid";
 import html from "./folia-page.html";
 import FoliaFloatingBar from "./folia-floating-bar";
+import { COLLABORATOR_PERMISSIONS } from "../../../../folia_2/src/core/constants";
 import {
   ANNOTATION_TYPES,
+  FONT_FAMILY,
+  FONT_WEIGHT,
   ROLE_ARROW_SOURCE,
   ROLE_ARROW_TARGET,
   ROLE_CORNER_LB,
@@ -13,6 +16,7 @@ import {
   ROLE_PAGE,
   ROLE_TEXTBOX_LEFT_TOP,
   ROLE_TEXTBOX_RIGHT_TOP,
+  TEXT_ALIGNMENT,
 } from "../constants";
 
 import InkObject from "./render-objects/ink";
@@ -23,7 +27,14 @@ import ImageObject from "./render-objects/image";
 import TextBoxObject from "./render-objects/text-box";
 import CommentObject from "./render-objects/comment";
 import HighlightObject from "./render-objects/highlight";
-import { UndoRedo } from "../undo-redo";
+import {
+  areArraysSimilar,
+  setArrowNewPosition,
+  setPathsNewPosition,
+  setRectNewPosition,
+  setTextRectNewPosition,
+  sortObjects,
+} from "../folia-util";
 
 class EventBusRequest {
   constructor(eventBus) {
@@ -82,6 +93,18 @@ class MultipleObjectsSelection extends Set {
     return super.size;
   }
 
+  get first() {
+    return Array.from(this).at(0);
+  }
+
+  get last() {
+    return Array.from(this).at(-1);
+  }
+
+  toArray() {
+    return Array.from(this);
+  }
+
   remainOnly(object) {
     for (const obj of this) {
       if (obj === object) continue;
@@ -113,6 +136,7 @@ class FoliaPage extends HTMLElement {
   #permissions;
   #userEmail;
   #userName;
+  #userRole;
   #viewport;
   #eventBus;
   #pageNumber;
@@ -131,6 +155,8 @@ class FoliaPage extends HTMLElement {
   #unselectObjectBinded = this.unselectObject.bind(this);
   #selectAllObjectsBinded = this.selectAllObjects.bind(this);
   #resetObjectsSelectionBinded = this.resetObjectsSelection.bind(this);
+  #pasteAnnotationFromClipboardBinded = this.pasteAnnotationFromClipboard.bind(this);
+  #showFloatingBarBinded = this.showFloatingBar.bind(this);
 
   constructor() {
     super();
@@ -173,6 +199,8 @@ class FoliaPage extends HTMLElement {
     this.#eventBus.on("duplicate-selected-objects", this.#duplicateSelectedObjectsBinded);
     this.#eventBus.on("select-all-objects", this.#selectAllObjectsBinded);
     this.#eventBus.on("reset-objects-selection", this.#resetObjectsSelectionBinded);
+    this.#eventBus.on("paste-from-clipboard", this.#pasteAnnotationFromClipboardBinded);
+    this.#eventBus.on("show-floating-bar", this.#showFloatingBarBinded);
 
     const floatingBar = document.createElement("folia-floating-bar");
     this.floatingBar = this.shadowRoot.appendChild(floatingBar);
@@ -209,6 +237,8 @@ class FoliaPage extends HTMLElement {
       this.#eventBus.off("duplicate-selected-objects", this.#duplicateSelectedObjectsBinded);
       this.#eventBus.off("select-all-objects", this.#selectAllObjectsBinded);
       this.#eventBus.off("reset-objects-selection", this.#resetObjectsSelectionBinded);
+      this.#eventBus.off("paste-from-clipboard", this.#pasteAnnotationFromClipboardBinded);
+      this.#eventBus.off("show-floating-bar", this.#showFloatingBarBinded);
     }
   }
 
@@ -244,10 +274,15 @@ class FoliaPage extends HTMLElement {
     if (!this.pageShouldRender) return;
     this.#canvas.width = this.#canvas.width;
     const ctx = this.#canvas.getContext("2d");
-    for (const annoObj of this.#objects) {
+    const pdfCanvas = this.parentNode.querySelector('div.canvasWrapper>canvas[role="presentation"]');
+
+    const lastSelectedObject = this.#multipleSelection.first;
+    const annoObjects = this.#objects.slice().sort(sortObjects);
+    if (lastSelectedObject) annoObjects.push(lastSelectedObject);
+
+    for (const annoObj of annoObjects) {
       ctx.save();
       if (annoObj instanceof HighlightObject) {
-        const pdfCanvas = this.parentNode.querySelector('div.canvasWrapper>canvas[role="presentation"]');
         annoObj.renderTo(this.#viewport, ctx, this.#ui, pdfCanvas);
       } else {
         annoObj.renderTo(this.#viewport, ctx, this.#ui);
@@ -323,6 +358,15 @@ class FoliaPage extends HTMLElement {
   get objects() {
     return this.#objects;
   }
+  get selectedObjects() {
+    return Array.from(this.#multipleSelection);
+  }
+  get canManage() {
+    return (
+      this.#permissions.includes(COLLABORATOR_PERMISSIONS.MANAGE_ANNOTATION) ||
+      this.#permissions.includes(COLLABORATOR_PERMISSIONS.MANAGE_OWN_COMMENT)
+    );
+  }
   get annotationBuilderClass() {
     return null;
   }
@@ -345,9 +389,9 @@ class FoliaPage extends HTMLElement {
         this.#permissions = data.permissions;
         this.#userEmail = data.userEmail;
         this.#userName = data.userName;
+        this.#userRole = data.userRole;
         for (const dataObject of data.objects) {
           let annoObj = this.#objects.find((obj) => obj.id === dataObject.id);
-
           if (annoObj) {
             annoObj.update(dataObject);
           } else {
@@ -356,6 +400,7 @@ class FoliaPage extends HTMLElement {
             annoObj = new AnnoObjClass(dataObject, this.#viewport, this.#eventBus, this.#pdfCanvas);
             annoObj.userEmail = this.#userEmail;
             annoObj.userName = this.#userName;
+            annoObj.userRole = this.#userRole;
             annoObj.permissions = this.#permissions;
             this.#objects.push(annoObj);
           }
@@ -415,38 +460,6 @@ class FoliaPage extends HTMLElement {
       .forEach((object) => this.#multipleSelection.add(object));
     this.showFloatingBar(true);
   }
-  findObjectByCoordinates(point) {
-    if (!point) throw new Error("required point");
-    const { x, y } = point;
-    return this.#objects
-      .filter((obj) => !obj.isDeleted)
-      .find((obj) => {
-        const { left, top, right, bottom } = obj.getBoundingRect();
-        return x >= left && x <= right && y >= top && y <= bottom;
-      });
-  }
-  findObjectsByArea(startPos, endPos) {
-    if (!startPos) throw new Error("required startPos");
-    if (!endPos) throw new Error("required endPos");
-
-    const selectionArea = {
-      left: Math.min(startPos.x, endPos.x),
-      top: Math.min(startPos.y, endPos.y),
-      right: Math.max(startPos.x, endPos.x),
-      bottom: Math.max(startPos.y, endPos.y),
-    };
-    this.selectionArea = selectionArea;
-
-    // prettier-ignore
-    return this.#objects.filter((object) => {
-      if (object instanceof CommentObject) return false;
-      if (object.isDeleted) return false;
-      const { left, top, right, bottom } = object.getBoundingRect();
-      const x_overlap = Math.max(0, Math.min(selectionArea.right, right) - Math.max(selectionArea.left, left));
-      const y_overlap = Math.max(0, Math.min(selectionArea.bottom, bottom) - Math.max(selectionArea.top, top));
-      return Boolean(x_overlap * y_overlap);
-    });
-  }
   addAnnotationObject(dataObject, makeSelected = false) {
     const AnnoObjClass = FoliaPage.AnnoClasses[dataObject.__typename];
     if (!AnnoObjClass) {
@@ -496,6 +509,134 @@ class FoliaPage extends HTMLElement {
     }
     this.resetObjectsSelection();
   }
+  pasteAnnotationFromClipboard(data) {
+    if (!this.pageIsActive || !this.canManage) return;
+    const isEditing = this.#multipleSelection.toArray().some((object) => object.isEditing);
+    if (isEditing) return console.log("-->>", isEditing);
+
+    this.resetObjectsSelection();
+
+    if (!Array.isArray(data)) return;
+    for (let annoData of data) {
+      switch (annoData.__typename) {
+        case ANNOTATION_TYPES.ARROW: {
+          const { sourcePoint, targetPoint } = setArrowNewPosition(
+            annoData.sourcePoint,
+            annoData.targetPoint,
+            this.viewport,
+            this.freeMousePoint,
+            annoData.lineWidth
+          );
+          annoData.sourcePoint = sourcePoint;
+          annoData.targetPoint = targetPoint;
+          break;
+        }
+        case ANNOTATION_TYPES.CIRCLE:
+        case ANNOTATION_TYPES.SQUARE:
+        case ANNOTATION_TYPES.IMAGE: {
+          const rect = setRectNewPosition(
+            annoData.rect,
+            this.viewport,
+            this.freeMousePoint,
+            annoData.lineWidth
+          );
+          annoData.rect = rect;
+          break;
+        }
+        case ANNOTATION_TYPES.INK: {
+          const paths = setPathsNewPosition(
+            annoData.paths,
+            this.viewport,
+            this.freeMousePoint,
+            annoData.lineWidth
+          );
+          annoData.paths = paths;
+          break;
+        }
+        case ANNOTATION_TYPES.TEXT_BOX: {
+          const absTextRect = setTextRectNewPosition(this.viewport, annoData.text, "MONOSPACE", 13, "W400");
+
+          annoData.rect = setRectNewPosition(
+            annoData.rect || absTextRect,
+            this.#viewport,
+            this.freeMousePoint
+          );
+          annoData.fontSize ||= 13;
+          annoData.fontWeight ||= "W400";
+          annoData.fontFamily ||= "MONOSPACE";
+          annoData.color ||= "#000000FF";
+          annoData.textAlignment ||= "CENTER";
+          break;
+        }
+        default:
+          continue;
+          break;
+      }
+
+      annoData.id = uuid();
+      annoData.addedAt = new Date().toISOString();
+      annoData.collaboratorEmail = this.#userEmail;
+      annoData.page = this.pageNumber;
+
+      this.addAnnotationObject(annoData);
+      this.eventBus.dispatch("objects-were-updated", [{ ...annoData, newbie: true }]);
+      this.eventBus.dispatch("undo-redo-collect", { action: "add", currentState: annoData });
+    }
+  }
+
+  findObjectsByArea(startPos, endPos) {
+    if (!startPos) throw new Error("required startPos");
+    if (!endPos) throw new Error("required endPos");
+
+    const selectionArea = {
+      left: Math.min(startPos.x, endPos.x),
+      top: Math.min(startPos.y, endPos.y),
+      right: Math.max(startPos.x, endPos.x),
+      bottom: Math.max(startPos.y, endPos.y),
+    };
+    this.selectionArea = selectionArea;
+
+    // prettier-ignore
+    return this.#objects.filter((object) => {
+      if (object instanceof CommentObject) return false;
+      if (object.isDeleted) return false;
+      const { left, top, right, bottom } = object.getBoundingRect();
+      const x_overlap = Math.max(0, Math.min(selectionArea.right, right) - Math.max(selectionArea.left, left));
+      const y_overlap = Math.max(0, Math.min(selectionArea.bottom, bottom) - Math.max(selectionArea.top, top));
+      return Boolean(x_overlap * y_overlap);
+    });
+  }
+
+  overlappingObjects = [];
+  overlappedObjectIndex = 0;
+  findObjectByCoordinates(point) {
+    if (!point) throw new Error("required point");
+    const { x, y } = point;
+    const overlappingObjects = this.#objects
+      .slice()
+      .sort(sortObjects)
+      .reverse()
+      .filter((obj) => !obj.isDeleted)
+      .filter((obj) => {
+        const { left, top, right, bottom } = obj.getBoundingRect();
+        return x >= left && x <= right && y >= top && y <= bottom;
+      });
+
+    if (overlappingObjects.length === 0) {
+      this.overlappedObjectIndex = 0;
+      this.overlappingObjects = overlappingObjects;
+      return null;
+    }
+
+    let objIndex = 0;
+    if (areArraysSimilar(overlappingObjects, this.overlappingObjects)) {
+      objIndex = this.overlappedObjectIndex;
+    } else {
+      this.overlappedObjectIndex = 0;
+    }
+    this.overlappingObjects = overlappingObjects.slice();
+    return overlappingObjects.at(objIndex);
+  }
 
   onMouseDown(e) {
     if (e.target !== this) return;
@@ -503,8 +644,7 @@ class FoliaPage extends HTMLElement {
 
     this.activeObject = this.findObjectByCoordinates(this.freeMousePoint) || e.objectInstance;
     this.activeObjectRole = e.objectRole || e.target.dataset["role"];
-    // console.log("onMouseDown", this.#pageNumber, this.activeObject, this.activeObjectRole);
-    // console.log("onMouseDown", e.target);
+    // console.log("onMouseDown", this.activeObject, e.objectRole);
 
     if (!this.activeObject && this.activeObjectRole === ROLE_PAGE) {
       this.resetObjectsSelection();
@@ -514,9 +654,10 @@ class FoliaPage extends HTMLElement {
     } else if (this.activeObject && this.activeObjectRole) {
       this.startMousePoint = this.normalizeMousePoin(e);
       if (!e.shiftKey && !this.#multipleSelection.has(this.activeObject)) {
-        this.resetObjectsSelection();
-        // this.#eventBus.dispatch("reset-objects-selection");
-        // this.#multipleSelection.clear();
+        const selectedHeap = this.#multipleSelection.toArray();
+        if (!this.overlappingObjects.some((obj) => selectedHeap.some((sObj) => sObj.id === obj.id))) {
+          this.resetObjectsSelection();
+        }
       }
       this.#multipleSelection.size > 0
         ? this.#multipleSelection.forEach((object) => object.rememberStartPosition())
@@ -556,8 +697,6 @@ class FoliaPage extends HTMLElement {
     } else if (this.activeObjectRole === ROLE_PAGE) {
       const foundObjects = this.findObjectsByArea(this.startMousePoint, this.freeMousePoint);
       this.resetObjectsSelection();
-      // this.#multipleSelection.clear();
-      // this.#eventBus.dispatch("reset-objects-selection");
       foundObjects.forEach((object) => this.#multipleSelection.add(object));
       //
     }
@@ -572,6 +711,7 @@ class FoliaPage extends HTMLElement {
       this.showFloatingBar(false);
     } else if (this.activeObject && this.activeObjectRole && this.mouseWasMoved) {
       this.showFloatingBar(true);
+      // this.overlappingObjects = [];
       //
     } else if (this.activeObject && this.activeObjectRole && !this.mouseWasMoved) {
       if (e.shiftKey && !this.#multipleSelection.has(this.activeObject)) {
@@ -582,8 +722,6 @@ class FoliaPage extends HTMLElement {
         this.showFloatingBar(true);
       } else if (!e.shiftKey && !this.#multipleSelection.has(this.activeObject)) {
         this.resetObjectsSelection();
-        // this.#multipleSelection.clear();
-        // this.#eventBus.dispatch("reset-objects-selection");
         this.#multipleSelection.add(this.activeObject);
         this.showFloatingBar(true);
       } else if (!e.shiftKey && this.#multipleSelection.has(this.activeObject)) {
@@ -595,6 +733,10 @@ class FoliaPage extends HTMLElement {
       }
     }
     // console.log("onMouseUp", this.activeObjectRole, this.activeObject);
+    if (!this.mouseWasMoved) {
+      this.overlappedObjectIndex++;
+      if (this.overlappedObjectIndex >= this.overlappingObjects.length) this.overlappedObjectIndex = 0;
+    }
 
     this.mouseWasPressedDown = false;
     this.mouseWasMoved = false;
