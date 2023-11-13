@@ -2,11 +2,13 @@ import { setTextAreaDynamicHeight } from "../folia-util";
 import html from "./folia-comment.html";
 import reply from "./folia-reply";
 import { PERMISSIONS, USER_ROLE } from "../constants";
+import { comment } from "postcss";
 
 class FoliaComment extends HTMLElement {
   #initialComment = null;
   #replies = [];
   #permissions = [];
+  #userRole = "";
   #currentUserEmail = "";
   #collaboratorEmail = "";
 
@@ -41,15 +43,15 @@ class FoliaComment extends HTMLElement {
   }
 
   connectedCallback() {
-    this.className = "folia-comment";
+    this.className = "folia-comment invisible";
 
-    const deleteDialogOverlay = this.shadowRoot.querySelector(".folia-comment-dialog-overlay");
-    deleteDialogOverlay.onclick = (e) => {
-      e.stopPropagation();
-      this.toggleDeleteDialog(false);
-    };
-    const deleteDialog = this.shadowRoot.querySelector(".folia-comment-dialog");
-    deleteDialog.onclick = (e) => this.deleteDialogOnClick(e);
+    // const deleteDialogOverlay = this.shadowRoot.querySelector(".folia-comment-dialog-overlay");
+    // deleteDialogOverlay.onclick = (e) => {
+    //   e.stopPropagation();
+    //   this.toggleDeleteDialog(false);
+    // };
+    // const deleteDialog = this.shadowRoot.querySelector(".folia-comment-dialog");
+    // deleteDialog.onclick = (e) => this.deleteDialogOnClick(e);
 
     const headerCloseBtn = this.shadowRoot.querySelector(".folia-comment-header-close-btn");
     const headerMenuBtn = this.shadowRoot.querySelector(".folia-comment-header-menu-btn");
@@ -71,6 +73,8 @@ class FoliaComment extends HTMLElement {
     replyEditor.focus();
     this.#applyPermissions();
     setTextAreaDynamicHeight(replyEditor);
+
+    this.adjustPosition();
   }
 
   disconnectedCallback() {
@@ -90,6 +94,37 @@ class FoliaComment extends HTMLElement {
     sendReplyBtn.removeEventListener("click", this.sendReplyBtnClickBinded, { passive: false });
     replyEditor.removeEventListener("keydown", this.replyEditorKeydownBinded, { passive: false });
     replyEditor.removeEventListener("input", this.replyEditorInputBinded, { passive: false });
+  }
+
+  adjustPosition() {
+    requestAnimationFrame(() => {
+      this.classList.toggle("right-side", true);
+
+      const safeZone = 5;
+
+      const commentWidth = this.clientWidth;
+      const commentLeft = this.offsetLeft;
+      const pageWidth = this.parentNode.parentNode.clientWidth;
+      const pinLeft = this.parentNode.offsetLeft;
+
+      const commentHeight = this.clientHeight;
+      const pageHeight = this.parentNode.parentNode.clientHeight;
+      const pinTop = this.parentNode.offsetTop;
+
+      const delta = pageHeight - (pinTop + commentHeight + safeZone);
+      if (delta < 0) {
+        this.style.top = delta + "px";
+      } else {
+        this.style.top = "";
+      }
+
+      if (pinLeft + commentLeft + commentWidth + safeZone > pageWidth) {
+        this.classList.toggle("right-side", false);
+        this.classList.toggle("left-side", true);
+      }
+
+      this.classList.remove("invisible");
+    });
   }
 
   closeBtnClick(e) {
@@ -140,6 +175,7 @@ class FoliaComment extends HTMLElement {
       behavior: "smooth",
     });
     sendReplyBtn.toggleAttribute("disabled", true);
+    this.adjustPosition();
   }
 
   replyEditorKeydown(e) {
@@ -172,6 +208,11 @@ class FoliaComment extends HTMLElement {
     });
     sortedRepliesList.forEach((reply, index) => {
       let replyEl = this.shadowRoot.getElementById(reply.id);
+      if (reply.deletedAt) {
+        if (replyEl) replyEl.remove();
+        return;
+      }
+
       if (!replyEl) {
         const el = document.createElement("folia-reply");
         el.setAttribute("id", reply.id);
@@ -184,7 +225,7 @@ class FoliaComment extends HTMLElement {
       replyEl.error = reply.error;
       replyEl.addedAt = reply.addedAt;
       replyEl.editedStatus = reply.status;
-      replyEl.isRead = reply.isRead;
+      replyEl.isRead = this.#userRole === USER_ROLE.PUBLIC_VIEWER ? true : reply.isRead;
       replyEl.collaboratorEmail = reply.collaboratorEmail;
 
       replyEl.onChangeReadStatus = (replyId, isRead) => {
@@ -202,10 +243,6 @@ class FoliaComment extends HTMLElement {
       };
     });
 
-    this.#replies = repliesList.slice();
-    if (this.#replies.some((reply) => !reply.isRead)) {
-      this.dispatchEvent(new CustomEvent("mark-all-as-read"));
-    }
     this.#applyPermissions();
     if (!this.scrollingRepliesAfterOpen) {
       setTimeout(() => {
@@ -213,7 +250,7 @@ class FoliaComment extends HTMLElement {
           top: conversationBox.scrollHeight,
           behavior: "smooth",
         });
-      }, 100);
+      }, 10);
       this.scrollingRepliesAfterOpen = true;
     }
   }
@@ -227,6 +264,14 @@ class FoliaComment extends HTMLElement {
   }
   get permissions() {
     return this.#permissions;
+  }
+
+  set userRole(value) {
+    this.#userRole = value;
+    this.#applyPermissions();
+  }
+  get userRole() {
+    return this.#userRole;
   }
 
   set currentUserEmail(value) {
@@ -246,16 +291,15 @@ class FoliaComment extends HTMLElement {
   }
 
   #applyPermissions() {
-    // console.log("perms", this.#permissions);
     const isCommentOwner = this.#currentUserEmail === this.#collaboratorEmail;
     const canDeleteComment =
       (isCommentOwner && this.#permissions.includes(PERMISSIONS.MANAGE_OWN_COMMENT)) ||
       this.#permissions.includes(PERMISSIONS.DELETE_FOREIGN_COMMENT);
     const canMakeReply = this.#permissions.includes(PERMISSIONS.MANAGE_ANNOTATION);
 
-    // this.shadowRoot.querySelectorAll(".folia-comment-header-menu-btn-option.unread").forEach((el) => {
-    //   el.classList.toggle("disabled", !canMakeReply);
-    // });
+    this.shadowRoot.querySelectorAll(".folia-comment-header-menu-btn-option.unread").forEach((el) => {
+      el.classList.toggle("disabled", this.userRole === USER_ROLE.PUBLIC_VIEWER);
+    });
     this.shadowRoot.querySelectorAll(".folia-comment-header-menu-btn-option.delete").forEach((el) => {
       el.classList.toggle("disabled", !canDeleteComment);
     });
@@ -278,12 +322,33 @@ class FoliaComment extends HTMLElement {
   }
 
   toggleDeleteDialog(forcedStatus) {
-    const deleteDialogOverlay = this.shadowRoot.querySelector(".folia-comment-dialog-overlay");
-    if (typeof forcedStatus === "undefined") {
-      deleteDialogOverlay.classList.toggle("shown", !deleteDialogOverlay.classList.contains("shown"));
-    } else {
-      deleteDialogOverlay.classList.toggle("shown", forcedStatus);
+    const that = this;
+    const deleteDialog = document.createElement("folia-simple-modal");
+    deleteDialog.setAttribute("type", "dangerous");
+    deleteDialog.setAttribute("header", "Delete Thread?");
+    deleteDialog.setAttribute("confirmation-button", "Delete");
+    deleteDialog.setAttribute("dismiss-button", "Cancel");
+    deleteDialog.innerText = `Are you sure you want to delete this comment thread?
+    Doing this will delete all replies as well.`;
+
+    function simpleDialogActionHandler(e) {
+      deleteDialog.removeEventListener("confirm", simpleDialogActionHandler);
+      deleteDialog.removeEventListener("dismiss", simpleDialogActionHandler);
+      deleteDialog.remove();
+
+      switch (e.type) {
+        case "confirm":
+          that.dispatchEvent(new CustomEvent("remove", { detail: { commentId: that.id } }));
+          break;
+        case "dismiss":
+          break;
+        default:
+          break;
+      }
     }
+    deleteDialog.addEventListener("confirm", simpleDialogActionHandler);
+    deleteDialog.addEventListener("dismiss", simpleDialogActionHandler);
+    this.shadowRoot.appendChild(deleteDialog);
   }
 
   deleteDialogOnClick(e) {

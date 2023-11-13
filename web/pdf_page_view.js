@@ -733,12 +733,6 @@ class PDFPageView {
     });
     if (!div.querySelector("folia-page")) div.appendChild(this.foliaPageLayer);
     this.foliaPageLayer.resume();
-    // this.foliaPageLayer ||= this.foliaPageLayerFactory.createFoliaPageLayer({
-    //   pageDiv: div,
-    //   pdfPage,
-    //   viewport: this.viewport,
-    // });
-    // console.log("====>", this.foliaPageLayer);
 
     if (this.xfaLayer?.div) {
       // The xfa layer needs to stay on top.

@@ -16,7 +16,7 @@
     </svg>
     <div class="folia-comment-header-menu-btn-options-overlay hidden"></div>
     <ul class="folia-comment-header-menu-btn-options hidden">
-      <li class="folia-comment-header-menu-btn-option unread hidden">Mark as unread</li>
+      <li class="folia-comment-header-menu-btn-option unread">Mark as unread</li>
       <li class="folia-comment-header-menu-btn-option delete">Delete thread</li>
     </ul>
   </button>
@@ -49,66 +49,6 @@
     </svg>
   </button>
 </div>
-<div class="folia-comment-dialog-overlay">
-  <div class="folia-comment-dialog">
-    <div class="folia-comment-dialog-header">
-      <button class="folia-comment-dialog-close-btn" data-role="close-dialog">
-        <svg
-          data-role="close-dialog"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M17.25 6.75L6.75 17.25M6.75 6.75L17.25 17.25"
-            stroke="#64748B"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </button>
-    </div>
-    <div class="folia-comment-dialog-body">
-      <svg
-        width="32"
-        height="32"
-        viewBox="0 0 32 32"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        data-v-3b393293=""
-      >
-        <path
-          d="M1.90406 24.7072L12.4301 3.71318C13.9059 0.769647 18.1075 0.770415 19.5822 3.71449L30.0986 24.7085C31.4309 27.3683 29.497 30.5 26.5222 30.5H5.47979C2.50433 30.5 0.57045 27.3671 1.90406 24.7072Z"
-          fill="#FECDD3"
-          data-v-3b393293=""
-        ></path>
-        <path
-          d="M16.9996 24C16.9996 24.5523 16.5519 25 15.9996 25C15.4474 25 14.9996 24.5523 14.9996 24C14.9996 23.4477 15.4474 23 15.9996 23C16.5519 23 16.9996 23.4477 16.9996 24Z"
-          fill="#FECDD3"
-          data-v-3b393293=""
-        ></path>
-        <path
-          d="M15.9996 12V16M12.4301 3.71318L1.90406 24.7072C0.57045 27.3671 2.50433 30.5 5.47979 30.5H26.5222C29.497 30.5 31.4309 27.3683 30.0986 24.7085L19.5822 3.71449C18.1075 0.770415 13.9059 0.769647 12.4301 3.71318ZM16.9996 24C16.9996 24.5523 16.5519 25 15.9996 25C15.4474 25 14.9996 24.5523 14.9996 24C14.9996 23.4477 15.4474 23 15.9996 23C16.5519 23 16.9996 23.4477 16.9996 24Z"
-          stroke="#F43F5E"
-          stroke-width="2"
-          data-v-3b393293=""
-        ></path>
-      </svg>
-      <h3>Delete Comment</h3>
-      <p>
-        Deleting this comment will also delete all replies added by others. Are you sure you want to delete
-        this comment?
-      </p>
-    </div>
-    <div class="folia-comment-dialog-footer">
-      <button class="folia-comment-dialog-button" data-role="close-dialog">Nevermind</button>
-      <button class="folia-comment-dialog-button dangerous" data-role="remove-comment">Delete</button>
-    </div>
-  </div>
-</div>
 <style>
   /** comment header part */
 
@@ -120,12 +60,11 @@
     gap: 5px;
     padding: 8px;
     width: 100%;
-    /* border-bottom: 1px solid #f1f5f9; */
+    border-bottom: 1px solid #f1f5f9;
   }
 
   .folia-comment-header-menu-btn,
-  .folia-comment-header-close-btn,
-  .folia-comment-dialog-close-btn {
+  .folia-comment-header-close-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -133,27 +72,19 @@
     height: 24px;
     border-radius: 6px;
     border: none;
-    background-color: transparent;
+    background-color: #ffffff;
     cursor: pointer;
     padding: 0;
+    border: 1px solid #e2e8f0;
   }
 
-  /* .folia-comment-header-menu-btn:active,
-  .folia-comment-header-close-btn:active,
-  .folia-comment-dialog-close-btn:active {
-    transform: translate(1px, 1px);
-  } */
-
   .folia-comment-header-menu-btn:hover,
-  .folia-comment-header-close-btn:hover,
-  .folia-comment-dialog-close-btn:hover {
+  .folia-comment-header-close-btn:hover {
     background-color: #f1f1f1;
   }
 
   .folia-comment-header-menu-btn.hidden,
-  .folia-comment-header-close-btn.hidden,
-  .folia-comment-dialog-close-btn.hidden {
-    /* visibility: hidden; */
+  .folia-comment-header-close-btn.hidden {
     display: none;
   }
 
@@ -282,94 +213,6 @@
     cursor: not-allowed;
   }
   .folia-comment-footer-send-btn:enabled:active {
-    transform: translate(1px, 1px);
-  }
-
-  .folia-comment-dialog-overlay {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-
-  .folia-comment-dialog-overlay.shown {
-    display: flex;
-  }
-
-  .folia-comment-dialog {
-    display: flex;
-    flex-direction: column;
-    width: 440px;
-    height: 270px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    background: white;
-    box-shadow: 0px 8px 20px 0px rgba(0, 0, 0, 0.1);
-    cursor: default;
-  }
-  .folia-comment-dialog-header {
-    padding: 10px 10px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    border-bottom: solid 1px #f1f1f1;
-  }
-  .folia-comment-dialog-body {
-    padding: 0px 10px;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 10px 30px;
-  }
-  .folia-comment-dialog-footer {
-    padding: 10px 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border-top: solid 1px #f1f1f1;
-    background: #f8fafc;
-  }
-
-  .folia-comment-dialog-button {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    padding: 8px;
-    /* gap: 8px; */
-    cursor: pointer;
-    width: 120px;
-    height: 36px;
-    font-style: normal;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 20px;
-    color: #334155;
-    user-select: none;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-  }
-
-  .folia-comment-dialog-button.dangerous {
-    background-color: rgb(244, 63, 94);
-    color: white;
-  }
-
-  .folia-comment-dialog-button:enabled:hover {
-    border: 1px solid #ced3db;
-  }
-
-  .folia-comment-dialog-button:enabled:active {
     transform: translate(1px, 1px);
   }
 </style>

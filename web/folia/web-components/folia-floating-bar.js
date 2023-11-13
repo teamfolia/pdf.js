@@ -76,19 +76,20 @@ class FoliaFloatingBar extends HTMLElement {
     this.shadowRoot.addEventListener("mousedown", this.onMouseDownBinded, { passive: false });
     this.shadowRoot.addEventListener("click", this.onClickBinded, { passive: false });
     this.bar = this.shadowRoot.querySelector(".folia-floating-bar");
-    this.strokeBtn = this.shadowRoot.querySelector(".bar-button.stroke");
-    this.colorBtn = this.shadowRoot.querySelector(".bar-button.color");
-    this.duplicateBtn = this.shadowRoot.querySelector(".bar-button.duplicate");
-    this.stampBtn = this.shadowRoot.querySelector(".bar-button.stamp");
-    this.deleteBtn = this.shadowRoot.querySelector(".bar-button.delete");
-    this.boldBtn = this.shadowRoot.querySelector(".bar-button.bold");
-    this.alignLeftBtn = this.shadowRoot.querySelector(".bar-button.align-left");
-    this.alignCenterBtn = this.shadowRoot.querySelector(".bar-button.align-center");
-    this.alignRightBtn = this.shadowRoot.querySelector(".bar-button.align-right");
+
+    this.duplicateBtn = this.shadowRoot.querySelector('folia-button[name="duplicate"]');
+    this.stampBtn = this.shadowRoot.querySelector('folia-button[name="stamp"]');
+    this.deleteBtn = this.shadowRoot.querySelector('folia-button[name="delete"]');
+    this.infoBtn = this.shadowRoot.querySelector('folia-button[name="info"]');
+    this.strokeBtn = this.shadowRoot.querySelector('folia-button[name="stroke"]');
+    this.colorBtn = this.shadowRoot.querySelector('folia-button[name="color"]');
+    this.boldBtn = this.shadowRoot.querySelector('folia-button[name="bold"]');
+    this.alignLeftBtn = this.shadowRoot.querySelector('folia-button[name="align-left"]');
+    this.alignCenterBtn = this.shadowRoot.querySelector('folia-button[name="align-center"]');
+    this.alignRightBtn = this.shadowRoot.querySelector('folia-button[name="align-right"]');
+
     this.fontFamilyBtn = this.shadowRoot.querySelector(".font-family");
     this.fontSizeBtn = this.shadowRoot.querySelector(".font-size");
-
-    this.infoBtn = this.shadowRoot.querySelector(".bar-button.info");
 
     this.strokePanel = this.shadowRoot.querySelector(".folia-floating-bar-stroke-panel");
     this.colorPanel = this.shadowRoot.querySelector(".folia-floating-bar-color-panel");
@@ -203,7 +204,7 @@ class FoliaFloatingBar extends HTMLElement {
       } else {
         this.bar.style.left = pageWidth / 2 - barWidth / 2 + "px";
         this.bar.style.top = pageHeigth / 2 - barHeight / 2 + "px";
-        console.log("in the middle");
+        // console.log("in the middle");
         // middle middle
       }
       this.bar.classList.toggle("shown", true);
@@ -220,7 +221,7 @@ class FoliaFloatingBar extends HTMLElement {
     this.strokeBtn.toggleAttribute("disabled", !value);
     this.colorBtn.toggleAttribute("disabled", !value);
     this.duplicateBtn.toggleAttribute("disabled", !value);
-    this.stampBtn.toggleAttribute("disabled", !value);
+    // this.stampBtn.toggleAttribute("disabled", !value);
     this.boldBtn.toggleAttribute("disabled", !value);
     this.alignLeftBtn.toggleAttribute("disabled", !value);
     this.alignCenterBtn.toggleAttribute("disabled", !value);
@@ -243,9 +244,9 @@ class FoliaFloatingBar extends HTMLElement {
     // console.log("set openedPanel", value);
     switch (value) {
       case STROKE_PANEL:
-        this.strokeBtn.classList.toggle("selected", true);
-        this.colorBtn.classList.toggle("selected", false);
-        this.infoBtn.classList.toggle("selected", false);
+        this.strokeBtn.toggleAttribute("selected", true);
+        this.colorBtn.toggleAttribute("selected", false);
+        this.infoBtn.toggleAttribute("selected", false);
         this.fontFamilyBtn.classList.toggle("selected", false);
         this.fontSizeBtn.classList.toggle("selected", false);
 
@@ -256,9 +257,9 @@ class FoliaFloatingBar extends HTMLElement {
         this.fontSizePanel.classList.toggle("shown", false);
         break;
       case COLOR_PANEL:
-        this.strokeBtn.classList.toggle("selected", false);
-        this.colorBtn.classList.toggle("selected", true);
-        this.infoBtn.classList.toggle("selected", false);
+        this.strokeBtn.toggleAttribute("selected", false);
+        this.colorBtn.toggleAttribute("selected", true);
+        this.infoBtn.toggleAttribute("selected", false);
         this.fontFamilyBtn.classList.toggle("selected", false);
         this.fontSizeBtn.classList.toggle("selected", false);
 
@@ -269,9 +270,9 @@ class FoliaFloatingBar extends HTMLElement {
         this.fontSizePanel.classList.toggle("shown", false);
         break;
       case INFO_PANEL:
-        this.strokeBtn.classList.toggle("selected", false);
-        this.colorBtn.classList.toggle("selected", false);
-        this.infoBtn.classList.toggle("selected", true);
+        this.strokeBtn.toggleAttribute("selected", false);
+        this.colorBtn.toggleAttribute("selected", false);
+        this.infoBtn.toggleAttribute("selected", true);
         this.fontFamilyBtn.classList.toggle("selected", false);
         this.fontSizeBtn.classList.toggle("selected", false);
 
@@ -282,9 +283,9 @@ class FoliaFloatingBar extends HTMLElement {
         this.fontSizePanel.classList.toggle("shown", false);
         break;
       case FONT_FAMILY_PANEL:
-        this.strokeBtn.classList.toggle("selected", false);
-        this.colorBtn.classList.toggle("selected", false);
-        this.infoBtn.classList.toggle("selected", false);
+        this.strokeBtn.toggleAttribute("selected", false);
+        this.colorBtn.toggleAttribute("selected", false);
+        this.infoBtn.toggleAttribute("selected", false);
         this.fontFamilyBtn.classList.toggle("selected", true);
         this.fontSizeBtn.classList.toggle("selected", false);
 
@@ -295,9 +296,9 @@ class FoliaFloatingBar extends HTMLElement {
         this.fontSizePanel.classList.toggle("shown", false);
         break;
       case FONT_SIZE_PANEL:
-        this.strokeBtn.classList.toggle("selected", false);
-        this.colorBtn.classList.toggle("selected", false);
-        this.infoBtn.classList.toggle("selected", false);
+        this.strokeBtn.toggleAttribute("selected", false);
+        this.colorBtn.toggleAttribute("selected", false);
+        this.infoBtn.toggleAttribute("selected", false);
         this.fontFamilyBtn.classList.toggle("selected", false);
         this.fontSizeBtn.classList.toggle("selected", true);
 
@@ -308,9 +309,9 @@ class FoliaFloatingBar extends HTMLElement {
         this.fontSizePanel.classList.toggle("shown", true);
         break;
       default:
-        this.strokeBtn.classList.toggle("selected", false);
-        this.colorBtn.classList.toggle("selected", false);
-        this.infoBtn.classList.toggle("selected", false);
+        this.strokeBtn.toggleAttribute("selected", false);
+        this.colorBtn.toggleAttribute("selected", false);
+        this.infoBtn.toggleAttribute("selected", false);
         this.fontFamilyBtn.classList.toggle("selected", false);
         this.fontSizeBtn.classList.toggle("selected", false);
 
@@ -349,7 +350,7 @@ class FoliaFloatingBar extends HTMLElement {
   }
   set fontWeight(value) {
     this.#fontWeight = value;
-    this.boldBtn.classList.toggle("selected", this.#fontWeight === FONT_WEIGHT.W600);
+    this.boldBtn.toggleAttribute("selected", this.#fontWeight === FONT_WEIGHT.W600);
   }
 
   get textAlignment() {
@@ -357,9 +358,9 @@ class FoliaFloatingBar extends HTMLElement {
   }
   set textAlignment(value) {
     this.#textAlignment = value;
-    this.alignLeftBtn.classList.toggle("selected", this.#textAlignment === TEXT_ALIGNMENT.START);
-    this.alignCenterBtn.classList.toggle("selected", this.#textAlignment === TEXT_ALIGNMENT.CENTER);
-    this.alignRightBtn.classList.toggle("selected", this.#textAlignment === TEXT_ALIGNMENT.END);
+    this.alignLeftBtn.toggleAttribute("selected", this.#textAlignment === TEXT_ALIGNMENT.START);
+    this.alignCenterBtn.toggleAttribute("selected", this.#textAlignment === TEXT_ALIGNMENT.CENTER);
+    this.alignRightBtn.toggleAttribute("selected", this.#textAlignment === TEXT_ALIGNMENT.END);
   }
 
   get fontFamily() {

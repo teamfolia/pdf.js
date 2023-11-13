@@ -63,7 +63,7 @@ class FoliaCreateComment extends HTMLElement {
       localStorage.removeItem("folia-create-comment");
     } else {
       const editor = this.shadowRoot.querySelector(".folia-create-comment-editor");
-      localStorage.setItem("folia-create-comment", editor.value);
+      if (editor.value) localStorage.setItem("folia-create-comment", editor.value);
     }
   }
 
@@ -78,9 +78,11 @@ class FoliaCreateComment extends HTMLElement {
     if (editorElem.value.length > 0) {
       fakeBtn.style.display = "none";
       footer.style.display = "flex";
+      localStorage.setItem("folia-create-comment", editorElem.value);
     } else {
       fakeBtn.style.display = "block";
       footer.style.display = "none";
+      localStorage.removeItem("folia-create-comment");
     }
     editorElem.style.height = "auto";
     editorElem.style.height = `${editorElem.scrollHeight}px`;

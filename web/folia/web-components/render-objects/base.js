@@ -27,6 +27,7 @@ class BaseAnnoObject {
 
   #userEmail;
   #userName;
+  #userRole;
   #permissions;
 
   onMouseDownBinded = this.onMouseDown.bind(this);
@@ -63,7 +64,16 @@ class BaseAnnoObject {
   }
 
   update(annoData) {
-    const { addedAt = this.addedAt, deletedAt = this.deletedAt, error = this.error } = annoData;
+    const { addedAt = this.addedAt, deletedAt = this.deletedAt, error } = annoData;
+
+    this.error = error;
+    if (this.error) {
+      this.annotationUI?.classList.toggle("error", true);
+      this.annotationUI?.setAttribute("title", this.error.message);
+    } else {
+      this.annotationUI?.classList.toggle("error", false);
+      this.annotationUI?.removeAttribute("title");
+    }
 
     if (deletedAt) {
       this.deletedAt = deletedAt;
@@ -75,7 +85,6 @@ class BaseAnnoObject {
     if (addedAtTime <= currAddedAtTime) return false;
 
     this.addedAt = addedAt;
-    this.error = error;
 
     return true;
   }
@@ -138,19 +147,26 @@ class BaseAnnoObject {
     const rect = this.getBoundingRect();
     const { width, height } = this.viewport;
     const now = new Date().toISOString();
-    const shift = Math.min(rect.width * 1.1, rect.height * 1.1);
+    // const shift = Math.min(rect.width * 1.1, rect.height * 1.1);
+    const shift = 15;
     let positionData;
 
-    if (rect.left - shift > 0 && rect.top - shift > 0) {
+    if (rect.left + rect.width + shift < width && rect.top + shift < height) {
+      // right bottom
+      positionData = this.shiftObjectPosition(shift, shift);
+    } else if (rect.left - shift > 0 && rect.top - shift > 0) {
+      // left top
       positionData = this.shiftObjectPosition(-shift, -shift);
     } else if (rect.left + rect.width + shift < width && rect.top - shift > 0) {
+      // right top
       positionData = this.shiftObjectPosition(shift, -shift);
-    } else if (rect.left + rect.width + shift < width && rect.top + shift < height) {
-      positionData = this.shiftObjectPosition(shift, shift);
     } else if (rect.left - shift > 0 && rect.top + shift < height) {
+      // left bottom
       positionData = this.shiftObjectPosition(-shift, shift);
     } else {
-      console.log("не влазе ні куда (", { rect, shift, width, height });
+      const message = "сильно завелика для звичайного клону, тож буде зміщена всього на 5 поінтів ;)";
+      console.log(message, { rect, shift, width, height });
+      positionData = this.shiftObjectPosition(-5, 5);
       return;
     }
 
@@ -418,10 +434,6 @@ class BaseAnnoObject {
     annotationUI.style.top = top - lineWidth / 2 + "px";
     annotationUI.style.width = width + lineWidth + "px";
     annotationUI.style.height = height + lineWidth + "px";
-
-    if (this.error) {
-      this.annotationUI.classList.toggle("error", Boolean(this.error));
-    }
   }
 
   renderTo(viewport, pageCanvasContext, uiContainer, pdfCanvas) {
@@ -464,6 +476,13 @@ class BaseAnnoObject {
     return this.#userName;
   }
 
+  set userRole(value) {
+    this.#userRole = value;
+  }
+  get userRole() {
+    return this.#userRole;
+  }
+
   get canManage() {
     return this.#permissions.includes(PERMISSIONS.MANAGE_ANNOTATION);
   }
@@ -477,6 +496,10 @@ class BaseAnnoObject {
 
   get isDeleted() {
     return Boolean(this.deletedAt);
+  }
+
+  get isEditing() {
+    return false;
   }
 }
 

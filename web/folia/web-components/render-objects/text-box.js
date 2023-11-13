@@ -26,6 +26,7 @@ class TextBoxObject extends BaseAnnoObject {
   rect;
 
   onKeyDownBinded = this.onKeyDown.bind(this);
+  onInputBinded = this.onInput.bind(this);
 
   constructor(annoData, viewport, eventBus) {
     super(annoData, viewport, eventBus);
@@ -207,6 +208,10 @@ class TextBoxObject extends BaseAnnoObject {
     };
   }
 
+  onInput(e) {
+    this.eventBus.dispatch("show-floating-bar", true);
+  }
+
   onKeyDown(e) {
     if (e.key === "Escape") {
       this.text = this.prevState.text;
@@ -233,6 +238,7 @@ class TextBoxObject extends BaseAnnoObject {
     this.editorEl.style.userSelect = "default";
     this.editorEl.toggleAttribute("contenteditable", true);
     this.editorEl.addEventListener("keydown", this.onKeyDownBinded, { passive: false });
+    this.editorEl.addEventListener("input", this.onInputBinded, { passive: false });
     this.editorEl.focus();
 
     this.prevState = this.toObjectData();
@@ -243,6 +249,7 @@ class TextBoxObject extends BaseAnnoObject {
     this.editorEl.style.cursor = "grab";
     this.editorEl.style.userSelect = "none";
     this.editorEl.removeEventListener("keydown", this.onKeyDownBinded, { passive: false });
+    this.editorEl.removeEventListener("input", this.onInputBinded, { passive: false });
     this.editorEl.toggleAttribute("contenteditable", false);
     // this.foliaPageLayer.undoRedoManager.updatingObject(this.prevState, this.newState);
   }
@@ -284,6 +291,10 @@ class TextBoxObject extends BaseAnnoObject {
       rect: this.rect,
     };
     this.changeManually(annoData, this.startPosition.objectData);
+  }
+
+  get isEditing() {
+    return this.editorEl.hasAttribute("contenteditable");
   }
 }
 

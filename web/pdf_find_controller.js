@@ -21,6 +21,7 @@ import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { createPromiseCapability } from "pdfjs-lib";
 import { getCharacterType } from "./pdf_find_utils.js";
 import { fromPdfRect } from "./folia/folia-util.js";
+import { EventBusRequest } from "./folia/web-components/folia-page.js";
 
 const FindState = {
   FOUND: 0,
@@ -319,7 +320,6 @@ class PDFFindController {
   constructor({ linkService, eventBus, dataProxy }) {
     this._linkService = linkService;
     this._eventBus = eventBus;
-    this._dataProxy = dataProxy;
 
     this.#reset();
     eventBus._on("find", this.#onFind.bind(this));
@@ -487,7 +487,7 @@ class PDFFindController {
     this._extractTextPromises = [];
     this._pageContents = []; // Stores the normalized text for each page.
     this._pageDiffs = [];
-    this._pageAnnots = [];
+    this._pageAnnots = null;
     this._hasDiacritics = [];
     this._matchesCountTotal = 0;
     this._pagesToSearch = null;
@@ -575,7 +575,7 @@ class PDFFindController {
       matchesLength = [];
 
     const diffs = this._pageDiffs[pageIndex];
-    const annots = this._pageAnnots[pageIndex];
+    const annots = this._pageAnnots ? this._pageAnnots[pageIndex] : [];
 
     let match;
     while ((match = query.exec(pageContent)) !== null) {
@@ -726,42 +726,33 @@ class PDFFindController {
   }
 
   async #extractAnnots() {
+    if (Array.isArray(this._pageAnnots)) return;
+
     const pagesPromises = [];
     for (let pageNumber = 0; pageNumber < this._pdfDocument.numPages; pageNumber++) {
-      pagesPromises[pageNumber] = this._dataProxy
-        .getObjects(pageNumber)
-        .then((annotations) =>
-          annotations.filter((anno) => anno.hasOwnProperty("rect") && anno.hasOwnProperty("text"))
-        )
-        .catch((err) => {
+      const dataRequest = new EventBusRequest(this._eventBus);
+      const promise = dataRequest
+        .get("folia-data", { pageNumber })
+        .then((data) => {
+          return data.objects.filter((objectData) => {
+            return objectData.hasOwnProperty("rect") && objectData.hasOwnProperty("text");
+          });
+        })
+        .catch((error) => {
           console.err(`Can not parse page #${pageNumber + 1} for search`);
+          return [];
         });
+      pagesPromises[pageNumber] = promise;
     }
 
     return Promise.allSettled(pagesPromises).then((results) => {
+      const pageAnnots = [];
       results.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          this._pageAnnots[index] = result.value;
-        } else {
-          this._pageAnnots[index] = [];
-          console.error(`Unable to get annotations content for page ${index + 1}`, result.reason);
-        }
+        pageAnnots[index] = result.value;
       });
+      console.log("#extractAnnots", this.#query, this._pageAnnots);
+      this._pageAnnots = pageAnnots;
     });
-
-    /**
-    try {
-      for (let pageNumber = 0; pageNumber < this._pdfDocument.numPages; pageNumber++) {
-        const annotationsContent = this._dataProxy.getObjects(pageNumber);
-        this._pageAnnots[pageNumber] = annotationsContent.filter((anno) => {
-          return anno.rect && anno.text;
-        });
-      }
-    } catch (e) {
-      this._pageAnnots[pageNumber] = [];
-      console.error(`Unable to get annotations content for page ${pageNumber + 1}`, e.message);
-    }
-    */
   }
 
   #extractText() {
@@ -1016,6 +1007,7 @@ class PDFFindController {
       annoDivs.forEach((el) => el.remove());
       this._matchesCountTotal = 0;
       this._pageMatches = [];
+      this._pageAnnots = null;
     });
   }
 

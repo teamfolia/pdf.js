@@ -92,10 +92,10 @@ class FoliaReply extends HTMLElement {
   }
 
   composeCreatedAtAsLabel(createdAt) {
-    clearTimeout(this.#createdAtRedrawTimer);
+    // clearTimeout(this.#createdAtRedrawTimer);
     const commentDate = this.shadowRoot.querySelector(".folia-reply-title-info-timestamp");
     commentDate.innerHTML = foliaDateFormat(createdAt);
-    this.#createdAtRedrawTimer = setTimeout(() => this.composeCreatedAtAsLabel(createdAt), 1000);
+    // this.#createdAtRedrawTimer = setTimeout(() => this.composeCreatedAtAsLabel(createdAt), 1000);
   }
 
   get text() {
