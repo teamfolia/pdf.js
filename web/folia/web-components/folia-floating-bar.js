@@ -29,6 +29,31 @@ const FONT_WEIGHT = {
   W600: "W600",
 };
 
+const FONT_SIZES = [
+  { value: "8", text: "8" },
+  { value: "10", text: "10" },
+  { value: "12", text: "12" },
+  { value: "14", text: "14" },
+  { value: "16", text: "16" },
+  { value: "18", text: "18" },
+  { value: "20", text: "20" },
+  { value: "24", text: "24" },
+  { value: "36", text: "36" },
+  { value: "48", text: "48" },
+  { value: "64", text: "64" },
+  { value: "72", text: "72" },
+  { value: "96", text: "96" },
+  { value: "144", text: "144" },
+];
+
+const FONT_FAMILIES = [
+  { value: FONT_FAMILY.SANS_SERIF, text: "Sans serif" },
+  { value: FONT_FAMILY.SERIF, text: "Serif" },
+  { value: FONT_FAMILY.MONOSPACE, text: "Monospace" },
+  { value: FONT_FAMILY.SCRIPT, text: "Script" },
+  { value: FONT_FAMILY.FANTASY, text: "Fantasy" },
+];
+
 const FONT_FAMILY_PANEL = "FONT_FAMILY_PANEL";
 const FONT_SIZE_PANEL = "FONT_SIZE_PANEL";
 const COLOR_PANEL = "COLOR_PANEL";
@@ -52,6 +77,8 @@ class FoliaFloatingBar extends HTMLElement {
   onClickBinded = this.onClick.bind(this);
   strokeSliderOnInputBinded = this.strokeSliderOnInput.bind(this);
   opacitySliderOnInputBinded = this.opacitySliderOnInput.bind(this);
+  fontFamilyInputBinded = this.fontFamilyInput.bind(this);
+  fontSizeInputBinded = this.fontSizeInput.bind(this);
 
   constructor() {
     super();
@@ -88,26 +115,25 @@ class FoliaFloatingBar extends HTMLElement {
     this.alignCenterBtn = this.shadowRoot.querySelector('folia-button[name="align-center"]');
     this.alignRightBtn = this.shadowRoot.querySelector('folia-button[name="align-right"]');
 
-    this.fontFamilyBtn = this.shadowRoot.querySelector(".font-family");
-    this.fontSizeBtn = this.shadowRoot.querySelector(".font-size");
-
     this.strokePanel = this.shadowRoot.querySelector(".folia-floating-bar-stroke-panel");
     this.colorPanel = this.shadowRoot.querySelector(".folia-floating-bar-color-panel");
     this.infoPanel = this.shadowRoot.querySelector(".folia-floating-bar-info-panel");
-    this.fontFamilyPanel = this.shadowRoot.querySelector(".folia-floating-bar-font-family-panel");
-    this.fontSizePanel = this.shadowRoot.querySelector(".folia-floating-bar-font-size-panel");
 
     this.addedAt = this.shadowRoot.getElementById("added-at");
     this.collaboratorName = this.shadowRoot.getElementById("collaborator-name");
     this.strokeWidth = this.shadowRoot.getElementById("stroke-width");
     this.opacityValue = this.shadowRoot.getElementById("opacity-value");
-    this.fontFamilyValue = this.shadowRoot.getElementById("font-family-value");
-    this.fontSizeValue = this.shadowRoot.getElementById("font-size-value");
 
     this.strokeSlider = this.shadowRoot.getElementById("stroke-slider");
     this.opacitySlider = this.shadowRoot.getElementById("opacity-slider");
     this.strokeSlider.addEventListener("input", this.strokeSliderOnInputBinded);
     this.opacitySlider.addEventListener("input", this.opacitySliderOnInputBinded);
+
+    this.fontFamilyDropDown = this.shadowRoot.querySelector('folia-drop-down[name="font-family"]');
+    this.fontSizeDropDown = this.shadowRoot.querySelector('folia-drop-down[name="font-size"]');
+    // console.log(">>>>", this.fontFamilyDropDown, this.fontSizeDropDown);
+    this.fontFamilyDropDown.addEventListener("input", this.fontFamilyInputBinded);
+    this.fontSizeDropDown.addEventListener("input", this.fontSizeInputBinded);
   }
 
   disconnectedCallback() {
@@ -115,6 +141,8 @@ class FoliaFloatingBar extends HTMLElement {
     this.shadowRoot.removeEventListener("click", this.onClickBinded, { passive: false });
     this.strokeSlider.removeEventListener("input", this.strokeSliderOnInputBinded);
     this.opacitySlider.removeEventListener("input", this.opacitySliderOnInputBinded);
+    this.fontFamilyDropDown.removeEventListener("input", this.fontFamilyInputBinded);
+    this.fontSizeDropDown.removeEventListener("input", this.fontSizeInputBinded);
   }
 
   hide() {
@@ -171,8 +199,8 @@ class FoliaFloatingBar extends HTMLElement {
     this.shadowRoot.querySelectorAll(".text-box-property").forEach((el) => {
       el.classList.toggle("shown", isFontDependent);
     });
-    this.shadowRoot.querySelectorAll(".bar-button.stroke").forEach((el) => {
-      el.classList.toggle("hidden", !isStrokeDependent);
+    this.shadowRoot.querySelectorAll(".stroke-property").forEach((el) => {
+      el.classList.toggle("shown", isStrokeDependent);
     });
     this.shadowRoot.querySelectorAll(".color-property").forEach((el) => {
       el.classList.toggle("shown", isColorDependent);
@@ -226,8 +254,8 @@ class FoliaFloatingBar extends HTMLElement {
     this.alignLeftBtn.toggleAttribute("disabled", !value);
     this.alignCenterBtn.toggleAttribute("disabled", !value);
     this.alignRightBtn.toggleAttribute("disabled", !value);
-    this.fontFamilyBtn.toggleAttribute("disabled", !value);
-    this.fontSizeBtn.toggleAttribute("disabled", !value);
+    this.fontFamilyDropDown.toggleAttribute("disabled", !value);
+    this.fontSizeDropDown.toggleAttribute("disabled", !value);
   }
 
   get eventBus() {
@@ -247,79 +275,55 @@ class FoliaFloatingBar extends HTMLElement {
         this.strokeBtn.toggleAttribute("selected", true);
         this.colorBtn.toggleAttribute("selected", false);
         this.infoBtn.toggleAttribute("selected", false);
-        this.fontFamilyBtn.classList.toggle("selected", false);
-        this.fontSizeBtn.classList.toggle("selected", false);
 
         this.strokePanel.classList.toggle("shown", true);
         this.colorPanel.classList.toggle("shown", false);
         this.infoPanel.classList.toggle("shown", false);
-        this.fontFamilyPanel.classList.toggle("shown", false);
-        this.fontSizePanel.classList.toggle("shown", false);
         break;
       case COLOR_PANEL:
         this.strokeBtn.toggleAttribute("selected", false);
         this.colorBtn.toggleAttribute("selected", true);
         this.infoBtn.toggleAttribute("selected", false);
-        this.fontFamilyBtn.classList.toggle("selected", false);
-        this.fontSizeBtn.classList.toggle("selected", false);
 
         this.strokePanel.classList.toggle("shown", false);
         this.colorPanel.classList.toggle("shown", true);
         this.infoPanel.classList.toggle("shown", false);
-        this.fontFamilyPanel.classList.toggle("shown", false);
-        this.fontSizePanel.classList.toggle("shown", false);
         break;
       case INFO_PANEL:
         this.strokeBtn.toggleAttribute("selected", false);
         this.colorBtn.toggleAttribute("selected", false);
         this.infoBtn.toggleAttribute("selected", true);
-        this.fontFamilyBtn.classList.toggle("selected", false);
-        this.fontSizeBtn.classList.toggle("selected", false);
 
         this.strokePanel.classList.toggle("shown", false);
         this.colorPanel.classList.toggle("shown", false);
         this.infoPanel.classList.toggle("shown", true);
-        this.fontFamilyPanel.classList.toggle("shown", false);
-        this.fontSizePanel.classList.toggle("shown", false);
         break;
       case FONT_FAMILY_PANEL:
         this.strokeBtn.toggleAttribute("selected", false);
         this.colorBtn.toggleAttribute("selected", false);
         this.infoBtn.toggleAttribute("selected", false);
-        this.fontFamilyBtn.classList.toggle("selected", true);
-        this.fontSizeBtn.classList.toggle("selected", false);
 
         this.strokePanel.classList.toggle("shown", false);
         this.colorPanel.classList.toggle("shown", false);
         this.infoPanel.classList.toggle("shown", false);
-        this.fontFamilyPanel.classList.toggle("shown", true);
-        this.fontSizePanel.classList.toggle("shown", false);
         break;
       case FONT_SIZE_PANEL:
         this.strokeBtn.toggleAttribute("selected", false);
         this.colorBtn.toggleAttribute("selected", false);
         this.infoBtn.toggleAttribute("selected", false);
-        this.fontFamilyBtn.classList.toggle("selected", false);
-        this.fontSizeBtn.classList.toggle("selected", true);
 
         this.strokePanel.classList.toggle("shown", false);
         this.colorPanel.classList.toggle("shown", false);
         this.infoPanel.classList.toggle("shown", false);
-        this.fontFamilyPanel.classList.toggle("shown", false);
-        this.fontSizePanel.classList.toggle("shown", true);
         break;
       default:
         this.strokeBtn.toggleAttribute("selected", false);
         this.colorBtn.toggleAttribute("selected", false);
         this.infoBtn.toggleAttribute("selected", false);
-        this.fontFamilyBtn.classList.toggle("selected", false);
-        this.fontSizeBtn.classList.toggle("selected", false);
 
         this.strokePanel.classList.toggle("shown", false);
         this.colorPanel.classList.toggle("shown", false);
         this.infoPanel.classList.toggle("shown", false);
-        this.fontFamilyPanel.classList.toggle("shown", false);
-        this.fontSizePanel.classList.toggle("shown", false);
         break;
     }
     this.#openedPanel = value;
@@ -368,7 +372,7 @@ class FoliaFloatingBar extends HTMLElement {
   }
   set fontFamily(value) {
     this.#fontFamily = value;
-    this.fontFamilyValue.innerText = FONT_NAMES[value];
+    this.fontFamilyDropDown.setAttribute("value", this.#fontFamily);
   }
 
   get fontSize() {
@@ -376,7 +380,16 @@ class FoliaFloatingBar extends HTMLElement {
   }
   set fontSize(value) {
     this.#fontSize = value;
-    this.fontSizeValue.innerText = value;
+    this.fontSizeDropDown.setAttribute("value", this.#fontSize);
+  }
+
+  fontFamilyInput(e) {
+    this.fontFamily = e.data;
+    this.onChange("fontFamily", e.data);
+  }
+  fontSizeInput(e) {
+    this.fontSize = e.data;
+    this.onChange("fontSize", parseInt(e.data, 10));
   }
 
   strokeSliderOnInput(e) {

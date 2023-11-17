@@ -575,7 +575,7 @@ class PDFFindController {
       matchesLength = [];
 
     const diffs = this._pageDiffs[pageIndex];
-    const annots = this._pageAnnots ? this._pageAnnots[pageIndex] : [];
+    const annots = this._pageAnnots[pageIndex] || [];
 
     let match;
     while ((match = query.exec(pageContent)) !== null) {
@@ -592,9 +592,8 @@ class PDFFindController {
     }
 
     for (const annot of annots) {
-      const annotText = annot.text || "";
       query.lastIndex = 0;
-      if (query.test(annotText)) {
+      if (query.test(annot.text || "")) {
         matches.push(annot);
         matchesLength.push(null);
       }
@@ -727,32 +726,25 @@ class PDFFindController {
 
   async #extractAnnots() {
     if (Array.isArray(this._pageAnnots)) return;
+    const dataRequest = new EventBusRequest(this._eventBus);
+    this._pageAnnots = [];
 
-    const pagesPromises = [];
-    for (let pageNumber = 0; pageNumber < this._pdfDocument.numPages; pageNumber++) {
-      const dataRequest = new EventBusRequest(this._eventBus);
-      const promise = dataRequest
-        .get("folia-data", { pageNumber })
-        .then((data) => {
-          return data.objects.filter((objectData) => {
+    return dataRequest
+      .get("folia-data", { pageNumber: -1 })
+      .then((data) => {
+        data.objects
+          .filter((objectData) => {
             return objectData.hasOwnProperty("rect") && objectData.hasOwnProperty("text");
+          })
+          .forEach((annotation) => {
+            this._pageAnnots[annotation.page] ||= [];
+            this._pageAnnots[annotation.page].push(annotation);
           });
-        })
-        .catch((error) => {
-          console.err(`Can not parse page #${pageNumber + 1} for search`);
-          return [];
-        });
-      pagesPromises[pageNumber] = promise;
-    }
-
-    return Promise.allSettled(pagesPromises).then((results) => {
-      const pageAnnots = [];
-      results.forEach((result, index) => {
-        pageAnnots[index] = result.value;
+      })
+      .catch((error) => {
+        console.error(`Can not parse page #${pageNumber + 1} for search`, error.message);
+        this._pageAnnots = [];
       });
-      console.log("#extractAnnots", this.#query, this._pageAnnots);
-      this._pageAnnots = pageAnnots;
-    });
   }
 
   #extractText() {

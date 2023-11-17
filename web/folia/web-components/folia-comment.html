@@ -151,6 +151,17 @@
 
   /** comment body part */
 
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    height: 20px;
+    border-radius: 5px;
+  }
   .folia-comment-conversation {
     width: 100%;
     display: flex;
@@ -158,7 +169,7 @@
     align-items: flex-start;
     justify-content: flex-start;
     max-height: 365px;
-    overflow-y: auto;
+    overflow: hidden auto;
   }
 
   /** footer part */

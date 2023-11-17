@@ -1,37 +1,56 @@
 <div class="folia-floating-bar">
   <div class="text-box-property">
-    <button class="font-family" data-role="font-family-panel">
-      <span id="font-family-value" data-role="font-family-panel">Sans-serif</span>
-    </button>
-    <button class="font-size" data-role="font-size-panel">
-      <span id="font-size-value" data-role="font-size-panel">12</span>
-    </button>
+    <folia-drop-down name="font-family" tooltip="Font family" top width="103">
+      <option value="SANS_SERIF">Sans serif</option>
+      <option value="SERIF">Serif</option>
+      <option value="MONOSPACE">Monospace</option>
+      <option value="SCRIPT">Script</option>
+      <option value="FANTASY">Fantasy</option>
+    </folia-drop-down>
+    <folia-drop-down name="font-size" tooltip="Font size" top>
+      <option value="8">8</option>
+      <option value="10">10</option>
+      <option value="12">12</option>
+      <option value="14">14</option>
+      <option value="16">16</option>
+      <option value="18">18</option>
+      <option value="20">20</option>
+      <option value="24">24</option>
+      <option value="36">36</option>
+      <option value="48">48</option>
+      <option value="64">64</option>
+      <option value="72">72</option>
+      <option value="96">96</option>
+      <option value="144">144</option>
+    </folia-drop-down>
     <div class="divider"></div>
   </div>
   <!-- prettier-ignore -->
-  <folia-button data-role="stroke-width" name="stroke" icon="stroke" tooltip="Stroke" top="true"></folia-button>
+  <div class="stroke-property">
+    <folia-button data-role="stroke-width" name="stroke" icon="stroke" tooltip="Adjust stroke width" top="true"></folia-button>
+  </div>
   <div class="color-property">
     <!-- prettier-ignore -->
-    <folia-button data-role="anno-color" name="color" icon="color" tooltip="Color" top="true"></folia-button>
+    <folia-button data-role="anno-color" name="color" icon="color" tooltip="Adjust color and opacity" top="true"></folia-button>
     <div class="divider"></div>
   </div>
   <div class="text-box-property">
     <!-- prettier-ignore -->
-    <folia-button data-role="bold" name="bold" icon="bold" tooltip="Color" top="true"></folia-button>
+    <folia-button data-role="bold" name="bold" icon="bold" tooltip="Bold" top="true"></folia-button>
     <!-- prettier-ignore -->
-    <folia-button data-role="align-left" name="align-left" icon="align_left" tooltip="Aligned left" top="true"></folia-button>
+    <folia-button data-role="align-left" name="align-left" icon="align_left" tooltip="Left align" top="true"></folia-button>
     <!-- prettier-ignore -->
-    <folia-button data-role="align-center" name="align-center" icon="align_center" tooltip="Aligned center" top="true"></folia-button>
+    <folia-button data-role="align-center" name="align-center" icon="align_center" tooltip="Center align" top="true"></folia-button>
     <!-- prettier-ignore -->
-    <folia-button data-role="align-right" name="align-right" icon="align_right" tooltip="Aligned right" top="true"></folia-button>
+    <folia-button data-role="align-right" name="align-right" icon="align_right" tooltip="Right align" top="true"></folia-button>
     <div class="divider"></div>
   </div>
 
   <!-- prettier-ignore -->
   <folia-button data-role="duplicate" name="duplicate" icon="duplicate" tooltip="Duplicate" top="true"></folia-button>
   <!-- prettier-ignore -->
-  <folia-button data-role="make-as-a-stamp" disabled name="stamp" icon="stamp" tooltip="Make as stamp" top="true"></folia-button>
-  <folia-button data-role="show-info" name="info" icon="info" tooltip="Info" top="true"></folia-button>
+  <folia-button data-role="make-as-a-stamp" disabled name="stamp" icon="stamp" tooltip="Stamp" top="true"></folia-button>
+  <folia-button data-role="show-info" name="info" icon="info" tooltip="Details" top="true"></folia-button>
   <div class="divider"></div>
   <folia-button data-role="delete" name="delete" icon="delete" tooltip="Delete" top="true"></folia-button>
 
@@ -183,14 +202,16 @@
   }
 
   .text-box-property,
-  .color-property {
+  .color-property,
+  .stroke-property {
     display: none;
     align-items: center;
     justify-content: center;
     gap: 16px;
   }
   .text-box-property.shown,
-  .color-property.shown {
+  .color-property.shown,
+  .stroke-property.shown {
     display: flex;
   }
 

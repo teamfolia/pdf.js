@@ -88,7 +88,7 @@ class FoliaReply extends HTMLElement {
     const editedStatusLabel = this.shadowRoot.querySelector(".folia-reply-edited-label");
     editedStatusLabel.classList.toggle("shown", this.#isEdited);
     // editedStatusLabel.innerHTML = "Edited " + foliaDateFormat(this.#addedAt);
-    editedStatusLabel.innerHTML = "Edited";
+    editedStatusLabel.innerHTML = "(edited)";
   }
 
   composeCreatedAtAsLabel(createdAt) {

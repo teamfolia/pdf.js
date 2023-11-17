@@ -43,6 +43,9 @@ class CreatingAnnotation {
 
     const state = structuredClone(this.state);
     state.addedAt = new Date().toISOString();
+    if (state.__typename === ANNOTATION_TYPES.IMAGE) {
+      state.newbie = true;
+    }
     const annoObject = page.foliaPageLayer.addAnnotationObject(state);
     this.manager.foliaPdfViewer.eventBus.dispatch("objects-were-updated", [annoObject.toObjectData()]);
   }

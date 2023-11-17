@@ -129,6 +129,7 @@ class FoliaCreateComment extends HTMLElement {
     smiles.onclick = (e) => {
       if (!e.target.classList.contains("folia-create-comment-smile")) return;
       editor.value += e.target.innerText;
+      smiles.classList.toggle("shown", false);
     };
   }
 

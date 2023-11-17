@@ -46,7 +46,7 @@ class EventBusRequest {
     const that = this;
     return new Promise((resolve, reject) => {
       try {
-        const timeout = setTimeout(() => reject(new Error("event bus request timeout")), 10_000);
+        const timeout = setTimeout(() => reject(new Error("event bus request timeout")), 30_000);
         this.eventBus.on(responseName, handleResponse);
         this.eventBus.dispatch(reqName, { responseName, reqProps });
 

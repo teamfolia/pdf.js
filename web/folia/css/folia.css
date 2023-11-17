@@ -1,12 +1,10 @@
 @import url(../../pdf_viewer.css);
-
 @import url(./fonts/Cookie/font.css);
 @import url(./fonts/CourierPrime/font.css);
 @import url(./fonts/EagleLake/font.css);
 @import url(./fonts/Inter/font.css);
 @import url(./fonts/Lora/font.css);
 @import url(./fonts/SourceSansPro/font.css);
-
 @import url(../annotations-builders/annotation-builders.css);
 @import url(../../annotation_layer_builder.css);
 
@@ -14,21 +12,6 @@ body {
   padding: 0;
   margin: 0;
 }
-
-/* .viewer-container {
-  flex-grow: 1;
-  border: solid 5px red;
-  margin-top: 60px;
-} */
-
-/* .viewer {
-  border: solid 5px blue;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10px;
-  gap: 10px;
-} */
 
 .page {
   position: relative;
