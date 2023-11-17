@@ -67,13 +67,6 @@ class BaseAnnoObject {
     const { addedAt = this.addedAt, deletedAt = this.deletedAt, error } = annoData;
 
     this.error = error;
-    if (this.error) {
-      this.annotationUI?.classList.toggle("error", true);
-      this.annotationUI?.setAttribute("title", this.error.message);
-    } else {
-      this.annotationUI?.classList.toggle("error", false);
-      this.annotationUI?.removeAttribute("title");
-    }
 
     if (deletedAt) {
       this.deletedAt = deletedAt;
@@ -393,6 +386,14 @@ class BaseAnnoObject {
       annotationUI.className = `annotation ${this.__typename}`;
       annotationUI.onmousedown = this.onMouseDownBinded;
       this.annotationUI = uiContainer.appendChild(annotationUI);
+    }
+
+    if (this.error) {
+      this.annotationUI?.classList.toggle("error", true);
+      this.annotationUI?.setAttribute("title", this.error.message);
+    } else {
+      this.annotationUI?.classList.toggle("error", false);
+      this.annotationUI?.removeAttribute("title");
     }
 
     if (!this.no_corners) {
