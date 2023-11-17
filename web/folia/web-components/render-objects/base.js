@@ -438,7 +438,7 @@ class BaseAnnoObject {
 
   renderTo(viewport, pageCanvasContext, uiContainer, pdfCanvas) {
     this.viewport = viewport;
-    if (this.deletedAt) {
+    if (this.deletedAt && !this.error) {
       this.annotationUI?.remove();
     } else {
       this.render(pageCanvasContext, pdfCanvas);
