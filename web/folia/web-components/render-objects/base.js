@@ -395,6 +395,7 @@ class BaseAnnoObject {
       this.annotationUI?.classList.toggle("error", false);
       this.annotationUI?.removeAttribute("title");
     }
+    // 123
 
     if (!this.no_corners) {
       const cornersRoles = [ROLE_CORNER_LB, ROLE_CORNER_LT, ROLE_CORNER_RB, ROLE_CORNER_RT];

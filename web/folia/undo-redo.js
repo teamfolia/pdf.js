@@ -9,16 +9,16 @@ class CreatingAnnotation {
   }
 
   undo() {
-    this.manager.foliaPdfViewer.page = this.state.page + 1;
+    // this.manager.foliaPdfViewer.page = this.state.page + 1;
     const page = this.manager.foliaPdfViewer.pdfViewer._pages.find((page) => page.id === this.state.page + 1);
     if (!page) return;
     if (!page.foliaPageLayer) return setTimeout(() => this.undo(), 100);
 
-    this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
-      pageNumber: this.state.page + 1,
-      destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
-      allowNegativeOffset: true,
-    });
+    // this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
+    //   pageNumber: this.state.page + 1,
+    //   destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
+    //   allowNegativeOffset: true,
+    // });
 
     const annoObject = page.foliaPageLayer.objects.find((obj) => obj.id === this.state.id);
     const now = new Date().toISOString();
@@ -133,18 +133,18 @@ class DeletingAnnotation {
   }
 
   redo() {
-    this.manager.foliaPdfViewer.page = this.prevState.page + 1;
+    // this.manager.foliaPdfViewer.page = this.prevState.page + 1;
     const page = this.manager.foliaPdfViewer.pdfViewer._pages.find(
       (page) => page.id === this.prevState.page + 1
     );
     if (!page) return;
     if (!page.foliaPageLayer) return setTimeout(() => this.redo(), 100);
 
-    this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
-      pageNumber: this.prevState.page + 1,
-      destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
-      allowNegativeOffset: true,
-    });
+    // this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
+    //   pageNumber: this.prevState.page + 1,
+    //   destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
+    //   allowNegativeOffset: true,
+    // });
 
     const annoObject = page.foliaPageLayer.objects.find((obj) => obj.id === this.prevState.id);
     const now = new Date().toISOString();
@@ -166,7 +166,12 @@ class ToolUndoRedo {
   }
 
   undo() {
-    this.manager.foliaPdfViewer.page = this.prevState.page + 1;
+    this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
+      pageNumber: this.prevState.page + 1,
+      destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
+      allowNegativeOffset: true,
+    });
+
     const page = this.manager.foliaPdfViewer.pdfViewer._pages.find(
       (page) => page.id === this.prevState.page + 1
     );
@@ -179,7 +184,12 @@ class ToolUndoRedo {
   }
 
   redo() {
-    this.manager.foliaPdfViewer.page = this.prevState.page + 1;
+    this.manager.foliaPdfViewer.pdfViewer.scrollPageIntoView({
+      pageNumber: this.prevState.page + 1,
+      destArray: [null, { name: "XYZ" }, this._location.left, this._location.top, this._location.scale / 100],
+      allowNegativeOffset: true,
+    });
+
     const page = this.manager.foliaPdfViewer.pdfViewer._pages.find(
       (page) => page.id === this.prevState.page + 1
     );
@@ -240,8 +250,8 @@ export class UndoRedo {
   }
 
   addToolStep(previousData, nextData) {
-    // console.log("addToolStep", { previousData, nextData });
     const command = new ToolUndoRedo(this, previousData, nextData);
+    console.log("addToolStep", command);
     this.undoStack.push(command);
     this.redoStack = [];
     this.updateUI();
