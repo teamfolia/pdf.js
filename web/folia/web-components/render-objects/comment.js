@@ -87,6 +87,13 @@ class CommentObject extends BaseAnnoObject {
 
   getBoundingRect() {
     const anchorPoint = fromPdfPoint(this.anchorPoint, this.viewport.width, this.viewport.height);
+    const points = [
+      { x: anchorPoint.x, y: anchorPoint.y }, // left top
+      { x: anchorPoint.x + this.pointWidth, y: anchorPoint.y }, // right top
+      { x: anchorPoint.x + this.pointWidth, y: anchorPoint.y + this.pointHeight }, // right bottom
+      { x: anchorPoint.x, y: anchorPoint.y + this.pointHeight }, // left bottom
+    ];
+
     return {
       left: anchorPoint.x,
       top: anchorPoint.y,
@@ -94,6 +101,7 @@ class CommentObject extends BaseAnnoObject {
       height: this.pointHeight,
       right: anchorPoint.x + this.pointWidth,
       bottom: anchorPoint.y + this.pointHeight,
+      points,
     };
   }
 
@@ -204,6 +212,7 @@ class CommentObject extends BaseAnnoObject {
       replyData.status = replyData?.edited || e.detail.edited ? "EDITED" : "NOT_EDITED";
       replyData.addedAt = addedAt;
       replyData.text = e.detail.text;
+      replyData.page = this.page;
       this.eventBus.dispatch("objects-were-updated", [replyData]);
     }
   }

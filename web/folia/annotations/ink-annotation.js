@@ -1,4 +1,3 @@
-import { view } from "paper/dist/paper-core";
 import { ANNOTATION_TYPES } from "../constants";
 import { hexColor2RGBA, fromPdfPoint, toPdfPath, fromPdfPath, fromPdfRect } from "../folia-util";
 import FoliaBaseAnnotation from "./base-annotation";

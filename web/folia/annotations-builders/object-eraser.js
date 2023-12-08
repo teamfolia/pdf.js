@@ -113,6 +113,8 @@ class ObjectEraser {
       const y = point.y * window.devicePixelRatio;
     }
   }
+
+  applyPreset() {}
 }
 
 export default ObjectEraser;

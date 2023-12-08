@@ -95,7 +95,7 @@ class HighlightObject extends BaseAnnoObject {
   }
 
   getBoundingRect() {
-    return this.rects.reduce(
+    const { left, top, right, bottom, width, height } = this.rects.reduce(
       (acc, pdfRect) => {
         const rect = fromPdfRect(pdfRect, this.viewport.width, this.viewport.height);
         return {
@@ -109,6 +109,15 @@ class HighlightObject extends BaseAnnoObject {
       },
       { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity, width: 0, height: 0 }
     );
+
+    const points = [
+      { x: left, y: top }, // left top
+      { x: right, y: top }, // right top
+      { x: right, y: bottom }, // right bottom
+      { x: left, y: bottom }, // left bottom
+    ];
+
+    return { left, top, right, bottom, width, height, points };
   }
 
   move() {

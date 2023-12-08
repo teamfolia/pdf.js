@@ -27,6 +27,9 @@
 .annotation-builder-container.eraser.on {
   cursor: var(--cursor-on-image), cell;
 }
+.annotation-builder-container.pixel-eraser {
+  cursor: crosshair;
+}
 
 .text-box-editor {
   position: absolute;

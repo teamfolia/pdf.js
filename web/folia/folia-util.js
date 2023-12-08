@@ -445,3 +445,52 @@ export const areArraysSimilar = (arr1, arr2) => {
     return arr2[arr1index] === arr1item;
   });
 };
+
+export const isPointInRect = (point, rect) => {
+  const [leftTop, rightTop, rightBottom, leftBottom] = rect.points;
+
+  function triangleArea(p1, p2, p3) {
+    const p1p2 = Math.sqrt(Math.pow(Math.abs(p1.x - p2.x), 2) + Math.pow(Math.abs(p1.y - p2.y), 2));
+    const p2p3 = Math.sqrt(Math.pow(Math.abs(p2.x - p3.x), 2) + Math.pow(Math.abs(p2.y - p3.y), 2));
+    const p3p1 = Math.sqrt(Math.pow(Math.abs(p3.x - p1.x), 2) + Math.pow(Math.abs(p3.y - p1.y), 2));
+    let semiPerimeter = (p1p2 + p2p3 + p3p1) / 2;
+    return Math.sqrt(
+      semiPerimeter * (semiPerimeter - p1p2) * (semiPerimeter - p2p3) * (semiPerimeter - p3p1)
+    );
+  }
+
+  const triangle1Area = triangleArea(leftTop, rightTop, point);
+  const triangle2Area = triangleArea(rightTop, rightBottom, point);
+  const triangle3Area = triangleArea(rightBottom, leftBottom, point);
+  const triangle4Area = triangleArea(leftBottom, leftTop, point);
+
+  const triangle5Area = triangleArea(leftTop, rightTop, rightBottom);
+  const triangle6Area = triangleArea(rightBottom, leftBottom, leftTop);
+
+  return (
+    Math.round(triangle5Area + triangle6Area) ===
+    Math.round(triangle1Area + triangle2Area + triangle3Area + triangle4Area)
+  );
+};
+
+export const isRectInRect = (rect1, rect2) => {
+  for (let x = rect1.left; x <= rect1.right; x++) {
+    if (x === rect1.left || x === rect1.right) {
+      for (let y = rect1.top; y <= rect1.bottom; y++) {
+        if (isPointInRect({ x, y }, rect2)) return true;
+      }
+    } else {
+      if (isPointInRect({ x, y: rect1.top }, rect2)) return true;
+      if (isPointInRect({ x, y: rect1.bottom }, rect2)) return true;
+      if (
+        rect2.left > rect1.left &&
+        rect2.top > rect1.top &&
+        rect2.right < rect1.right &&
+        rect2.bottom < rect1.bottom
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+};

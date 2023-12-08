@@ -1,5 +1,6 @@
 import BaseAnnoObject from "./base";
 import { fromPdfPath, toPdfPath, fromPdfPoint, hexColor2RGBA } from "../../folia-util";
+import { colord } from "colord";
 
 class InkObject extends BaseAnnoObject {
   color;
@@ -58,7 +59,7 @@ class InkObject extends BaseAnnoObject {
     return { paths: paths.map((path) => toPdfPath(path, width, height)) };
   }
 
-  render(ctx) {
+  _render(ctx) {
     if (!ctx) return;
 
     // const ctx = canvas.getContext("2d");
@@ -106,6 +107,97 @@ class InkObject extends BaseAnnoObject {
     });
   }
 
+  render(ctx) {
+    if (!ctx) return;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    const alpha = colord(this.color).alpha();
+    const color = colord(this.color).alpha(1).toHex();
+    ctx.globalCompositeOperation = alpha < 1 ? "xor" : "source-over";
+    ctx.globalAlpha = alpha;
+
+    ctx.strokeStyle = hexColor2RGBA(color);
+    ctx.fillStyle = hexColor2RGBA(color);
+    const lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
+    const paths = this.paths
+      .map((pdfPath) => fromPdfPath(pdfPath, this.viewport.width, this.viewport.height))
+      .map((path) =>
+        path.map((point) => ({
+          x: point.x * window.devicePixelRatio,
+          y: point.y * window.devicePixelRatio,
+        }))
+      );
+
+    for (const path of paths) {
+      if (path.length === 1) {
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.arc(path[0].x, path[0].y, lineWidth / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.closePath();
+      } else {
+        ctx.lineWidth = lineWidth;
+        let p1 = path[0];
+        let p2 = path[1];
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        for (let i = 1, len = path.length; i < len; i++) {
+          const mp = {
+            x: p1.x + (p2.x - p1.x) * 0.5,
+            y: p1.y + (p2.y - p1.y) * 0.5,
+          };
+          ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
+          p1 = path[i];
+          p2 = path[i + 1];
+        }
+        ctx.stroke();
+        ctx.closePath();
+      }
+
+      // for (const curve of segment) {
+      //   ctx.beginPath();
+      //   let p = curve.points;
+      //   ctx.moveTo(p[0].x, p[0].y);
+      //   if (p.length === 3) ctx.quadraticCurveTo(p[1].x, p[1].y, p[2].x, p[2].y);
+      //   ctx.stroke();
+      //   ctx.closePath();
+      // }
+    }
+    ctx.globalAlpha = 1;
+
+    // -----------------------------
+    // const ctx = canvas.getContext("2d");
+    return;
+    paths.forEach((viewportPath) => {
+      let p1 = viewportPath[0];
+      let p2 = viewportPath[1];
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+
+      if (viewportPath.length === 1) {
+        ctx.lineWidth = 1;
+        ctx.arc(p1.x, p1.y, lineWidth / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.lineWidth = lineWidth;
+        for (let i = 1, len = viewportPath.length; i < len; i++) {
+          const mp = {
+            x: p1.x + (p2.x - p1.x) * 0.5,
+            y: p1.y + (p2.y - p1.y) * 0.5,
+          };
+          ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
+          p1 = viewportPath[i];
+          p2 = viewportPath[i + 1];
+        }
+      }
+
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+      ctx.closePath();
+    });
+  }
+
   getBoundingRect() {
     const { left, top, right, bottom } = [].concat.apply([], this.paths).reduce(
       (acc, path, index, arr) => {
@@ -124,7 +216,23 @@ class InkObject extends BaseAnnoObject {
       },
       { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
     );
-    return { left, top, width: right - left, height: bottom - top, right, bottom };
+
+    const halfOfWidth = (this.lineWidth / 2) * this.viewport.scale;
+
+    return {
+      left,
+      top,
+      width: right - left,
+      height: bottom - top,
+      right,
+      bottom,
+      points: [
+        { x: left - halfOfWidth, y: top - halfOfWidth },
+        { x: right + halfOfWidth, y: top - halfOfWidth },
+        { x: right + halfOfWidth, y: bottom + halfOfWidth },
+        { x: left - halfOfWidth, y: bottom + halfOfWidth },
+      ],
+    };
   }
 
   move(deltaX = 0, deltaY = 0) {

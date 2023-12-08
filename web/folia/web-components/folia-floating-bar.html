@@ -55,35 +55,63 @@
   <folia-button data-role="delete" name="delete" icon="delete" tooltip="Delete" top="true"></folia-button>
 
   <div class="folia-floating-bar-stroke-panel">
-    <input type="range" min="1" max="20" step="1" class="panel-slider" id="stroke-slider" />
+    <input type="range" min="1" max="20" step="1" class="panel-slider stroke" id="stroke-slider" />
     <div class="folia-floating-bar-label-container">
       <span class="folia-floating-bar-label">Stroke width</span>
       <span class="folia-floating-bar-label" id="stroke-width">12</span>
     </div>
   </div>
   <div class="folia-floating-bar-color-panel">
-    <input type="range" min="10" max="100" step="1" class="panel-slider" id="opacity-slider" />
+    <input type="range" min="10" max="100" step="1" class="panel-slider opacity" id="opacity-slider" />
     <div class="folia-floating-bar-label-container">
       <span class="folia-floating-bar-label">Opacity</span>
       <span class="folia-floating-bar-label" id="opacity-value">100%</span>
     </div>
     <div class="color-panel-colors">
-      <button class="color-button s-ring" style="--color: #ffffff" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #ffed69" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #f59e0b" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #ef4444" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #ec4899" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #8b5cf6" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #5b21b6" data-role="choose-color"></button>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #ffffff" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #ffed69" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #f59e0b" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #ef4444" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #ec4899" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #8b5cf6" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #5b21b6" data-role="choose-color"></button>
+      </div>
     </div>
     <div class="color-panel-colors">
-      <button class="color-button s-ring" style="--color: #000000" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #d3e660" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #9dcf62" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #0d9488" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #22d3ee" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #0ea5e9" data-role="choose-color"></button>
-      <button class="color-button s-ring" style="--color: #94a3b8" data-role="choose-color"></button>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #000000" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #d3e660" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #9dcf62" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #0d9488" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #22d3ee" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #0ea5e9" data-role="choose-color"></button>
+      </div>
+      <div class="selected-button-ring">
+        <button class="color-button" style="--color: #94a3b8" data-role="choose-color"></button>
+      </div>
     </div>
   </div>
   <div class="folia-floating-bar-info-panel">
@@ -126,6 +154,10 @@
       opacity: 1;
     }
   }
+  folia-button.hidden {
+    display: none;
+  }
+
   .folia-floating-bar {
     z-index: 2000;
     position: absolute;
@@ -356,6 +388,38 @@
     width: 100%;
     min-width: 216px;
   }
+  .panel-slider:focus {
+    outline: none;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    height: 10px;
+    border-radius: 10px;
+    margin: 0;
+    border: solid 1px #f1f5f9;
+  }
+  input[type="range"].stroke {
+    background: var(--color);
+  }
+  input[type="range"].opacity {
+    background: var(--color);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 18px;
+    border: solid 1px #e2e8f0;
+    align-self: center;
+    background-color: var(--color);
+    filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.1));
+  }
 
   .color-panel-colors {
     width: 100%;
@@ -363,6 +427,19 @@
     justify-content: center;
     align-items: flex-start;
     gap: 8px;
+  }
+
+  .selected-button-ring {
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: solid 2px transparent;
+    border-radius: 50%;
+  }
+  .selected-button-ring.selected {
+    border: solid 2px #e2e8f0;
   }
 
   .color-button {
@@ -376,6 +453,9 @@
     background-repeat: no-repeat;
     cursor: pointer;
 
+    border: solid 1px #e2e8f0;
+    background-color: var(--color);
+
     --anno-color: #f1f1f1;
   }
 
@@ -388,10 +468,6 @@
     transform: translate(1px, 1px);
   }
 
-  .color-button.s-ring {
-    border: solid 1px #e2e8f0;
-    background-color: var(--color);
-  }
   .color-button.selected {
     border: solid 3px #e2e8f0;
   }

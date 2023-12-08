@@ -68,6 +68,13 @@ class ImageObject extends BaseAnnoObject {
 
   getBoundingRect() {
     const rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height);
+    const points = [
+      { x: rect[0], y: rect[1] }, // left top
+      { x: rect[0] + rect[2], y: rect[1] }, // right top
+      { x: rect[0] + rect[2], y: rect[1] + rect[3] }, // right bottom
+      { x: rect[0], y: rect[1] + rect[3] }, // left bottom
+    ];
+
     return {
       left: rect[0],
       top: rect[1],
@@ -75,6 +82,7 @@ class ImageObject extends BaseAnnoObject {
       height: rect[3],
       right: rect[0] + rect[2],
       bottom: rect[1] + rect[3],
+      points,
     };
   }
 }

@@ -27,14 +27,15 @@ import TextBoxBuilder from "./annotations-builders/text-box-builder";
 import "./css/folia.css";
 import { UndoRedo } from "./undo-redo";
 import ObjectEraser from "./annotations-builders/object-eraser";
+import PixelEraser from "./annotations-builders/pixel-eraser";
 import CommentBuilder from "./annotations-builders/comment-builder";
 import StampsBuilder from "./annotations-builders/stamps-builder";
-import FoliaArrowAnnotation from "./annotations/arrow-annotation";
-import FoliaCircleAnnotation from "./annotations/circle-annotation";
-import FoliaImageAnnotation from "./annotations/image-annotation";
-import FoliaInkAnnotation from "./annotations/ink-annotation";
-import FoliaSquareAnnotation from "./annotations/square-annotation";
-import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
+// import FoliaArrowAnnotation from "./annotations/arrow-annotation";
+// import FoliaCircleAnnotation from "./annotations/circle-annotation";
+// import FoliaImageAnnotation from "./annotations/image-annotation";
+// import FoliaInkAnnotation from "./annotations/ink-annotation";
+// import FoliaSquareAnnotation from "./annotations/square-annotation";
+// import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -688,6 +689,9 @@ export class FoliaPDFViewer {
     } else if (toolType === TOOLS.ERASER) {
       const BuilderClass = ObjectEraser;
       this.continueStartDrawing(BuilderClass, {});
+    } else if (toolType === TOOLS.PIXEL_ERASER) {
+      const BuilderClass = PixelEraser;
+      this.continueStartDrawing(BuilderClass, preset);
     } else if (toolType === TOOLS.COMMENT) {
       const BuilderClass = CommentBuilder;
       this.continueStartDrawing(BuilderClass, {});

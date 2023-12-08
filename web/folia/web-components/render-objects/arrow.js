@@ -76,8 +76,6 @@ class ArrowObject extends BaseAnnoObject {
     const targetPoint = fromPdfPoint(this.targetPoint, this.viewport.width, this.viewport.height);
     const lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const color = hexColor2RGBA(this.color);
-    // console.log("arrow", { sourcePoint, targetPoint, lineWidth, color });
-    // const ctx = canvas.getContext("2d");
 
     const sourceX = sourcePoint.x * window.devicePixelRatio;
     const sourceY = sourcePoint.y * window.devicePixelRatio;
@@ -262,18 +260,106 @@ class ArrowObject extends BaseAnnoObject {
   }
 
   getBoundingRect() {
-    // TODO: need to get real div bounds of arrow instead of get rect between sourcePoint && targetPoint
-    // return { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 };
-
     const sourcePoint = fromPdfPoint(this.sourcePoint, this.viewport.width, this.viewport.height);
     const targetPoint = fromPdfPoint(this.targetPoint, this.viewport.width, this.viewport.height);
+
+    const annotationWidth = Math.abs(targetPoint.x - sourcePoint.x);
+    const annotationHeight = Math.abs(targetPoint.y - sourcePoint.y);
+    const annotationAgle = Math.atan(annotationHeight / annotationWidth);
+    const arrowLength = Math.sqrt(Math.pow(annotationWidth, 2) + Math.pow(annotationHeight, 2));
+    const lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
+    const lineFactor = Math.max(lineWidth, 5);
+    const arrowHeight = lineFactor * 3.7;
+    const arrowLeavesHeight = arrowHeight / 6.5;
+    const cornersRadius = lineFactor / 6;
+    const arrowAngle = (63 * Math.PI) / 180;
+    const outSideLine = arrowHeight / Math.cos(arrowAngle / 2);
+    const halfOfArrowBase = Math.sqrt(Math.pow(outSideLine, 2) - Math.pow(arrowHeight, 2)) / 2;
+
+    let source1, target1, target2, source2;
+    if (sourcePoint.x <= targetPoint.x && sourcePoint.y <= targetPoint.y) {
+      source1 = {
+        x: Math.round(sourcePoint.x + halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(sourcePoint.y - halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      target1 = {
+        x: Math.round(targetPoint.x + halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(targetPoint.y - halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      target2 = {
+        x: Math.round(targetPoint.x - halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(targetPoint.y + halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      source2 = {
+        x: Math.round(sourcePoint.x - halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(sourcePoint.y + halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+    } else if (sourcePoint.x <= targetPoint.x && sourcePoint.y >= targetPoint.y) {
+      source1 = {
+        x: Math.round(sourcePoint.x - halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(sourcePoint.y - halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      target1 = {
+        x: Math.round(targetPoint.x - halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(targetPoint.y - halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      target2 = {
+        x: Math.round(targetPoint.x + halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(targetPoint.y + halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      source2 = {
+        x: Math.round(sourcePoint.x + halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(sourcePoint.y + halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+    } else if (sourcePoint.x >= targetPoint.x && sourcePoint.y <= targetPoint.y) {
+      source1 = {
+        x: Math.round(sourcePoint.x + halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(sourcePoint.y + halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      target1 = {
+        x: Math.round(targetPoint.x + halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(targetPoint.y + halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      target2 = {
+        x: Math.round(targetPoint.x - halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(targetPoint.y - halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      source2 = {
+        x: Math.round(sourcePoint.x - halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(sourcePoint.y - halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+    } else if (sourcePoint.x >= targetPoint.x && sourcePoint.y >= targetPoint.y) {
+      source1 = {
+        x: Math.round(sourcePoint.x - halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(sourcePoint.y + halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      target1 = {
+        x: Math.round(targetPoint.x - halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(targetPoint.y + halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      target2 = {
+        x: Math.round(targetPoint.x + halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(targetPoint.y - halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+      source2 = {
+        x: Math.round(sourcePoint.x + halfOfArrowBase * Math.sin(annotationAgle)),
+        y: Math.round(sourcePoint.y - halfOfArrowBase * Math.cos(annotationAgle)),
+      };
+    }
+
+    const left = Math.min(source1.x, source2.x, target1.x, target2.x);
+    const top = Math.min(source1.y, source2.y, target1.y, target2.y);
+    const right = Math.max(source1.x, source2.x, target1.x, target2.x);
+    const bottom = Math.max(source1.y, source2.y, target1.y, target2.y);
+
     return {
-      left: Math.min(sourcePoint.x, targetPoint.x),
-      top: Math.min(sourcePoint.y, targetPoint.y),
-      width: Math.max(sourcePoint.x, targetPoint.x) - Math.min(sourcePoint.x, targetPoint.x),
-      height: Math.max(sourcePoint.y, targetPoint.y) - Math.min(sourcePoint.y, targetPoint.y),
-      right: Math.max(sourcePoint.x, targetPoint.x),
-      bottom: Math.max(sourcePoint.y, targetPoint.y),
+      left,
+      top,
+      right,
+      bottom,
+      width: right - left,
+      height: bottom - top,
+      points: [source1, target1, target2, source2],
     };
   }
 

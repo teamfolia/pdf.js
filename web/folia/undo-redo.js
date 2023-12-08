@@ -221,6 +221,10 @@ export class UndoRedo {
         return this.updatingObject(previousState, currentState);
       case "delete":
         return this.deletingObject(previousState);
+      case "tool-changes":
+        return this.addToolStep(previousState, currentState);
+      case "reset-tool-changes":
+        return this.removeToolUndoRedoItems();
     }
   }
 
@@ -251,7 +255,6 @@ export class UndoRedo {
 
   addToolStep(previousData, nextData) {
     const command = new ToolUndoRedo(this, previousData, nextData);
-    console.log("addToolStep", command);
     this.undoStack.push(command);
     this.redoStack = [];
     this.updateUI();

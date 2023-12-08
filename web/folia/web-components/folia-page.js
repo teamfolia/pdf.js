@@ -29,12 +29,16 @@ import CommentObject from "./render-objects/comment";
 import HighlightObject from "./render-objects/highlight";
 import {
   areArraysSimilar,
+  isPointInRect,
+  arePolygonsIntersected,
   setArrowNewPosition,
   setPathsNewPosition,
   setRectNewPosition,
   setTextRectNewPosition,
   sortObjects,
+  isRectInRect,
 } from "../folia-util";
+import PixelEraser from "../annotations-builders/pixel-eraser";
 
 class EventBusRequest {
   constructor(eventBus) {
@@ -277,13 +281,18 @@ class FoliaPage extends HTMLElement {
     const pdfCanvas = this.parentNode.querySelector('div.canvasWrapper>canvas[role="presentation"]');
 
     const lastSelectedObject = this.#multipleSelection.first;
-    const annoObjects = this.#objects.slice().sort(sortObjects);
+    const annoObjects = this.#objects.filter((obj) => obj !== lastSelectedObject).sort(sortObjects);
     if (lastSelectedObject) annoObjects.push(lastSelectedObject);
 
     for (const annoObj of annoObjects) {
       ctx.save();
       if (annoObj instanceof HighlightObject) {
         annoObj.renderTo(this.#viewport, ctx, this.#ui, pdfCanvas);
+      } else if (PixelEraser.ERASABLE_TYPES.includes(annoObj.__typename)) {
+        // annoObj.renderTo(this.#viewport, ctx, this.#ui);
+        if (!(this.annotationBuilder instanceof PixelEraser)) {
+          annoObj.renderTo(this.#viewport, ctx, this.#ui);
+        }
       } else {
         annoObj.renderTo(this.#viewport, ctx, this.#ui);
       }
@@ -296,9 +305,22 @@ class FoliaPage extends HTMLElement {
       ctx.restore();
     }
 
+    if (this.points && Array.isArray(this.points)) {
+      for (const point of this.points) {
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.fillStyle = point.color || "gray";
+        ctx.strokeStyle = "black";
+        ctx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.closePath();
+      }
+    }
     if (this.selectionArea) this.renderSelectionArea(ctx);
     this.AnimationFrameTimer = requestAnimationFrame(() => this.render(viewport));
   }
+  points = [];
 
   resume() {
     // console.log(`page #${this.pageNumber} invoked 'resume'`);
@@ -584,29 +606,6 @@ class FoliaPage extends HTMLElement {
     }
   }
 
-  findObjectsByArea(startPos, endPos) {
-    if (!startPos) throw new Error("required startPos");
-    if (!endPos) throw new Error("required endPos");
-
-    const selectionArea = {
-      left: Math.min(startPos.x, endPos.x),
-      top: Math.min(startPos.y, endPos.y),
-      right: Math.max(startPos.x, endPos.x),
-      bottom: Math.max(startPos.y, endPos.y),
-    };
-    this.selectionArea = selectionArea;
-
-    // prettier-ignore
-    return this.#objects.filter((object) => {
-      if (object instanceof CommentObject) return false;
-      if (object.isDeleted) return false;
-      const { left, top, right, bottom } = object.getBoundingRect();
-      const x_overlap = Math.max(0, Math.min(selectionArea.right, right) - Math.max(selectionArea.left, left));
-      const y_overlap = Math.max(0, Math.min(selectionArea.bottom, bottom) - Math.max(selectionArea.top, top));
-      return Boolean(x_overlap * y_overlap);
-    });
-  }
-
   overlappingObjects = [];
   overlappedObjectIndex = 0;
   findObjectByCoordinates(point) {
@@ -618,8 +617,9 @@ class FoliaPage extends HTMLElement {
       .reverse()
       .filter((obj) => !obj.isDeleted)
       .filter((obj) => {
-        const { left, top, right, bottom } = obj.getBoundingRect();
-        return x >= left && x <= right && y >= top && y <= bottom;
+        const objRect = obj.getBoundingRect();
+        const isIn = isPointInRect(point, objRect);
+        return isIn;
       });
 
     if (overlappingObjects.length === 0) {
@@ -636,6 +636,26 @@ class FoliaPage extends HTMLElement {
     }
     this.overlappingObjects = overlappingObjects.slice();
     return overlappingObjects.at(objIndex);
+  }
+  findObjectsByArea(startPos, endPos) {
+    if (!startPos) throw new Error("required startPos");
+    if (!endPos) throw new Error("required endPos");
+
+    const selectionArea = {
+      left: Math.min(startPos.x, endPos.x),
+      top: Math.min(startPos.y, endPos.y),
+      right: Math.max(startPos.x, endPos.x),
+      bottom: Math.max(startPos.y, endPos.y),
+      width: Math.min(startPos.x, endPos.x) + Math.max(startPos.x, endPos.x),
+      height: Math.min(startPos.y, endPos.y) + Math.max(startPos.y, endPos.y),
+    };
+    this.selectionArea = selectionArea;
+
+    return this.#objects.filter((object) => {
+      if (object instanceof CommentObject) return false;
+      if (object.isDeleted) return false;
+      return isRectInRect(selectionArea, object.getBoundingRect());
+    });
   }
 
   onMouseDown(e) {

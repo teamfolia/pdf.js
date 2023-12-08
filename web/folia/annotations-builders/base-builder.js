@@ -66,7 +66,8 @@ class BaseBuilder {
       this.foliaPageLayer.eventBus.dispatch("undo-redo-collect", { action: "add", currentState: annoData });
     }
 
-    this.foliaPageLayer.undoRedoManager?.removeToolUndoRedoItems();
+    this.foliaPageLayer.eventBus.dispatch("reset-tool-changes");
+    // this.foliaPageLayer.undoRedoManager?.removeToolUndoRedoItems();
     this.foliaPageLayer.parentNode
       .querySelectorAll(".annotation-builder-container")
       .forEach((el) => el.remove());

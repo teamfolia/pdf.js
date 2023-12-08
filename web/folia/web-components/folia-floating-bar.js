@@ -1,6 +1,7 @@
 import { foliaDateFormat } from "../folia-util";
 import { colord } from "colord";
 import foliaFloatingBarHtml from "./folia-floating-bar.html";
+import { ANNOTATION_TYPES } from "../constants";
 
 const FONT_FAMILY = {
   SANS_SERIF: "SANS_SERIF",
@@ -166,33 +167,50 @@ class FoliaFloatingBar extends HTMLElement {
       pageHeigth = 0,
       isFontDependent = false,
       isStrokeDependent = false,
-      isColorDependent = false;
+      isColorDependent = false,
+      isHighlightDependent = false;
 
     for (const object of objects) {
-      left = Math.min(left, object.bounds.left);
-      top = Math.min(top, object.bounds.top);
-      right = Math.max(right, object.bounds.right);
-      bottom = Math.max(bottom, object.bounds.bottom);
+      const {
+        __typename,
+        color,
+        lineWidth,
+        fontWeight,
+        textAlignment,
+        fontFamily,
+        fontSize,
+        viewport,
+        collaboratorName,
+        addedAt,
+        bounds: { points },
+      } = object;
+      left = Math.min(left, Math.min(...points.map((point) => point.x)));
+      top = Math.min(top, Math.min(...points.map((point) => point.y)));
+      right = Math.max(right, Math.max(...points.map((point) => point.x)));
+      bottom = Math.max(bottom, Math.max(...points.map((point) => point.y)));
 
-      pageWidth = object.viewport.width;
-      pageHeigth = object.viewport.height;
-      this.collaboratorName.innerText = object.collaboratorName;
-      this.addedAt.innerText = foliaDateFormat(object.addedAt);
-      if (object.color) {
+      pageWidth = viewport.width;
+      pageHeigth = viewport.height;
+      this.collaboratorName.innerText = collaboratorName;
+      this.addedAt.innerText = foliaDateFormat(addedAt);
+
+      isHighlightDependent = isHighlightDependent || __typename === ANNOTATION_TYPES.HIGHLIGHT;
+
+      if (color) {
         isColorDependent = true;
-        this.color = object.color;
+        this.color = color;
       }
-      if (object.lineWidth) {
+      if (lineWidth) {
         isStrokeDependent = true;
-        this.lineWidth = object.lineWidth;
+        this.lineWidth = lineWidth;
       }
-      if (object.fontWeight) {
+      if (fontWeight) {
         isFontDependent = true;
-        this.fontWeight = object.fontWeight;
+        this.fontWeight = fontWeight;
       }
-      if (object.textAlignment) this.textAlignment = object.textAlignment;
-      if (object.fontFamily) this.fontFamily = object.fontFamily;
-      if (object.fontSize) this.fontSize = object.fontSize;
+      if (textAlignment) this.textAlignment = textAlignment;
+      if (fontFamily) this.fontFamily = fontFamily;
+      if (fontSize) this.fontSize = fontSize;
     }
 
     this.bar.classList.toggle("trasparent", true);
@@ -205,13 +223,14 @@ class FoliaFloatingBar extends HTMLElement {
     this.shadowRoot.querySelectorAll(".color-property").forEach((el) => {
       el.classList.toggle("shown", isColorDependent);
     });
+    this.shadowRoot.querySelectorAll('[data-role="duplicate"]').forEach((el) => {
+      el.classList.toggle("hidden", isHighlightDependent);
+    });
 
     setTimeout(() => {
       const barWidth = this.bar.clientWidth;
       const barHeight = this.bar.clientHeight;
-      const colorPanelWidth = this.colorPanel.clientWidth;
       const colorPanelHeight = this.colorPanel.clientHeight;
-      // console.log("show objectData", { barHeight, left, right, pageWidth });
 
       if (right + barWidth + padding < pageWidth) {
         this.bar.style.left = right + padding + "px";
@@ -232,10 +251,15 @@ class FoliaFloatingBar extends HTMLElement {
       } else {
         this.bar.style.left = pageWidth / 2 - barWidth / 2 + "px";
         this.bar.style.top = pageHeigth / 2 - barHeight / 2 + "px";
-        // console.log("in the middle");
         // middle middle
       }
       this.bar.classList.toggle("shown", true);
+
+      // pointing for tooltips to show on the bottom side when is not enough height to show on top
+      this.shadowRoot.querySelectorAll("folia-button").forEach((btn) => {
+        const topEdge = this.bar.offsetTop - document.getElementById("viewerContainer").scrollTop;
+        btn.toggleAttribute("top", topEdge >= barHeight);
+      });
     }, 0);
   }
 
@@ -343,10 +367,26 @@ class FoliaFloatingBar extends HTMLElement {
   }
   set color(value) {
     this.#color = value;
+    const alpha = parseInt(colord(value).alpha() * 100, 10);
+    this.#opacity = alpha;
+
     this.colorBtn.style.setProperty("--color", value);
-    this.#opacity = parseInt(colord(value).alpha() * 100, 10);
-    this.opacitySlider.value = this.#opacity;
-    this.opacityValue.innerText = `${this.#opacity}%`;
+    this.opacitySlider.value = alpha;
+    this.opacityValue.innerText = `${alpha}%`;
+
+    const justColor = colord(value).alpha(1).toHex();
+    // prettier-ignore
+    const background = `linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, ${justColor} ${alpha - 5}%, #E2E8F0 ${alpha - 5}% 100%)`;
+    this.opacitySlider.style.setProperty("--color", justColor);
+    this.strokeSlider.style.setProperty("--color", justColor);
+    this.opacitySlider.style.setProperty("background", background);
+
+    this.shadowRoot.querySelectorAll(".color-button").forEach((button) => {
+      const parent = button.parentNode;
+      const color = colord(this.#color).alpha(1).toHex();
+      const buttonColor = button.style.getPropertyValue("--color");
+      parent.classList.toggle("selected", buttonColor === color);
+    });
   }
 
   get fontWeight() {
@@ -398,12 +438,12 @@ class FoliaFloatingBar extends HTMLElement {
     this.onChange("lineWidth", this.lineWidth);
   }
   opacitySliderOnInput(e) {
-    this.color = colord(this.color)
+    const color = colord(this.color)
       .alpha(e.target.value / 100)
       .toHex();
-    this.color += this.color.length === 7 ? "ff" : "";
-    // console.log("choose-opacity", this.color);
+    this.color = color + (color.length === 7 ? "ff" : "");
     this.onChange("color", this.color);
+    // console.log("choose-opacity", this.color);
   }
 
   onMouseDown(e) {

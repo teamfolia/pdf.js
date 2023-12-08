@@ -63,13 +63,42 @@ class SquareObject extends BaseAnnoObject {
 
   getBoundingRect() {
     const rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height);
+    // const points = [
+    //   { x: rect[0], y: rect[1] }, // left top
+    //   { x: rect[0] + rect[2], y: rect[1] }, // right top
+    //   { x: rect[0] + rect[2], y: rect[1] + rect[3] }, // right bottom
+    //   { x: rect[0], y: rect[1] + rect[3] }, // left bottom
+    // ];
+
+    // return {
+    //   left: rect[0],
+    //   top: rect[1],
+    //   width: rect[2],
+    //   height: rect[3],
+    //   right: rect[0] + rect[2],
+    //   bottom: rect[1] + rect[3],
+    //   points,
+    // };
+
+    const left = rect[0];
+    const top = rect[1];
+    const right = rect[0] + rect[2];
+    const bottom = rect[1] + rect[3];
+    const halfOfWidth = (this.lineWidth / 2) * this.viewport.scale;
+
     return {
-      left: rect[0],
-      top: rect[1],
-      width: rect[2],
-      height: rect[3],
-      right: rect[0] + rect[2],
-      bottom: rect[1] + rect[3],
+      left,
+      top,
+      right,
+      bottom,
+      width: right - left,
+      height: bottom - top,
+      points: [
+        { x: left - halfOfWidth, y: top - halfOfWidth },
+        { x: right + halfOfWidth, y: top - halfOfWidth },
+        { x: right + halfOfWidth, y: bottom + halfOfWidth },
+        { x: left - halfOfWidth, y: bottom + halfOfWidth },
+      ],
     };
   }
 }
