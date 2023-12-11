@@ -150,52 +150,12 @@ class InkObject extends BaseAnnoObject {
           p1 = path[i];
           p2 = path[i + 1];
         }
+        ctx.lineTo(p1.x, p1.y);
         ctx.stroke();
         ctx.closePath();
       }
-
-      // for (const curve of segment) {
-      //   ctx.beginPath();
-      //   let p = curve.points;
-      //   ctx.moveTo(p[0].x, p[0].y);
-      //   if (p.length === 3) ctx.quadraticCurveTo(p[1].x, p[1].y, p[2].x, p[2].y);
-      //   ctx.stroke();
-      //   ctx.closePath();
-      // }
     }
     ctx.globalAlpha = 1;
-
-    // -----------------------------
-    // const ctx = canvas.getContext("2d");
-    return;
-    paths.forEach((viewportPath) => {
-      let p1 = viewportPath[0];
-      let p2 = viewportPath[1];
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-
-      if (viewportPath.length === 1) {
-        ctx.lineWidth = 1;
-        ctx.arc(p1.x, p1.y, lineWidth / 2, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.lineWidth = lineWidth;
-        for (let i = 1, len = viewportPath.length; i < len; i++) {
-          const mp = {
-            x: p1.x + (p2.x - p1.x) * 0.5,
-            y: p1.y + (p2.y - p1.y) * 0.5,
-          };
-          ctx.quadraticCurveTo(p1.x, p1.y, mp.x, mp.y);
-          p1 = viewportPath[i];
-          p2 = viewportPath[i + 1];
-        }
-      }
-
-      ctx.lineTo(p1.x, p1.y);
-      ctx.stroke();
-      ctx.closePath();
-    });
   }
 
   getBoundingRect() {

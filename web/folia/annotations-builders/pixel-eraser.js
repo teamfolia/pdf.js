@@ -56,14 +56,6 @@ class PixelEraser {
       })
       .sort(sortObjects)
       .map((objectData) => {
-        // console.log(
-        //   "INPUT",
-        //   objectData.id.split("-")[0],
-        //   objectData.__typename.substring(0, 3),
-        //   objectData.addedAt,
-        //   objectData.deletedAt,
-        //   objectData.paths
-        // );
         switch (objectData.__typename) {
           case ANNOTATION_TYPES.INK: {
             const paths = objectData.paths.map((path) => fromPdfPath(path, width, height));
@@ -110,14 +102,6 @@ class PixelEraser {
       const objectAddedAt = new Date(object.addedAt).getTime();
       const erasableObjectAddedAt = new Date(erasableObject.addedAt).getTime();
       if (objectAddedAt >= erasableObjectAddedAt) return;
-      // console.log(
-      //   "OUTPUT",
-      //   erasableObject.id.split("-")[0],
-      //   erasableObject.__typename.substring(0, 3),
-      //   erasableObject.addedAt,
-      //   erasableObject.deletedAt,
-      //   erasableObject.paths
-      // );
       switch (object.__typename) {
         case ANNOTATION_TYPES.INK: {
           if (erasableObject.paths.length === 0) {
@@ -357,7 +341,7 @@ class PixelEraser {
     ctx.closePath();
   }
 
-  drawPaths(ctx, color, _lineWidth, paths) {
+  prev_drawPaths(ctx, color, _lineWidth, paths) {
     paths.forEach((path) => {
       if (path.length === 0) return;
 
@@ -398,6 +382,61 @@ class PixelEraser {
           p2 = path[i + 1];
         }
         this.controlPoints.push(p1);
+        ctx.lineTo(p1.x * window.devicePixelRatio, p1.y * window.devicePixelRatio);
+      }
+      ctx.stroke();
+      ctx.closePath();
+    });
+  }
+
+  drawPaths(ctx, color, _lineWidth, paths) {
+    paths.forEach((path) => {
+      if (path.length === 0) return;
+
+      let lineWidth = _lineWidth * this.viewport.scale * window.devicePixelRatio;
+      ctx.strokeStyle = hexColor2RGBA(color);
+      ctx.fillStyle = hexColor2RGBA(color);
+
+      ctx.lineWidth = lineWidth;
+      let p1 = path[0];
+      let p2 = path[1];
+      ctx.beginPath();
+      ctx.moveTo(p1.x * window.devicePixelRatio, p1.y * window.devicePixelRatio);
+
+      if (path.length === 1) {
+        ctx.lineWidth = 1;
+        ctx.arc(
+          p1.x * window.devicePixelRatio,
+          p1.y * window.devicePixelRatio,
+          lineWidth / 2,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      } else if (path.length > 1) {
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        for (let i = 1, len = path.length; i < len; i++) {
+          const mp = {
+            x: p1.x + (p2.x - p1.x) * 0.5,
+            y: p1.y + (p2.y - p1.y) * 0.5,
+          };
+          ctx.quadraticCurveTo(
+            p1.x * window.devicePixelRatio,
+            p1.y * window.devicePixelRatio,
+            mp.x * window.devicePixelRatio,
+            mp.y * window.devicePixelRatio
+          );
+          // const mp = { x: (p2.x + p1.x) / 2, y: (p2.y + p1.y) / 2 };
+          // ctx.quadraticCurveTo(
+          //   p1.x * window.devicePixelRatio,
+          //   p1.y * window.devicePixelRatio,
+          //   mp.x * window.devicePixelRatio,
+          //   mp.y * window.devicePixelRatio
+          // );
+          p1 = path[i];
+          p2 = path[i + 1];
+        }
         ctx.lineTo(p1.x * window.devicePixelRatio, p1.y * window.devicePixelRatio);
       }
       ctx.stroke();
