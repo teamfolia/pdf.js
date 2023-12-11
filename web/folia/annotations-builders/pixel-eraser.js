@@ -111,7 +111,15 @@ class PixelEraser {
           } else {
             object.changeManually({
               addedAt: erasableObject.addedAt,
-              paths: erasableObject.paths.map((path) => toPdfPath(path, width, height)),
+              paths: erasableObject.paths
+                .map((path) => {
+                  return path.map((p) => {
+                    if (Number.isNaN(p.x) || Number.isNaN(p.y)) console.log(p);
+                    return { x: p.x, y: p.y };
+                  });
+                })
+                .map((path) => toPdfPath(path, width, height))
+                .map((path) => path.filter((p) => p !== null)),
             });
           }
           break;
@@ -270,10 +278,12 @@ class PixelEraser {
   }
 
   getCoords(p1, p2, partLength) {
+    if (p1.x === p2.x && p1.y === p2.y) return { x: p1.x, y: p1.y };
+
     const segmentLength = Math.sqrt(Math.abs(p2.x - p1.x) ** 2 + Math.abs(p2.y - p1.y) ** 2);
     const ratio = partLength / segmentLength;
-    const x = p1.x + ratio * (p2.x - p1.x);
-    const y = p1.y + ratio * (p2.y - p1.y);
+    const x = Math.round(p1.x + ratio * (p2.x - p1.x));
+    const y = Math.round(p1.y + ratio * (p2.y - p1.y));
     return { x, y };
   }
 
