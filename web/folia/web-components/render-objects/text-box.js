@@ -66,7 +66,7 @@ class TextBoxObject extends BaseAnnoObject {
 
       this.editorEl.innerText = this.text;
     }
-
+    console.log("text-box update");
     if (this.editorEl) {
       this.editorEl.style.color = hexColor2RGBA(this.color);
       const fontSize = this.fontSize * this.viewport.scale;
@@ -88,7 +88,7 @@ class TextBoxObject extends BaseAnnoObject {
       fontSize: this.fontSize,
       fontWeight: this.fontWeight,
       textAlignment: this.textAlignment,
-      rect: this.rect,
+      rect: this.rect.slice(),
     };
   }
 
@@ -225,10 +225,19 @@ class TextBoxObject extends BaseAnnoObject {
       this.text = this.prevState.text;
       this.addedAt = this.prevState.addedAt;
       this.editorEl.innerText = this.prevState.text;
+      this.rect = this.prevState.rect.slice();
       this.adjustHeight();
       this.stopEditMode();
     } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       this.stopEditMode();
+    }
+
+    if (e.key !== "Backspace" && e.key !== "Delete") {
+      const pageHeight = this.viewport.height;
+      const objectHeight = this.annotationUI.clientHeight;
+      if (objectHeight >= pageHeight * 0.95) {
+        e.preventDefault();
+      }
     }
   }
 
@@ -280,15 +289,25 @@ class TextBoxObject extends BaseAnnoObject {
   adjustHeight() {
     this.editorEl.style.height = "auto";
     const height = this.editorEl.scrollHeight;
+
     this.editorEl.style.height = height + "px";
     this.annotationUI.style.height = height + "px";
 
-    const rect = toPdfRect(
-      [this.annotationUI.offsetLeft, this.annotationUI.offsetTop, this.annotationUI.clientWidth, height],
-      this.viewport.width,
-      this.viewport.height
-    );
+    const uiRect = [
+      this.annotationUI.offsetLeft,
+      this.annotationUI.offsetTop,
+      this.annotationUI.clientWidth,
+      height,
+    ];
+
+    if (this.annotationUI.offsetTop + height > this.viewport.height) {
+      uiRect[1] = this.viewport.height - height - 5;
+    }
+
+    const rect = toPdfRect(uiRect, this.viewport.width, this.viewport.height);
+    this.rect[1] = rect[1];
     this.rect[3] = rect[3];
+    // console.log("adjustHeight", );
   }
 
   resize(deltaX, deltaY, corner) {

@@ -427,13 +427,6 @@ class PixelEraser {
             mp.x * window.devicePixelRatio,
             mp.y * window.devicePixelRatio
           );
-          // const mp = { x: (p2.x + p1.x) / 2, y: (p2.y + p1.y) / 2 };
-          // ctx.quadraticCurveTo(
-          //   p1.x * window.devicePixelRatio,
-          //   p1.y * window.devicePixelRatio,
-          //   mp.x * window.devicePixelRatio,
-          //   mp.y * window.devicePixelRatio
-          // );
           p1 = path[i];
           p2 = path[i + 1];
         }
