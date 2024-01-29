@@ -168,6 +168,7 @@ class FoliaPage extends HTMLElement {
     template.innerHTML = html;
     this.attachShadow({ mode: "open" });
     this.shadowRoot.appendChild(template.content.cloneNode(true));
+    this.zoomScale = 1;
     // console.log("folia page 'constructor'");
   }
 
@@ -266,7 +267,8 @@ class FoliaPage extends HTMLElement {
     );
   }
 
-  startRender(viewport) {
+  startRender(viewport, zoomScale) {
+    this.zoomScale = zoomScale;
     // console.log("folia page start render", viewport);
     cancelAnimationFrame(this.AnimationFrameTimer);
     this.render(viewport);
@@ -279,6 +281,7 @@ class FoliaPage extends HTMLElement {
     this.#canvas.width = this.#canvas.width;
     const ctx = this.#canvas.getContext("2d");
     const pdfCanvas = this.parentNode.querySelector('div.canvasWrapper>canvas[role="presentation"]');
+    const pdfCtx = pdfCanvas.getContext("2d", { willReadFrequently: true });
 
     const lastSelectedObject = this.#multipleSelection.first;
     const annoObjects = this.#objects.filter((obj) => obj !== lastSelectedObject).sort(sortObjects);
@@ -286,16 +289,18 @@ class FoliaPage extends HTMLElement {
 
     for (const annoObj of annoObjects) {
       ctx.save();
-      if (annoObj instanceof HighlightObject) {
-        annoObj.renderTo(this.#viewport, ctx, this.#ui, pdfCanvas);
-      } else if (PixelEraser.ERASABLE_TYPES.includes(annoObj.__typename)) {
-        // annoObj.renderTo(this.#viewport, ctx, this.#ui);
-        if (!(this.annotationBuilder instanceof PixelEraser)) {
+      try {
+        if (annoObj instanceof HighlightObject) {
+          annoObj.renderTo(this.#viewport, ctx, this.#ui, pdfCtx);
+        } else if (PixelEraser.ERASABLE_TYPES.includes(annoObj.__typename)) {
+          // annoObj.renderTo(this.#viewport, ctx, this.#ui);
+          if (!(this.annotationBuilder instanceof PixelEraser)) {
+            annoObj.renderTo(this.#viewport, ctx, this.#ui);
+          }
+        } else {
           annoObj.renderTo(this.#viewport, ctx, this.#ui);
         }
-      } else {
-        annoObj.renderTo(this.#viewport, ctx, this.#ui);
-      }
+      } catch (e) {}
       ctx.restore();
     }
 
@@ -778,6 +783,7 @@ class FoliaPage extends HTMLElement {
 
   // ---------- custom outside methods ----------
   showFloatingBar(visible = false) {
+    // console.log("showFloatingBar", this.zoomScale);
     const objects = Array.from(this.#multipleSelection)
       .filter((object) => {
         return !(object instanceof CommentObject);
@@ -790,7 +796,7 @@ class FoliaPage extends HTMLElement {
     if (visible && objects.length > 0) {
       this.floatingBar.canDelete = objects.at(-1)?.canDelete;
       this.floatingBar.canManage = objects.at(-1)?.canManage;
-      this.floatingBar.show(objects);
+      this.floatingBar.show(objects, this.zoomScale);
     } else {
       this.floatingBar.hide();
     }
@@ -799,7 +805,7 @@ class FoliaPage extends HTMLElement {
     // console.log("startDrawing", this.parentNode);
     this.resetObjectsSelection();
     this.stopDrawing();
-    this.#annotationBuilderClass = BuilderClass;
+    this.annotationBuilderClass = BuilderClass;
     this.annotationBuilder = new BuilderClass(this, BuilderClass, this.undoRedoManager);
   }
   updateToolDrawingProperties(preset) {
@@ -810,7 +816,7 @@ class FoliaPage extends HTMLElement {
     if (!this.annotationBuilder) return;
     this.annotationBuilder.stop();
     this.annotationBuilder = null;
-    this.#annotationBuilderClass = null;
+    this.annotationBuilderClass = null;
   }
 }
 

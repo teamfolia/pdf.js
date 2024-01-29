@@ -46,45 +46,32 @@ class SquareObject extends BaseAnnoObject {
 
   render(ctx) {
     if (!ctx) return;
-
-    // const ctx = canvas.getContext("2d");
-    const { left, top, width, height } = this.getBoundingRect();
-
-    ctx.strokeStyle = hexColor2RGBA(this.color);
-    ctx.lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
-    ctx.lineJoin = "miter";
-    ctx.strokeRect(
-      left * window.devicePixelRatio,
-      top * window.devicePixelRatio,
-      width * window.devicePixelRatio,
-      height * window.devicePixelRatio
+    const rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height).map(
+      (item) => item * window.devicePixelRatio
     );
+    const lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
+    const color = hexColor2RGBA(this.color);
+    return SquareObject._render(ctx, rect, lineWidth, color);
+  }
+
+  static _render(ctx, rect, lineWidth, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.lineJoin = "miter";
+    ctx.strokeRect(...rect);
   }
 
   getBoundingRect() {
     const rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height);
-    // const points = [
-    //   { x: rect[0], y: rect[1] }, // left top
-    //   { x: rect[0] + rect[2], y: rect[1] }, // right top
-    //   { x: rect[0] + rect[2], y: rect[1] + rect[3] }, // right bottom
-    //   { x: rect[0], y: rect[1] + rect[3] }, // left bottom
-    // ];
+    const lineWidth = this.lineWidth * this.viewport.scale;
+    return SquareObject._getBoundingRect(rect, lineWidth);
+  }
 
-    // return {
-    //   left: rect[0],
-    //   top: rect[1],
-    //   width: rect[2],
-    //   height: rect[3],
-    //   right: rect[0] + rect[2],
-    //   bottom: rect[1] + rect[3],
-    //   points,
-    // };
-
+  static _getBoundingRect(rect, lineWidth) {
     const left = rect[0];
     const top = rect[1];
     const right = rect[0] + rect[2];
     const bottom = rect[1] + rect[3];
-    const halfOfWidth = (this.lineWidth / 2) * this.viewport.scale;
 
     return {
       left,
@@ -94,10 +81,10 @@ class SquareObject extends BaseAnnoObject {
       width: right - left,
       height: bottom - top,
       points: [
-        { x: left - halfOfWidth, y: top - halfOfWidth },
-        { x: right + halfOfWidth, y: top - halfOfWidth },
-        { x: right + halfOfWidth, y: bottom + halfOfWidth },
-        { x: left - halfOfWidth, y: bottom + halfOfWidth },
+        { x: left - lineWidth / 2, y: top - lineWidth / 2 },
+        { x: right + lineWidth / 2, y: top - lineWidth / 2 },
+        { x: right + lineWidth / 2, y: bottom + lineWidth / 2 },
+        { x: left - lineWidth / 2, y: bottom + lineWidth / 2 },
       ],
     };
   }

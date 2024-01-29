@@ -438,6 +438,10 @@ class BaseAnnoObject {
     annotationUI.style.height = height + lineWidth + "px";
   }
 
+  render() {
+    console.log("base render");
+  }
+
   renderTo(viewport, pageCanvasContext, uiContainer, pdfCanvas) {
     this.viewport = viewport;
     if (this.deletedAt && !this.error) {

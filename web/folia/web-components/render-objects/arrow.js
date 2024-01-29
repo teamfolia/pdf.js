@@ -71,16 +71,24 @@ class ArrowObject extends BaseAnnoObject {
 
   render(ctx) {
     if (!ctx) return;
-
     const sourcePoint = fromPdfPoint(this.sourcePoint, this.viewport.width, this.viewport.height);
     const targetPoint = fromPdfPoint(this.targetPoint, this.viewport.width, this.viewport.height);
-    const lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
-    const color = hexColor2RGBA(this.color);
 
-    const sourceX = sourcePoint.x * window.devicePixelRatio;
-    const sourceY = sourcePoint.y * window.devicePixelRatio;
-    const targetX = targetPoint.x * window.devicePixelRatio;
-    const targetY = targetPoint.y * window.devicePixelRatio;
+    this.arrowDimensions = ArrowObject._render(
+      ctx,
+      { x: sourcePoint.x * window.devicePixelRatio, y: sourcePoint.y * window.devicePixelRatio },
+      { x: targetPoint.x * window.devicePixelRatio, y: targetPoint.y * window.devicePixelRatio },
+      this.lineWidth * this.viewport.scale * window.devicePixelRatio,
+      hexColor2RGBA(this.color)
+    );
+  }
+
+  static _render(ctx, sourcePoint, targetPoint, lineWidth, color) {
+    // console.log(ctx, sourcePoint, targetPoint, lineWidth, color);
+    const sourceX = sourcePoint.x;
+    const sourceY = sourcePoint.y;
+    const targetX = targetPoint.x;
+    const targetY = targetPoint.y;
     const annotationWidth = Math.abs(targetX - sourceX);
     const annotationHeight = Math.abs(targetY - sourceY);
     const annotationAgle = Math.atan(annotationHeight / annotationWidth);
@@ -123,8 +131,6 @@ class ArrowObject extends BaseAnnoObject {
       sourceY <= targetY
         ? targetY - (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle)
         : targetY + (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle);
-
-    // ctx.save();
 
     ctx.lineWidth = lineWidth;
     ctx.strokeStyle = color;
@@ -193,10 +199,9 @@ class ArrowObject extends BaseAnnoObject {
       ctx.fill();
       ctx.closePath();
     }
-    // ctx.restore();
 
     const arrowBase = Math.sqrt(Math.pow(outSideLine, 2) - Math.pow(arrowHeight, 2));
-    this.arrowDimensions = {
+    return {
       annotationAgle,
       arrowBase,
       arrowLength: arrowLength / window.devicePixelRatio,
@@ -262,12 +267,16 @@ class ArrowObject extends BaseAnnoObject {
   getBoundingRect() {
     const sourcePoint = fromPdfPoint(this.sourcePoint, this.viewport.width, this.viewport.height);
     const targetPoint = fromPdfPoint(this.targetPoint, this.viewport.width, this.viewport.height);
+    const lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
 
+    return ArrowObject._getBoundingRect(sourcePoint, targetPoint, lineWidth);
+  }
+
+  static _getBoundingRect(sourcePoint, targetPoint, lineWidth) {
     const annotationWidth = Math.abs(targetPoint.x - sourcePoint.x);
     const annotationHeight = Math.abs(targetPoint.y - sourcePoint.y);
     const annotationAgle = Math.atan(annotationHeight / annotationWidth);
     const arrowLength = Math.sqrt(Math.pow(annotationWidth, 2) + Math.pow(annotationHeight, 2));
-    const lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const lineFactor = Math.max(lineWidth, 5);
     const arrowHeight = lineFactor * 3.7;
     const arrowLeavesHeight = arrowHeight / 6.5;

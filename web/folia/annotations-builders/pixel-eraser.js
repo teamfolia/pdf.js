@@ -1,5 +1,20 @@
+import { intersect } from "@turf/turf";
 import { ANNOTATION_TYPES } from "../constants";
 import { fromPdfPath, hexColor2RGBA, isPointInRect, sortObjects, toPdfPath } from "../folia-util";
+import {
+  Point,
+  Vector,
+  Circle,
+  Line,
+  Ray,
+  Segment,
+  Arc,
+  Box,
+  Polygon,
+  Matrix,
+  PlanarSet,
+  circle,
+} from "@flatten-js/core";
 
 class PixelEraser {
   static ERASABLE_TYPES = [ANNOTATION_TYPES.INK];
@@ -111,15 +126,7 @@ class PixelEraser {
           } else {
             object.changeManually({
               addedAt: erasableObject.addedAt,
-              paths: erasableObject.paths
-                .map((path) => {
-                  return path.map((p) => {
-                    if (Number.isNaN(p.x) || Number.isNaN(p.y)) console.log(p);
-                    return { x: p.x, y: p.y };
-                  });
-                })
-                .map((path) => toPdfPath(path, width, height))
-                .map((path) => path.filter((p) => p !== null)),
+              paths: erasableObject.paths.map((path) => toPdfPath(path, width, height)),
             });
           }
           break;
@@ -138,7 +145,6 @@ class PixelEraser {
   }
 
   applyPreset(preset) {
-    console.log("preset", { preset });
     if ("lineWidth" in preset) {
       this.eraserWidth = parseInt(preset.lineWidth, 10);
     }
@@ -291,7 +297,166 @@ class PixelEraser {
     return Math.sqrt(Math.pow(Math.abs(x1 - x2), 2) + Math.pow(Math.abs(y1 - y2), 2));
   }
 
-  crossedLines = [];
+  removeSegments(object, objectIntersects) {
+    const paths = [];
+    object.paths.forEach((path, pathIndex) => {
+      const intersect = objectIntersects.get(pathIndex);
+      if (!intersect) return paths.push(path);
+
+      const firstPoint = intersect.find((point) => "first" in point);
+      const lastPoint = intersect.find((point) => "last" in point);
+      const middlePoints = intersect.filter((point) => !("first" in point) && !("last" in point));
+
+      if (firstPoint && lastPoint && middlePoints.length === 0) return; // paths.push("removed");
+
+      if (firstPoint && lastPoint && middlePoints.length === 2) {
+        // remove begin of path
+        const remainPart = path.slice(middlePoints[0].segmentIndex, middlePoints[1].segmentIndex);
+        remainPart.unshift(middlePoints[0]);
+        remainPart.push(middlePoints[1]);
+        paths.push(remainPart);
+        //
+      } else if (firstPoint && middlePoints.length === 1) {
+        // remove begin of path
+        const remainPart = path.slice(middlePoints[0].segmentIndex);
+        remainPart.unshift(middlePoints[0]);
+        paths.push(remainPart);
+        //
+      } else if (lastPoint && middlePoints.length === 1) {
+        // remove end of path
+        const remainPart = path.slice(0, middlePoints[0].segmentIndex);
+        remainPart.push(middlePoints[0]);
+        paths.push(remainPart);
+        //
+      } else if (intersect.length % 2 === 0) {
+        // remove begin / middle / end of path
+        let segmentPoints = [],
+          subPath = [];
+        for (let i = 0; i < intersect.length; i++) {
+          if (i === 0) {
+            if ("first" in intersect[i]) {
+              continue;
+            } else {
+              segmentPoints.push({ ...path[0], pathIndex, segmentIndex: 0 }); // begin of path
+            }
+          }
+          segmentPoints.push(intersect[i]);
+
+          if (segmentPoints.length === 2) {
+            const tmpPath = path.slice(segmentPoints[0].segmentIndex, segmentPoints[1].segmentIndex);
+            if (intersect[i - 1]) tmpPath.unshift(intersect[i - 1]);
+            if (intersect[i]) tmpPath.push(intersect[i]);
+            paths.push(tmpPath);
+          } else if (segmentPoints.length === 3) {
+            segmentPoints = [intersect[i]];
+          }
+        }
+
+        if (segmentPoints.length === 1 && "last" in segmentPoints[0]) return;
+        if (segmentPoints.length === 1) {
+          paths.push([segmentPoints[0], ...path.slice(segmentPoints[0].segmentIndex)]);
+        }
+      }
+    });
+
+    object.paths = structuredClone(paths);
+  }
+
+  findIntersectsAroundPoint(p) {
+    const eraserWidth = this.eraserWidth * this.viewport.scale;
+
+    for (const object of this.erasableObjects) {
+      const objectIntersects = new Map();
+      const circleRadius = eraserWidth + (object.lineWidth * this.viewport.scale) / 2;
+      const circle = new Circle(new Point(p.x, p.y), circleRadius);
+      for (let pathIndex = 0; pathIndex < object.paths.length; pathIndex++) {
+        const path = object.paths[pathIndex];
+        const pathIntersects = [];
+
+        // check first point
+        const firstPathPoint = new Point(path[0].x, path[0].y);
+        if (circle.contains(firstPathPoint)) {
+          pathIntersects.push({
+            x: firstPathPoint.x,
+            y: firstPathPoint.y,
+            pathIndex,
+            segmentIndex: 0,
+            first: "",
+          });
+        }
+
+        // proced path
+        let p1 = path[0];
+        let p2 = path[1];
+        for (let segmentIndex = 1; segmentIndex < path.length; segmentIndex++) {
+          const segment = new Segment(new Point(p1.x, p1.y), new Point(p2.x, p2.y));
+          const intersects = segment.intersect(circle);
+          if (intersects.length > 0) {
+            intersects.forEach((ip) => {
+              pathIntersects.push({
+                x: Math.round(ip.x),
+                y: Math.round(ip.y),
+                pathIndex,
+                segmentIndex: segmentIndex,
+              });
+            });
+          }
+          //
+          p1 = path[segmentIndex];
+          p2 = path[segmentIndex + 1];
+        }
+
+        // chack last point
+        const lastPathPoint = new Point(path[path.length - 1].x, path[path.length - 1].y);
+        if (circle.contains(lastPathPoint)) {
+          pathIntersects.push({
+            x: lastPathPoint.x,
+            y: lastPathPoint.y,
+            pathIndex,
+            segmentIndex: path.length - 1,
+            last: "",
+          });
+        }
+
+        //
+        if (pathIntersects.length > 0) {
+          objectIntersects.set(
+            pathIndex,
+            pathIntersects.sort((a, b) => {
+              return a.segmentIndex - b.segmentIndex;
+            })
+          );
+        }
+      }
+      if (objectIntersects.size) {
+        object.addedAt = new Date().toISOString();
+        this.removeSegments(object, objectIntersects);
+      }
+    }
+  }
+
+  findIntersectsWithLine(lp1, lp2) {
+    for (const object of this.erasableObjects) {
+      for (const path of object.paths) {
+        let p1 = path[0];
+        let p2 = path[1];
+        for (let i = 1; i < path.length; i++) {
+          const mousePath = new Segment(new Point(lp1.x, lp1.y), new Point(lp2.x, lp2.y));
+          const segment = new Segment(new Point(p1.x, p1.y), new Point(p2.x, p2.y));
+          const intersects = mousePath.intersect(segment);
+          if (intersects.length > 0) {
+            intersects.forEach((ip) => {
+              this.findIntersectsAroundPoint(ip);
+            });
+          }
+          //
+          p1 = path[i];
+          p2 = path[i + 1];
+        }
+      }
+    }
+  }
+
   onMouseDown(e) {
     this.undoData = this.toJSON();
 
@@ -300,7 +465,7 @@ class PixelEraser {
 
     const point = this.getRelativePoint(e);
     this.intersectsPoints = [];
-    this.crossedLines = [];
+    this.controlPoints = [];
     this.erasingPath = [point];
   }
 
@@ -315,10 +480,11 @@ class PixelEraser {
     if (this.thresholdFlag === true) return;
     this.thresholdFlag = true;
     this.erasingPath.push(point);
+    this.findIntersectsAroundPoint(point);
 
     clearTimeout(this.thresholdTimer);
     this.thresholdTimer = setTimeout(() => {
-      this.findIntersects();
+      // this.findIntersectsWithLine(...this.erasingPath);
       this.erasingPath = [point];
       this.thresholdFlag = false;
     }, 20);
@@ -326,6 +492,9 @@ class PixelEraser {
 
   onMouseUp(e) {
     this.mouseDown = false;
+    if (!this.mouseMoved) {
+      this.findIntersectsAroundPoint(this.erasingPath[0]);
+    }
     this.mouseMoved = false;
     const undoRedoData = {
       action: "tool-changes",
@@ -349,54 +518,6 @@ class PixelEraser {
     ctx.arc(point.x * window.devicePixelRatio, point.y * window.devicePixelRatio, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.closePath();
-  }
-
-  prev_drawPaths(ctx, color, _lineWidth, paths) {
-    paths.forEach((path) => {
-      if (path.length === 0) return;
-
-      let lineWidth = _lineWidth * this.viewport.scale * window.devicePixelRatio;
-      ctx.strokeStyle = hexColor2RGBA(color);
-      ctx.fillStyle = hexColor2RGBA(color);
-
-      ctx.lineWidth = lineWidth;
-      let p1 = path[0];
-      let p2 = path[1];
-      ctx.beginPath();
-      ctx.moveTo(p1.x * window.devicePixelRatio, p1.y * window.devicePixelRatio);
-
-      if (path.length === 1) {
-        ctx.lineWidth = 1;
-        ctx.arc(
-          p1.x * window.devicePixelRatio,
-          p1.y * window.devicePixelRatio,
-          lineWidth / 2,
-          0,
-          Math.PI * 2
-        );
-        ctx.fill();
-      } else if (path.length > 1) {
-        ctx.lineJoin = "round";
-        ctx.lineCap = "round";
-        for (let i = 1, len = path.length; i < len; i++) {
-          const mp = { x: (p2.x + p1.x) / 2, y: (p2.y + p1.y) / 2 };
-          ctx.quadraticCurveTo(
-            p1.x * window.devicePixelRatio,
-            p1.y * window.devicePixelRatio,
-            mp.x * window.devicePixelRatio,
-            mp.y * window.devicePixelRatio
-          );
-          this.controlPoints.push(p1);
-          this.middlePoints.push(mp);
-          p1 = path[i];
-          p2 = path[i + 1];
-        }
-        this.controlPoints.push(p1);
-        ctx.lineTo(p1.x * window.devicePixelRatio, p1.y * window.devicePixelRatio);
-      }
-      ctx.stroke();
-      ctx.closePath();
-    });
   }
 
   drawPaths(ctx, color, _lineWidth, paths) {
@@ -484,27 +605,14 @@ class PixelEraser {
   }
 
   draw(ctx) {
-    this.pathPoints = [];
-    this.controlPoints = [];
-    this.middlePoints = [];
-
     this.erasableObjects.forEach((object) => {
       switch (object.__typename) {
         case ANNOTATION_TYPES.INK: {
           this.drawPaths(ctx, object.color, object.lineWidth, object.paths);
-          // this.drawPaths(ctx, "#a0a0a0", 1, object.paths);
-          // object.paths.forEach((path) => {
-          //   path.forEach((point) => this.drawPoint(ctx, "green", 3, point));
-          // });
           break;
         }
       }
     });
-
-    // this.drawLine(ctx, "#c0c0c0", 1, this.erasingPath);
-
-    // this.crossedLines.forEach((line) => this.drawLine(ctx, null, 1, line));
-    // this.intersectsPoints.forEach((point) => this.drawPoint(ctx, "red", 3, point));
 
     if (this.eraserPointer) this.drawEraserPointer(ctx, this.eraserPointer);
   }

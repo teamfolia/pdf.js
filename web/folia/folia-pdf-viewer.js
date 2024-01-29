@@ -30,12 +30,14 @@ import ObjectEraser from "./annotations-builders/object-eraser";
 import PixelEraser from "./annotations-builders/pixel-eraser";
 import CommentBuilder from "./annotations-builders/comment-builder";
 import StampsBuilder from "./annotations-builders/stamps-builder";
-// import FoliaArrowAnnotation from "./annotations/arrow-annotation";
-// import FoliaCircleAnnotation from "./annotations/circle-annotation";
-// import FoliaImageAnnotation from "./annotations/image-annotation";
-// import FoliaInkAnnotation from "./annotations/ink-annotation";
-// import FoliaSquareAnnotation from "./annotations/square-annotation";
-// import FoliaTextBoxAnnotation from "./annotations/text-box-annotation";
+
+import * as folia_utils from "./folia-util";
+import RenderArrowObject from "./web-components/render-objects/arrow";
+import RenderSquareObject from "./web-components/render-objects/square";
+import RenderCircleObject from "./web-components/render-objects/circle";
+import RenderInkObject from "./web-components/render-objects/ink";
+import RenderTextBoxObject from "./web-components/render-objects/text-box";
+import RenderImageObject from "./web-components/render-objects/image";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
@@ -314,9 +316,9 @@ export class FoliaPDFViewer {
       scriptingManager: null,
       renderer: null,
       l10n: null,
-      annotationEditorMode: 0,
+      // annotationEditorMode: 0,
       textLayerMode: 1,
-      annotationMode: 0,
+      annotationMode: 1,
       annotationEditorMode: -1,
       imageResourcesPath: "./images/",
       enablePrintAutoRotate: true,
@@ -697,16 +699,19 @@ export class FoliaPDFViewer {
       this.continueStartDrawing(BuilderClass, {});
     } else if (toolType === TOOLS.STAMPS) {
       const BuilderClass = StampsBuilder;
-      this.continueStartDrawing(BuilderClass, preset.stamp, preset.preview);
+      const asset = preset.preview;
+      const stampData = structuredClone(preset);
+      delete stampData.preview;
+      this.continueStartDrawing(BuilderClass, stampData, asset);
     } else {
       console.log(`Tool ${toolType} does not exist yet`);
     }
   }
   continueStartDrawing(BuilderClass, preset, asset) {
+    // console.log("continueStartDrawing 1", { BuilderClass, preset, asset });
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
     this.pdfViewer.annotationBuilderClass = BuilderClass;
-    // console.log("continueStartDrawing 1", { BuilderClass, preset, asset });
 
     this.pdfViewer._pages.map((page) => {
       if (!page.foliaPageLayer) return;
@@ -926,3 +931,12 @@ export class FoliaPDFViewer {
     });
   }
 }
+
+export const foliaUtils = folia_utils;
+
+export const InkObject = RenderInkObject;
+export const ArrowObject = RenderArrowObject;
+export const SquareObject = RenderSquareObject;
+export const CircleObject = RenderCircleObject;
+export const TextBoxObject = RenderTextBoxObject;
+export const ImageObject = RenderImageObject;

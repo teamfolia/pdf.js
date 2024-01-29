@@ -155,8 +155,9 @@ class FoliaFloatingBar extends HTMLElement {
     this.bar.classList.toggle("trasparent", false);
   }
 
-  show(objects) {
-    // console.log("show objectData");
+  show(objects, zoomScale) {
+    // console.log("show objectData", objects);
+    this.zoomScale = zoomScale;
     this.openedPanel = null;
     const padding = 20;
     let left = Infinity,
@@ -173,6 +174,7 @@ class FoliaFloatingBar extends HTMLElement {
     for (const object of objects) {
       const {
         __typename,
+        id,
         color,
         lineWidth,
         fontWeight,
@@ -182,6 +184,7 @@ class FoliaFloatingBar extends HTMLElement {
         viewport,
         collaboratorName,
         addedAt,
+        zoomScale = 1,
         bounds: { points },
       } = object;
       left = Math.min(left, Math.min(...points.map((point) => point.x)));
@@ -211,6 +214,8 @@ class FoliaFloatingBar extends HTMLElement {
       if (textAlignment) this.textAlignment = textAlignment;
       if (fontFamily) this.fontFamily = fontFamily;
       if (fontSize) this.fontSize = fontSize;
+
+      this.stampData = { id, viewport, zoomScale: this.zoomScale };
     }
 
     this.bar.classList.toggle("trasparent", true);
@@ -225,6 +230,9 @@ class FoliaFloatingBar extends HTMLElement {
     });
     this.shadowRoot.querySelectorAll('[data-role="duplicate"]').forEach((el) => {
       el.classList.toggle("hidden", isHighlightDependent);
+    });
+    this.shadowRoot.querySelectorAll('[data-role="make-as-a-stamp"]').forEach((el) => {
+      el.classList.toggle("hidden", isHighlightDependent || objects.length > 1);
     });
 
     setTimeout(() => {
@@ -356,34 +364,44 @@ class FoliaFloatingBar extends HTMLElement {
   get lineWidth() {
     return this.#lineWidth;
   }
-  set lineWidth(value) {
-    this.#lineWidth = parseInt(value, 10);
+  set lineWidth(lineWidth) {
+    this.#lineWidth = parseInt(lineWidth, 10);
     this.strokeSlider.value = this.#lineWidth;
     this.strokeWidth.innerText = "" + this.#lineWidth;
+
+    const { min, max, value } = this.strokeSlider;
+    const strokePercentValue = (value * 100) / (max - min);
+    this.strokeSlider.style.setProperty("--color", "#FFFFFF");
+    // prettier-ignore
+    const stokeBackground = `linear-gradient(90deg, #64748B 0%, #64748B ${strokePercentValue - 5}%, #E2E8F0 ${strokePercentValue - 5}% 100%)`;
+    this.strokeSlider.style.setProperty("background", stokeBackground);
   }
 
   get color() {
-    return this.#color;
+    return colord(this.#color)
+      .alpha(this.#opacity / 100)
+      .toHex();
   }
   set color(value) {
-    this.#color = value;
+    // console.log("set color", value);
     const alpha = parseInt(colord(value).alpha() * 100, 10);
+    const justColor = colord(value).alpha(1).toHex();
+    this.#color = value;
     this.#opacity = alpha;
 
-    this.colorBtn.style.setProperty("--color", value);
+    this.colorBtn.setAttribute("color", value);
+
     this.opacitySlider.value = alpha;
     this.opacityValue.innerText = `${alpha}%`;
 
-    const justColor = colord(value).alpha(1).toHex();
     // prettier-ignore
-    const background = `linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, ${justColor} ${alpha - 5}%, #E2E8F0 ${alpha - 5}% 100%)`;
+    const opacityBackground = `linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, ${justColor} ${alpha - 5}%, #E2E8F0 ${alpha - 5}% 100%)`;
     this.opacitySlider.style.setProperty("--color", justColor);
-    this.strokeSlider.style.setProperty("--color", justColor);
-    this.opacitySlider.style.setProperty("background", background);
+    this.opacitySlider.style.setProperty("background", opacityBackground);
 
     this.shadowRoot.querySelectorAll(".color-button").forEach((button) => {
       const parent = button.parentNode;
-      const color = colord(this.#color).alpha(1).toHex();
+      let color = colord(this.#color).alpha(1).toHex();
       const buttonColor = button.style.getPropertyValue("--color");
       parent.classList.toggle("selected", buttonColor === color);
     });
@@ -438,12 +456,14 @@ class FoliaFloatingBar extends HTMLElement {
     this.onChange("lineWidth", this.lineWidth);
   }
   opacitySliderOnInput(e) {
-    const color = colord(this.color)
+    let color = colord(this.color)
       .alpha(e.target.value / 100)
-      .toHex();
-    this.color = color + (color.length === 7 ? "ff" : "");
-    this.onChange("color", this.color);
-    // console.log("choose-opacity", this.color);
+      .toHex()
+      .toLowerCase();
+
+    color += color.length === 7 ? "ff" : "";
+    this.color = color;
+    this.onChange("color", color);
   }
 
   onMouseDown(e) {
@@ -452,7 +472,7 @@ class FoliaFloatingBar extends HTMLElement {
   onClick(e) {
     const role = e.target.dataset["role"];
     const value = e.target.dataset["value"];
-    // console.log("fb onClick", { role, value });
+
     if (e.target.hasAttribute("disabled")) return;
 
     switch (role) {
@@ -483,7 +503,9 @@ class FoliaFloatingBar extends HTMLElement {
       }
       case "make-as-a-stamp": {
         this.openedPanel = NO_PANEL;
-        this.#eventBus.dispatch("make-as-a-stamp");
+        // console.log("make-as-a-stamp", this.stampData);
+        this.#eventBus.dispatch("make-as-a-stamp", this.stampData);
+        this.#eventBus.dispatch("reset-objects-selection");
         break;
       }
       case "delete": {
@@ -492,12 +514,14 @@ class FoliaFloatingBar extends HTMLElement {
         break;
       }
       case "choose-color": {
-        this.color = colord(window.getComputedStyle(e.target).backgroundColor)
+        let color = colord(window.getComputedStyle(e.target).backgroundColor)
           .alpha(this.#opacity / 100)
-          .toHex();
-        this.color += this.color.length === 7 ? "ff" : "";
-        // console.log("choose-color", this.color);
-        this.onChange("color", this.color);
+          .toHex()
+          .toLowerCase();
+
+        color += color.length === 7 ? "ff" : "";
+        this.color = color;
+        this.onChange("color", color);
         break;
       }
       case "bold": {

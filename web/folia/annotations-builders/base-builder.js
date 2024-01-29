@@ -31,6 +31,10 @@ class BaseBuilder {
     return [];
   }
 
+  makeSelected(annotation) {
+    return [ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.TEXT_BOX].includes(annotation.__typename);
+  }
+
   stop() {
     this.foliaPageLayer.eventBus.off("reset-drawing", this.resetDrawingBinded);
     // console.log("base builder.stop");
@@ -53,9 +57,7 @@ class BaseBuilder {
         // newbie: true,
         ...data,
       };
-      const makeSelected = [ANNOTATION_TYPES.COMMENT, ANNOTATION_TYPES.TEXT_BOX].includes(
-        annotation.__typename
-      );
+      const makeSelected = this.makeSelected(annotation);
       const shouldBeCommitted = !("doNotCommit" in annotation);
 
       const annoObj = this.foliaPageLayer.addAnnotationObject(annotation, makeSelected);

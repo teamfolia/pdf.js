@@ -219,8 +219,8 @@ class PDFPageView {
   async _renderFoliaPageLayer() {
     let error = null;
     try {
-      // console.log("_renderFoliaPageLayer -> render", this.viewport.width, this.viewport.height);
-      await this.foliaPageLayer.startRender(this.viewport);
+      // console.log("_renderFoliaPageLayer -> render", this);
+      await this.foliaPageLayer.startRender(this.viewport, this.scale);
     } catch (ex) {
       console.error("_renderFoliaPageLayer:", ex);
       error = ex;
@@ -238,7 +238,7 @@ class PDFPageView {
   async _renderAnnotationLayer() {
     let error = null;
     try {
-      await this.annotationLayer.render(this.viewport, "display");
+      // await this.annotationLayer.render(this.viewport, "display");
     } catch (ex) {
       console.error(`_renderAnnotationLayer: "${ex}".`);
       error = ex;

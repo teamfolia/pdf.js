@@ -66,7 +66,7 @@ class TextBoxObject extends BaseAnnoObject {
 
       this.editorEl.innerText = this.text;
     }
-    console.log("text-box update");
+
     if (this.editorEl) {
       this.editorEl.style.color = hexColor2RGBA(this.color);
       const fontSize = this.fontSize * this.viewport.scale;
@@ -104,8 +104,73 @@ class TextBoxObject extends BaseAnnoObject {
     };
   }
 
-  render(canvas) {
-    // console.log("textbox::render");
+  render(ctx) {
+    // return TextBoxObject._render(ctx);
+  }
+
+  static _render(ctx, renderedRect, text, color, fontWeight, fontSize, fontFamily, textAlignment) {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    ctx.textAlign = textAlignment;
+    ctx.textBaseline = "bottom";
+    let y = renderedRect[1],
+      x = renderedRect[0];
+
+    const lines = TextBoxObject._getTextLines(ctx, text, renderedRect[2]);
+    lines.forEach((line) => {
+      const { lineText, height, width } = line;
+      y += height;
+
+      if (textAlignment === "left") {
+        ctx.fillText(lineText, x, y);
+      } else if (textAlignment === "center") {
+        ctx.fillText(lineText, x + renderedRect[2] / 2, y);
+      } else if (textAlignment === "right") {
+        ctx.fillText(lineText, x + renderedRect[2], y);
+      }
+
+      // ctx.strokeStyle = "f1f1f1";
+      // ctx.lineWidth = 1;
+      // ctx.strokeRect(renderedRect[0], renderedRect[1], renderedRect[2], renderedRect[3]);
+    });
+  }
+
+  static _getTextLines(ctx, phrase, maxPxLength) {
+    var wa = phrase.split(" "),
+      phraseArray = [],
+      lastPhrase = wa[0],
+      width = 0,
+      height = 0,
+      splitChar = " ";
+    if (wa.length <= 1) {
+      return wa.map((lineText) => {
+        const measure = ctx.measureText(lineText);
+        width = measure.width;
+        height = measure.fontBoundingBoxAscent + measure.fontBoundingBoxDescent;
+        return { lineText, height, width };
+      });
+    }
+
+    for (var i = 1; i < wa.length; i++) {
+      var w = wa[i];
+      const measure = ctx.measureText(lastPhrase + splitChar + w);
+      width = measure.width;
+      height = measure.fontBoundingBoxAscent + measure.fontBoundingBoxDescent;
+      // height = measure.actualBoundingBoxAscent + measure.actualBoundingBoxDescent;
+
+      if (width < maxPxLength) {
+        lastPhrase += splitChar + w;
+      } else {
+        phraseArray.push({ lineText: lastPhrase, height, width });
+        lastPhrase = w;
+      }
+      if (i === wa.length - 1) {
+        phraseArray.push({ lineText: lastPhrase, height, width });
+        break;
+      }
+    }
+    return phraseArray;
   }
 
   renderUI(uiContainer) {
@@ -120,17 +185,13 @@ class TextBoxObject extends BaseAnnoObject {
       editorEl.setAttribute("text-box-placeholder", TextBoxObject.placeholderText);
       editorEl.style.lineHeight = "140%";
 
-      editorEl.oninput = (e) => {
-        this.changeManually({
-          addedAt: new Date().toISOString(),
-          text: e.target.innerText,
-        });
-        this.adjustHeight();
-      };
-
       editorEl.onpaste = (e) => {
         e.preventDefault();
-        e.target.innerText = e.clipboardData.getData("text/plain");
+        let paste = (e.clipboardData || window.clipboardData).getData("text");
+        document.execCommand("insertText", false, paste);
+      };
+
+      editorEl.oninput = (e) => {
         this.changeManually({
           addedAt: new Date().toISOString(),
           text: e.target.innerText,
@@ -198,6 +259,10 @@ class TextBoxObject extends BaseAnnoObject {
 
   getBoundingRect() {
     const rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height);
+    return TextBoxObject._getBoundingRect(rect);
+  }
+
+  static _getBoundingRect(rect) {
     const points = [
       { x: rect[0], y: rect[1] }, // left top
       { x: rect[0] + rect[2], y: rect[1] }, // right top

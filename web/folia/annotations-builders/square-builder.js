@@ -1,7 +1,6 @@
 import { toPdfRect, hexColor2RGBA } from "../folia-util";
 import BaseBuilder from "./base-builder";
 import { ANNOTATION_TYPES } from "../constants";
-import { colord } from "colord";
 
 class SquareBuilder extends BaseBuilder {
   currentSquare = null;

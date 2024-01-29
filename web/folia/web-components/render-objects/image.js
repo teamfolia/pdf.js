@@ -52,22 +52,24 @@ class ImageObject extends BaseAnnoObject {
   }
 
   render(ctx) {
-    if (!ctx || !this.image) return;
-
-    // const ctx = canvas.getContext("2d");
-    const { left, top, width, height } = this.getBoundingRect();
-
-    ctx.drawImage(
-      this.image,
-      left * window.devicePixelRatio,
-      top * window.devicePixelRatio,
-      width * window.devicePixelRatio,
-      height * window.devicePixelRatio
+    if (!ctx) return;
+    const rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height).map(
+      (item) => item * window.devicePixelRatio
     );
+    ImageObject._render(ctx, rect, this.image);
+  }
+
+  static _render(ctx, rect, image) {
+    if (!image) return;
+    ctx.drawImage(image, ...rect);
   }
 
   getBoundingRect() {
     const rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height);
+    return ImageObject._getBoundingRect(rect);
+  }
+
+  static _getBoundingRect(rect) {
     const points = [
       { x: rect[0], y: rect[1] }, // left top
       { x: rect[0] + rect[2], y: rect[1] }, // right top

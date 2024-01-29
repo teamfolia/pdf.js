@@ -53,26 +53,26 @@ class HighlightObject extends BaseAnnoObject {
     };
   }
 
-  render(ctx, pdfCanvas) {
-    if (!ctx || !pdfCanvas) return;
+  render(ctx, pdfCtx) {
+    if (!ctx || !pdfCtx) return;
 
     const { devicePixelRatio } = window;
     const { width, height, scale } = this.viewport;
-    const clonedPdfCanvas = document.createElement("canvas");
-    clonedPdfCanvas.width = width * devicePixelRatio;
-    clonedPdfCanvas.height = height * devicePixelRatio;
-    const pdfCtx = clonedPdfCanvas.getContext("2d", { willReadFrequently: true });
-    pdfCtx.drawImage(
-      pdfCanvas,
-      0,
-      0,
-      pdfCanvas.width,
-      pdfCanvas.height,
-      0,
-      0,
-      width * devicePixelRatio,
-      height * devicePixelRatio
-    );
+    // const clonedPdfCanvas = document.createElement("canvas");
+    // clonedPdfCanvas.width = width * devicePixelRatio;
+    // clonedPdfCanvas.height = height * devicePixelRatio;
+    // const pdfCtx = clonedPdfCanvas.getContext("2d", { willReadFrequently: true });
+    // pdfCtx.drawImage(
+    //   pdfCanvas,
+    //   0,
+    //   0,
+    //   pdfCanvas.width,
+    //   pdfCanvas.height,
+    //   0,
+    //   0,
+    //   width * devicePixelRatio,
+    //   height * devicePixelRatio
+    // );
 
     const lineWidth = 2 * scale * devicePixelRatio;
     this.rects.forEach((pdfRect, index) => {

@@ -91,6 +91,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
+    "@flatten-js/core": "^1.4.7",
     "@turf/turf": "^6.5.0",
     "ajv": "^8.11.2",
     "bezier-js": "^6.1.4",
