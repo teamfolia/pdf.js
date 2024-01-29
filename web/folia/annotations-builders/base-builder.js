@@ -23,9 +23,7 @@ class BaseBuilder {
     this.foliaPageLayer.eventBus.on("reset-drawing", this.resetDrawingBinded);
   }
 
-  resetDrawing(callerPage) {
-    console.log("reset-drawing base", { callerPage, currentPage: this.foliaPageLayer.pageNumber });
-  }
+  resetDrawing(callerPage) {}
 
   prepareAnnotations2save() {
     return [];
@@ -37,7 +35,7 @@ class BaseBuilder {
 
   stop() {
     this.foliaPageLayer.eventBus.off("reset-drawing", this.resetDrawingBinded);
-    // console.log("base builder.stop");
+
     if (this.removeOnClickListener) this.removeOnClickListener();
     const collaboratorEmail = this.foliaPageLayer.userEmail;
     const collaboratorName = this.foliaPageLayer.userName;

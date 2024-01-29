@@ -169,7 +169,6 @@ class FoliaPage extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadowRoot.appendChild(template.content.cloneNode(true));
     this.zoomScale = 1;
-    // console.log("folia page 'constructor'");
   }
 
   // ----------- system methods ------------
@@ -178,7 +177,6 @@ class FoliaPage extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    // console.log("folia page 'attributeChangedCallback'");
     switch (name) {
       default:
         break;
@@ -186,7 +184,6 @@ class FoliaPage extends HTMLElement {
   }
 
   connectedCallback() {
-    // console.log("connectedCallback", this.pageNumber);
     this.setAttribute("data-role", ROLE_PAGE);
 
     this.viewerContainer = document.getElementById("viewerContainer");
@@ -227,7 +224,6 @@ class FoliaPage extends HTMLElement {
     cancelAnimationFrame(this.AnimationFrameTimer);
     this.floatingBar.remove();
     this.floatingBar = null;
-    // console.log("disconnectedCallback", this.pageNumber);
 
     this.viewerContainer.removeEventListener("mousedown", this.#onMouseDownBinded, { passive: false });
     this.viewerContainer.removeEventListener("mousemove", this.#onMouseMoveBinded, { passive: false });
@@ -269,13 +265,12 @@ class FoliaPage extends HTMLElement {
 
   startRender(viewport, zoomScale) {
     this.zoomScale = zoomScale;
-    // console.log("folia page start render", viewport);
+
     cancelAnimationFrame(this.AnimationFrameTimer);
     this.render(viewport);
   }
 
   render(viewport) {
-    // console.log("folia page render", pdfCanvas);
     if (viewport) this.viewport = viewport.clone();
     if (!this.pageShouldRender) return;
     this.#canvas.width = this.#canvas.width;
@@ -328,18 +323,14 @@ class FoliaPage extends HTMLElement {
   points = [];
 
   resume() {
-    // console.log(`page #${this.pageNumber} invoked 'resume'`);
     this.pageShouldRender = true;
     clearTimeout(this.cancel2resumeHideBarTimer);
     this.cancel2resumeHideBarTimer = setTimeout(() => this.showFloatingBar(true), 500);
   }
 
-  hide() {
-    // console.log("folia page 'hide'");
-  }
+  hide() {}
 
   cancel() {
-    // console.log(`page #${this.pageNumber} invoked 'cancel'`);
     this.pageShouldRender = false;
     cancelAnimationFrame(this.AnimationFrameTimer);
     this.showFloatingBar(false);
@@ -350,7 +341,6 @@ class FoliaPage extends HTMLElement {
     return this.#pageNumber;
   }
   set pageNumber(value) {
-    // console.log("set page", value);
     this.#pageNumber = value;
     this.shadowRoot.querySelector(".folia-page")?.setAttribute("id", `page${this.#pageNumber}`);
   }
@@ -360,7 +350,7 @@ class FoliaPage extends HTMLElement {
   set viewport(value) {
     this.#viewport = value.clone();
     const { width, height, scale } = this.#viewport;
-    // console.log("set viewport", width, "x", height, "scale", scale);
+
     this.#canvas ||= this.shadowRoot.querySelector(".folia-page-canvas");
     this.#canvas.width = width * window.devicePixelRatio;
     this.#canvas.height = height * window.devicePixelRatio;
@@ -373,7 +363,6 @@ class FoliaPage extends HTMLElement {
     return this.#eventBus;
   }
   set eventBus(value) {
-    // console.log("set eventBus", value);
     this.#eventBus = value;
   }
   get userEmail() {
@@ -408,7 +397,6 @@ class FoliaPage extends HTMLElement {
   }
   // ----------- internal methods ---------------
   refreshFoliaPage() {
-    // console.log("refreshFoliaPage");
     const dataRequest = new EventBusRequest(this.#eventBus);
     dataRequest
       .get("folia-data", { pageNumber: this.#pageNumber })
@@ -528,7 +516,6 @@ class FoliaPage extends HTMLElement {
     this.showFloatingBar(false);
   }
   deleteSelectedObjects(annoObject) {
-    console.log("deleteSelectedObjects");
     const deletedObjects = annoObject ? [annoObject] : this.#multipleSelection.values();
     for (const object of deletedObjects) {
       if (!object.canDelete) continue;
@@ -539,7 +526,7 @@ class FoliaPage extends HTMLElement {
   pasteAnnotationFromClipboard(data) {
     if (!this.pageIsActive || !this.canManage) return;
     const isEditing = this.#multipleSelection.toArray().some((object) => object.isEditing);
-    if (isEditing) return console.log("-->>", isEditing);
+    if (isEditing) return;
 
     this.resetObjectsSelection();
 
@@ -669,7 +656,6 @@ class FoliaPage extends HTMLElement {
 
     this.activeObject = this.findObjectByCoordinates(this.freeMousePoint) || e.objectInstance;
     this.activeObjectRole = e.objectRole || e.target.dataset["role"];
-    // console.log("onMouseDown", this.activeObject, e.objectRole);
 
     if (!this.activeObject && this.activeObjectRole === ROLE_PAGE) {
       this.resetObjectsSelection();
@@ -689,13 +675,11 @@ class FoliaPage extends HTMLElement {
         : this.activeObject.rememberStartPosition();
     }
     this.mouseWasPressedDown = true;
-    // console.log("onMouseDown", this.#pageNumber, this.activeObjectRole, this.activeObject?.annotationUI);
   }
   onMouseMove(e) {
     this.freeMousePoint = this.normalizeMousePoin(e);
     if (!this.mouseWasPressedDown) return;
     this.mouseWasMoved = true;
-    // console.log("onMouseMove", this.activeObject, this.activeObjectRole);
     // prettier-ignore
     const cornersRoles = [
       ROLE_CORNER_LB, ROLE_CORNER_LT, ROLE_CORNER_RB, ROLE_CORNER_RT,
@@ -753,11 +737,9 @@ class FoliaPage extends HTMLElement {
         // run edit mode if needed
         this.#multipleSelection.remainOnly(this.activeObject);
         this.activeObject.startEditMode();
-        // console.log("run edit mode if needed");
         // this.showFloatingBar(false);
       }
     }
-    // console.log("onMouseUp", this.activeObjectRole, this.activeObject);
     if (!this.mouseWasMoved) {
       this.overlappedObjectIndex++;
       if (this.overlappedObjectIndex >= this.overlappingObjects.length) this.overlappedObjectIndex = 0;
@@ -770,11 +752,9 @@ class FoliaPage extends HTMLElement {
     this.activeObjectRole = null;
   }
   onMouseOver(e) {
-    // console.log("onMouseOver", e.target);
     this.pageIsActive = true;
   }
   onMouseOut(e) {
-    // console.log("onMouseOut", e.target);
     this.pageIsActive = false;
     this.onMouseUp(e);
     // this.mouseWasPressedDown = false;
@@ -783,7 +763,6 @@ class FoliaPage extends HTMLElement {
 
   // ---------- custom outside methods ----------
   showFloatingBar(visible = false) {
-    // console.log("showFloatingBar", this.zoomScale);
     const objects = Array.from(this.#multipleSelection)
       .filter((object) => {
         return !(object instanceof CommentObject);
@@ -802,7 +781,6 @@ class FoliaPage extends HTMLElement {
     }
   }
   startDrawing(BuilderClass) {
-    // console.log("startDrawing", this.parentNode);
     this.resetObjectsSelection();
     this.stopDrawing();
     this.annotationBuilderClass = BuilderClass;

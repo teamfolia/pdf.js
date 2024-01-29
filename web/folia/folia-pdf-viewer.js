@@ -49,7 +49,7 @@ const promisedTimeout = (timeout) => {
 
 function keyDownHandler(e) {
   const { key, keyCode, altKey, ctrlKey, metaKey, shiftKey, target, currentTarget } = e;
-  // console.log("foliaPdfViewer -> keyDownHandler", target.nodeName);
+
   if (target.nodeName === "TEXTAREA") return;
   if (target.nodeName === "INPUT") return;
   if (target.nodeName === "FOLIA-PAGE") return;
@@ -103,7 +103,7 @@ function keyDownHandler(e) {
       case "C": {
         e.preventDefault();
         e.stopPropagation();
-        console.log("pressed Ctrl + C");
+
         this.copyCutSelectedAnnotations2Clipboard();
         break;
       }
@@ -111,7 +111,7 @@ function keyDownHandler(e) {
       case "X": {
         e.preventDefault();
         e.stopPropagation();
-        console.log("pressed Ctrl + X");
+
         this.copyCutSelectedAnnotations2Clipboard(true);
         break;
       }
@@ -352,7 +352,6 @@ export class FoliaPDFViewer {
     window.addEventListener("keydown", this.keyDownHandler, { passive: false });
     window.addEventListener("paste", this.pasteIntoFoliaBinded, { passive: false });
     window.addEventListener("wheel", this.webViewerWheelBinded, { passive: false });
-    // console.log("foliaPdfViewer has been initialized");
   }
 
   deinit() {
@@ -491,7 +490,7 @@ export class FoliaPDFViewer {
     return Promise.allSettled(promises).then((results) => {
       return results.reduce((acc, res, index) => {
         // if (res.value.length > 0)
-        // console.log(`page #${index} annotations`, res.value);
+
         return acc || res.value.length > 0;
       }, false);
     });
@@ -507,14 +506,11 @@ export class FoliaPDFViewer {
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onPassword = (updateCallback, reason) => {
-      // console.log(`TODO: implement password support`)
       // this.pdfLinkService.externalLinkEnabled = false;
       // this.passwordPrompt.setUpdateCallback(updateCallback, reason);
       // this.passwordPrompt.open();
     };
     loadingTask.onProgress = ({ loaded, total }) => {
-      // console.log(`TODO: implement progress bar support if needed`)
-      // console.log(`onProgress: ${loaded}/${total}`)
       // this.progress(loaded / total);
     };
 
@@ -622,13 +618,11 @@ export class FoliaPDFViewer {
     this.undoRedoManager.redo();
   }
   zoomIn(steps = 1) {
-    // console.log("zoomIn");
     this.stopDrawing();
     this.pdfViewer.increaseScale(steps);
     this.pdfViewer.update();
   }
   zoomOut(steps = 1) {
-    // console.log("zoomOut");
     this.stopDrawing();
     this.pdfViewer.decreaseScale(steps);
     this.pdfViewer.update();
@@ -669,7 +663,6 @@ export class FoliaPDFViewer {
     fileInput.click();
   }
   startDrawing(toolType, preset) {
-    // console.log("startDrawing 1", { toolType, preset });
     if (toolType === TOOLS.INK) {
       this.continueStartDrawing(InkBuilder, preset);
     } else if (toolType === TOOLS.ARROW) {
@@ -704,13 +697,12 @@ export class FoliaPDFViewer {
       delete stampData.preview;
       this.continueStartDrawing(BuilderClass, stampData, asset);
     } else {
-      console.log(`Tool ${toolType} does not exist yet`);
     }
   }
   continueStartDrawing(BuilderClass, preset, asset) {
-    // console.log("continueStartDrawing 1", { BuilderClass, preset, asset });
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
+    BuilderClass.currentZoom = parseInt(this.zoom, 10);
     this.pdfViewer.annotationBuilderClass = BuilderClass;
 
     this.pdfViewer._pages.map((page) => {
@@ -889,7 +881,6 @@ export class FoliaPDFViewer {
   }
 
   search(query) {
-    // console.log("SEARCH", query);
     this.searchQuery = query;
     this.eventBus.dispatch("find", {
       type: "",
@@ -902,12 +893,10 @@ export class FoliaPDFViewer {
     });
   }
   closeSearch() {
-    // console.log("CLOSE SEARCH");
     this.searchQuery = "";
     this.eventBus.dispatch("findbarclose");
   }
   searchNext() {
-    // console.log("SEARCH NEXT");
     this.eventBus.dispatch("find", {
       type: "again",
       query: this.searchQuery,
@@ -919,7 +908,6 @@ export class FoliaPDFViewer {
     });
   }
   searchPrev() {
-    // console.log("SEARCH PREV");
     this.eventBus.dispatch("find", {
       type: "again",
       query: this.searchQuery,
