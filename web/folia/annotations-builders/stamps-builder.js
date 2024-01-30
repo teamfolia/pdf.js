@@ -41,7 +41,6 @@ class StampsBuilder extends BaseBuilder {
 
     this.usageConfirmation = false;
     this.stampData = { __typename, lineWidth, color };
-    this.zoom = BuildingClass.currentZoom / 100;
 
     if (sourcePoint && targetPoint) {
       const arrowPoints = [
@@ -49,10 +48,10 @@ class StampsBuilder extends BaseBuilder {
         fromPdfPoint(targetPoint, pageSize[0], pageSize[1]),
       ];
 
-      arrowPoints[0].x *= this.zoom;
-      arrowPoints[0].y *= this.zoom;
-      arrowPoints[1].x *= this.zoom;
-      arrowPoints[1].y *= this.zoom;
+      arrowPoints[0].x *= this.viewport.scale;
+      arrowPoints[0].y *= this.viewport.scale;
+      arrowPoints[1].x *= this.viewport.scale;
+      arrowPoints[1].y *= this.viewport.scale;
 
       const { left, top, width, height } = ArrowObject._getBoundingRect(...arrowPoints, lineWidth);
       this.stampData.sourcePoint = { x: arrowPoints[0].x - left, y: arrowPoints[0].y - top };
@@ -66,20 +65,20 @@ class StampsBuilder extends BaseBuilder {
       this.stampData.paths = viewportPaths.map((path) =>
         path.map((point) => {
           return {
-            x: (point.x - left) * this.zoom,
-            y: (point.y - top) * this.zoom,
+            x: (point.x - left) * this.viewport.scale,
+            y: (point.y - top) * this.viewport.scale,
           };
         })
       );
-      this.boundingRect = { width: width * this.zoom, height: height * this.zoom };
+      this.boundingRect = { width: width * this.viewport.scale, height: height * this.viewport.scale };
     }
 
     if (rect) {
       const viewportRect = fromPdfRect(rect, pageSize[0], pageSize[1]);
       viewportRect[0] = 0;
       viewportRect[1] = 0;
-      viewportRect[2] *= this.zoom;
-      viewportRect[3] *= this.zoom;
+      viewportRect[2] *= this.viewport.scale;
+      viewportRect[3] *= this.viewport.scale;
       //
       if (__typename === "SquareDocumentStamp") {
         const { width, height } = SquareObject._getBoundingRect(viewportRect, lineWidth);
