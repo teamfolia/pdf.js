@@ -6,6 +6,18 @@ PDF.js is community-driven and supported by Mozilla. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
 rendering PDFs.
 
+## Folia specific installation
+
+pdf.js and web-folia should be in the same directory
+```
+python3.10 -m venv venv
+source venv/bin/activate
+npm install
+npm install -g gulp-cli
+gulp generic
+npm run build
+```
+
 ## Contributing
 
 PDF.js is an open source project and always looking for more contributors. To

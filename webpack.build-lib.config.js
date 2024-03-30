@@ -1,11 +1,13 @@
 const path = require("path");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 module.exports = {
   plugins: [
     new MiniCssExtractPlugin({
       filename: "folia_pdf_viewer_[contenthash].css",
     }),
+    new NodePolyfillPlugin(),
   ],
   entry: {
     polyfills: "core-js",
