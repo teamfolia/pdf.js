@@ -269,6 +269,10 @@ function createWebpackConfig(
             defines: bundleDefines,
           },
         },
+        {
+          test: /\.html$/,
+          use: ['html-loader'],
+        }
       ],
     },
     // Avoid shadowing actual Node.js variables with polyfills, by disabling
@@ -870,7 +874,7 @@ function preprocessHTML(source, defines) {
 function buildGeneric(defines, dir) {
   rimraf.sync(dir);
 
-  return merge([
+    return merge([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
@@ -888,7 +892,7 @@ function buildGeneric(defines, dir) {
       .pipe(gulp.dest(dir + "web")),
     createCMapBundle().pipe(gulp.dest(dir + "web/cmaps")),
     createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
-
+    
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", defines)
       .pipe(
@@ -899,7 +903,6 @@ function buildGeneric(defines, dir) {
         ])
       )
       .pipe(gulp.dest(dir + "web")),
-
     gulp
       .src("web/compressed.tracemonkey-pldi-09.pdf")
       .pipe(gulp.dest(dir + "web")),

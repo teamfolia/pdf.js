@@ -14,7 +14,7 @@ module.exports = {
       filename: "[name]_[contenthash].js",
     },
     pdfjs_worker: {
-      import: "./build/dist/build/pdf.worker.js",
+      import: "./build/generic/build/pdf.worker.js",
       filename: "pdfjs-worker.js",
     },
   },
@@ -41,15 +41,15 @@ module.exports = {
   },
   resolve: {
     alias: {
-      "pdfjs-lib": path.resolve(__dirname, "build/dist/build/pdf.js"),
-      "pdfjs-worker": path.resolve(__dirname, "build/dist/build/pdf.worker.js"),
+      "pdfjs-lib": path.resolve(__dirname, "build/generic/build/pdf.js"),
+      "pdfjs-worker": path.resolve(__dirname, "build/generic/build/pdf.worker.js"),
     },
   },
 
   output: {
     clean: true,
     asyncChunks: false,
-    path: path.resolve(__dirname, "../folia_2/public/folia-pdf-viewer"),
+    path: path.resolve(__dirname, "../web-folia/public/folia-pdf-viewer"),
     filename: "[name].js",
     globalObject: "window",
     library: {

@@ -1,7 +1,7 @@
 import { v4 as uuid } from "uuid";
 import html from "./folia-page.html";
 import FoliaFloatingBar from "./folia-floating-bar";
-import { COLLABORATOR_PERMISSIONS } from "../../../../folia_2/src/core/constants";
+import { COLLABORATOR_PERMISSIONS } from "../../../../web-folia/src/core/constants";
 import {
   ANNOTATION_TYPES,
   FONT_FAMILY,
