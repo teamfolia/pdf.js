@@ -29,6 +29,13 @@ class TextBoxBuilder extends BaseBuilder {
       this.builderContainer.onmousedown = this.onMouseDown.bind(this);
       this.builderContainer.onmousemove = this.onMouseMove.bind(this);
       this.builderContainer.onmouseup = this.onMouseUp.bind(this);
+
+      // Mobile Browsers
+      this.builderContainer.ontouchstart = this.onMouseDown.bind(this); 
+      this.builderContainer.ontouchmove = this.onMouseMove.bind(this);
+      this.builderContainer.ontouchend = this.onMouseUp.bind(this); 
+      this.builderContainer.touchcancel =  this.onMouseUp.bind(this);
+
     }
     this.foliaPageLayer.parentNode.appendChild(this.builderContainer);
     this.calculateMinTextHeight(TextBoxBuilder.placeholderText);

@@ -22,9 +22,17 @@ class InkBuilder extends BaseBuilder {
       this.canvas.style.width = this.foliaPageLayer.parentNode.clientWidth + "px";
       this.canvas.style.height = this.foliaPageLayer.parentNode.clientHeight + "px";
       this.canvas.onclick = this.onMouseClick.bind(this);
+      
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
+
+      // Mobile Browsers
+      this.canvas.ontouchstart = this.onMouseDown.bind(this); 
+      this.canvas.ontouchmove = this.onMouseMove.bind(this);
+      this.canvas.ontouchend = this.onMouseUp.bind(this); 
+      this.canvas.touchcancel =  this.onMouseUp.bind(this);
+
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);
   }
@@ -108,7 +116,6 @@ class InkBuilder extends BaseBuilder {
     e.preventDefault();
     e.stopPropagation();
     if (!this.drawingPath) return;
-
     const point = this.getRelativePoint(e);
     this.drawingPath.path.push({
       x: point.x * window.devicePixelRatio,

@@ -17,6 +17,9 @@ class ImageBuilder extends BaseBuilder {
       this.canvas.height = this.foliaPageLayer.parentNode.clientHeight;
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
+
+      // Mobile Browsers
+      this.canvas.ontouchmove = this.onMouseMove.bind(this);
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);
 

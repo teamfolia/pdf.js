@@ -50,6 +50,13 @@ class PixelEraser {
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
+
+      // Mobile Browsers
+      this.canvas.ontouchstart = this.onMouseDown.bind(this); 
+      this.canvas.ontouchmove = this.onMouseMove.bind(this);
+      this.canvas.ontouchend = this.onMouseUp.bind(this); 
+      this.canvas.touchcancel =  this.onMouseUp.bind(this);
+      
       this.canvas.style.backgroundColor = "rgba(0, 90, 90, 0)";
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);

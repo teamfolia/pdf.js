@@ -119,6 +119,10 @@ class StampsBuilder extends BaseBuilder {
       this.canvas.height = this.foliaPageLayer.parentNode.clientHeight;
       this.canvas.onclick = this.onMouseClick.bind(this);
       this.canvas.onmousemove = (e) => this.onMouseMove(e);
+
+      // Mobile Browsers
+      this.canvas.ontouchmove = this.onMouseMove.bind(this);
+      
       this.canvas.style.backgroundColor = "rgba(0, 0, 0, 0)";
     }
 
