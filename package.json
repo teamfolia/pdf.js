@@ -99,6 +99,7 @@
     "colord": "^2.9.3",
     "geometric": "^2.5.4",
     "https-browserify": "^1.0.0",
+    "interactjs": "^1.10.27",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",

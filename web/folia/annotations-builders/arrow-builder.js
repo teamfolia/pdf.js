@@ -1,7 +1,7 @@
 import { toPdfPoint, hexColor2RGBA } from "../folia-util";
 import BaseBuilder from "./base-builder";
 import { ANNOTATION_TYPES } from "../constants";
-
+import interact from 'interactjs'
 class ArrowBuilder extends BaseBuilder {
   currentArrow = null;
   arrows = [];
@@ -18,12 +18,28 @@ class ArrowBuilder extends BaseBuilder {
       this.canvas.height = this.foliaPageLayer.parentNode.clientHeight * window.devicePixelRatio;
       this.canvas.style.width = this.foliaPageLayer.parentNode.clientWidth + "px";
       this.canvas.style.height = this.foliaPageLayer.parentNode.clientHeight + "px";
-      this.canvas.onclick = this.onMouseClick.bind(this);
-      this.canvas.onmousedown = this.onMouseDown.bind(this);
-      this.canvas.onmousemove = this.onMouseMove.bind(this);
-      this.canvas.onmouseup = this.onMouseUp.bind(this);
-      this.canvas.onmouseout = this.onMouseOut.bind(this);
+      // this.canvas.onclick = this.onMouseClick.bind(this);
+      // this.canvas.onmousedown = this.onMouseDown.bind(this);
+      // this.canvas.onmousemove = this.onMouseMove.bind(this);
+      // this.canvas.onmouseup = this.onMouseUp.bind(this);
+      // this.canvas.onmouseout = this.onMouseOut.bind(this);
 
+      interact(this.canvas)
+        .on("down", (event) => {
+          this.onMouseDown(event);
+        })
+        .on("move", (event) => {
+          this.onMouseMove(event);
+        })
+        .on("up", (event) => {
+          this.onMouseUp(event);
+        })
+        .on("out", (event) => {
+          this.onMouseOut(event);
+        })
+        .on("tap", (event) => {
+          this.onMouseClick(event);
+        });
       // Mobile Browsers
       this.canvas.ontouchstart = this.onMouseDown.bind(this); 
       this.canvas.ontouchmove = this.onMouseMove.bind(this);
@@ -70,6 +86,8 @@ class ArrowBuilder extends BaseBuilder {
   }
 
   startDrawing(sourcePoint) {
+    console.log("arrow drawing started from pdfjs...lol");
+
     this.currentArrow = {
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,
