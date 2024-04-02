@@ -41,10 +41,10 @@ class ArrowBuilder extends BaseBuilder {
           this.onMouseClick(event);
         });
       // Mobile Browsers
-      this.canvas.ontouchstart = this.onMouseDown.bind(this); 
-      this.canvas.ontouchmove = this.onMouseMove.bind(this);
-      this.canvas.ontouchend = this.onMouseUp.bind(this); 
-      this.canvas.touchcancel =  this.onMouseUp.bind(this);
+      // this.canvas.ontouchstart = this.onMouseDown.bind(this); 
+      // this.canvas.ontouchmove = this.onMouseMove.bind(this);
+      // this.canvas.ontouchend = this.onMouseUp.bind(this); 
+      // this.canvas.touchcancel =  this.onMouseUp.bind(this);
       
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);

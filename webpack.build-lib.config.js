@@ -13,7 +13,7 @@ module.exports = {
     polyfills: "core-js",
     folia_pdf_viewer: {
       import: "./web/folia/folia-pdf-viewer.js",
-      filename: "[name]_[contenthash].js",
+      filename: "[name].js",
     },
     pdfjs_worker: {
       import: "./build/generic/build/pdf.worker.js",
