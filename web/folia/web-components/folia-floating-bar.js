@@ -106,7 +106,7 @@ class FoliaFloatingBar extends HTMLElement {
     this.bar = this.shadowRoot.querySelector(".folia-floating-bar");
 
     this.duplicateBtn = this.shadowRoot.querySelector('folia-button[name="duplicate"]');
-    this.stampBtn = this.shadowRoot.querySelector('folia-button[name="stamp"]');
+    this.stampBtn = this.shadowRoot.querySelector('folia-button[name="create_stamp"]');
     this.deleteBtn = this.shadowRoot.querySelector('folia-button[name="delete"]');
     this.infoBtn = this.shadowRoot.querySelector('folia-button[name="info"]');
     this.strokeBtn = this.shadowRoot.querySelector('folia-button[name="stroke"]');
