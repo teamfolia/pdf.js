@@ -560,6 +560,10 @@ class FoliaFloatingBar extends HTMLElement {
         this.onChange("fontSize", this.fontSize);
         break;
       }
+      case "comment_thread":{
+        this.#eventBus.dispatch("comment_thread", {type:"COMMENT_THREAD"});
+        break;
+      }
       default:
         break;
     }
