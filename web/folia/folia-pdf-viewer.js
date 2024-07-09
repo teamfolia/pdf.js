@@ -699,7 +699,7 @@ export class FoliaPDFViewer {
     } else {
     }
   }
-  continueStartDrawing(BuilderClass, preset, asset) {
+  continueStartDrawing(BuilderClass, preset, asset) { //
     BuilderClass.initialPreset = cloneDeep(preset);
     BuilderClass.asset = asset;
     BuilderClass.currentZoom = parseInt(this.zoom, 10);

@@ -39,6 +39,7 @@ import {
   isRectInRect,
 } from "../folia-util";
 import PixelEraser from "../annotations-builders/pixel-eraser";
+import CommentBuilder from "../annotations-builders/comment-builder";
 
 class EventBusRequest {
   constructor(eventBus) {
@@ -161,6 +162,7 @@ class FoliaPage extends HTMLElement {
   #resetObjectsSelectionBinded = this.resetObjectsSelection.bind(this);
   #pasteAnnotationFromClipboardBinded = this.pasteAnnotationFromClipboard.bind(this);
   #showFloatingBarBinded = this.showFloatingBar.bind(this);
+  #attachCommentForAnnotation = this.attachCommentForAnnotation.bind(this);
 
   constructor() {
     super();
@@ -203,6 +205,7 @@ class FoliaPage extends HTMLElement {
     this.#eventBus.on("reset-objects-selection", this.#resetObjectsSelectionBinded);
     this.#eventBus.on("paste-from-clipboard", this.#pasteAnnotationFromClipboardBinded);
     this.#eventBus.on("show-floating-bar", this.#showFloatingBarBinded);
+    this.#eventBus.on("attach-comment-for-annotation", this.#attachCommentForAnnotation);
 
     const floatingBar = document.createElement("folia-floating-bar");
     this.floatingBar = this.shadowRoot.appendChild(floatingBar);
@@ -455,6 +458,12 @@ class FoliaPage extends HTMLElement {
   resetObjectsSelection() {
     this.#multipleSelection.clear();
     this.showFloatingBar(false);
+  }
+  attachCommentForAnnotation() {
+    console.log("Attching comment for annotation");
+    const BuilderClass = CommentBuilder;
+    BuilderClass.initialPreset = {"parentAnnotationId": "3244342", "x": 230, "y": 200};
+    this.startDrawing(BuilderClass);
   }
   selectAnnotation({ id, scrollIntoView = false }) {
     const object = this.#objects.find((obj) => obj.id === id);

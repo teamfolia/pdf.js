@@ -156,7 +156,7 @@ class FoliaFloatingBar extends HTMLElement {
   }
 
   show(objects, zoomScale) {
-    // console.log("show objectData", objects);
+    console.log("show objectData", objects);
     this.zoomScale = zoomScale;
     this.openedPanel = null;
     const padding = 20;
@@ -558,6 +558,10 @@ class FoliaFloatingBar extends HTMLElement {
         this.openedPanel = NO_PANEL;
         this.fontSize = parseInt(value, 10);
         this.onChange("fontSize", this.fontSize);
+        break;
+      }
+      case "comment_thread":{
+        this.#eventBus.dispatch("attach-comment-for-annotation");
         break;
       }
       default:

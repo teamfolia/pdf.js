@@ -17,9 +17,12 @@ class SquareObject extends BaseAnnoObject {
   }
 
   update(annoData) {
-    if (super.update(annoData)) {
-      const { color = this.color, lineWidth = this.lineWidth, rect = this.rect } = annoData;
+    console.log("Update square annotation begin")
 
+    if (super.update(annoData)) {
+      console.log("Update square annotation")
+      const { color = this.color, lineWidth = this.lineWidth, rect = this.rect } = annoData;
+      console.log(rect)
       this.rect = rect;
       this.lineWidth = lineWidth;
       this.color = color;

@@ -64,25 +64,35 @@ class BaseAnnoObject {
   }
 
   update(annoData) {
+
+    console.log("Calling annotation update");
     const { addedAt = this.addedAt, deletedAt = this.deletedAt, error } = annoData;
 
+    console.log('Step 1');
     this.error = error;
-
+    console.log('Step 2');
     if (deletedAt) {
       this.deletedAt = deletedAt;
       return false;
     }
 
+    console.log('Step 3');
     const addedAtTime = new Date(addedAt).getTime();
+    console.log('Step 4');
     const currAddedAtTime = new Date(this.addedAt || "1970-01-01").getTime();
-    if (addedAtTime <= currAddedAtTime) return false;
 
+    console.log('Step 5');
+    //if (addedAtTime <= currAddedAtTime) return false;
+
+    console.log('Step 6');
     this.addedAt = addedAt;
 
     return true;
   }
 
   changeManually(annoData, previousState) {
+
+    console.log("Calling changed manually");
     if (!previousState) previousState = this.toObjectData();
 
     const availableProperty = Object.keys(this.toObjectData());

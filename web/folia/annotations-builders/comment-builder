@@ -12,6 +12,8 @@ class CommentBuilder extends BaseBuilder {
 
   resume() {
     if (!this.canvas) {
+      console.log("Comment preset");
+      console.log(CommentBuilder.initialPreset);
       this.canvas = document.createElement("div");
       this.canvas.className = "annotation-builder-container";
       this.canvas.width = this.foliaPageLayer.parentNode.clientWidth;
@@ -20,6 +22,10 @@ class CommentBuilder extends BaseBuilder {
       this.canvas.style.cursor = `url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgZmlsdGVyPSJ1cmwoI2ZpbHRlcjBfZF8yNDk5NV8xMzA2NDYpIj4KPHBhdGggZD0iTTEwLjc1IDI0QzEwLjc1IDE0LjQ3MzEgMTguNDczMSA2Ljc1IDI4IDYuNzVDMzcuNTI2OSA2Ljc1IDQ1LjI1IDE0LjQ3NDEgNDUuMjUgMjQuMDAxMUM0NS4yNSAzMy41MjgxIDM3LjUyNjkgNDEuMjUyMiAyOCA0MS4yNTIySDEwLjc1VjI0WiIgZmlsbD0iIzI5OTBGRiIgc3Ryb2tlPSIjRTJFOEYwIiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8L2c+CjxkZWZzPgo8ZmlsdGVyIGlkPSJmaWx0ZXIwX2RfMjQ5OTVfMTMwNjQ2IiB4PSItMiIgeT0iLTIiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgZmlsdGVyVW5pdHM9InVzZXJTcGFjZU9uVXNlIiBjb2xvci1pbnRlcnBvbGF0aW9uLWZpbHRlcnM9InNSR0IiPgo8ZmVGbG9vZCBmbG9vZC1vcGFjaXR5PSIwIiByZXN1bHQ9IkJhY2tncm91bmRJbWFnZUZpeCIvPgo8ZmVDb2xvck1hdHJpeCBpbj0iU291cmNlQWxwaGEiIHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAxMjcgMCIgcmVzdWx0PSJoYXJkQWxwaGEiLz4KPGZlTW9ycGhvbG9neSByYWRpdXM9IjIiIG9wZXJhdG9yPSJkaWxhdGUiIGluPSJTb3VyY2VBbHBoYSIgcmVzdWx0PSJlZmZlY3QxX2Ryb3BTaGFkb3dfMjQ5OTVfMTMwNjQ2Ii8+CjxmZU9mZnNldCBkeT0iNCIvPgo8ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI0Ii8+CjxmZUNvbXBvc2l0ZSBpbjI9ImhhcmRBbHBoYSIgb3BlcmF0b3I9Im91dCIvPgo8ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMC4xNiAwIi8+CjxmZUJsZW5kIG1vZGU9Im5vcm1hbCIgaW4yPSJCYWNrZ3JvdW5kSW1hZ2VGaXgiIHJlc3VsdD0iZWZmZWN0MV9kcm9wU2hhZG93XzI0OTk1XzEzMDY0NiIvPgo8ZmVCbGVuZCBtb2RlPSJub3JtYWwiIGluPSJTb3VyY2VHcmFwaGljIiBpbjI9ImVmZmVjdDFfZHJvcFNoYWRvd18yNDk5NV8xMzA2NDYiIHJlc3VsdD0ic2hhcGUiLz4KPC9maWx0ZXI+CjwvZGVmcz4KPC9zdmc+Cg==") 10 32, move`;
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);
+
+    if (CommentBuilder.initialPreset["parentAnnotationId"]) {
+      this.createCommentView(CommentBuilder.initialPreset["x"], CommentBuilder.initialPreset["y"]);
+    }
   }
 
   stop() {
@@ -63,7 +69,10 @@ class CommentBuilder extends BaseBuilder {
 
     let { x, y } = this.getRelativePoint(e);
     y -= 25;
+    this.createCommentView(x, y);
+  }
 
+  createCommentView(x, y) {
     const { pageNumber } = this.foliaPageLayer;
     this.foliaPageLayer.eventBus.dispatch("reset-drawing", pageNumber);
 
@@ -122,6 +131,11 @@ class CommentBuilder extends BaseBuilder {
     });
     commentPointer.appendChild(createCommentEl);
     setTimeout(() => {
+
+      if (!createCommentEl.parentNode.parentNode) {
+        return;
+      }
+      
       const left = parseInt(window.getComputedStyle(commentPointer).left, 10);
       if (
         left + createCommentEl.clientWidth + 40 >
