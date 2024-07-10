@@ -689,7 +689,7 @@ export class FoliaPDFViewer {
       this.continueStartDrawing(BuilderClass, preset);
     } else if (toolType === TOOLS.COMMENT) {
       const BuilderClass = CommentBuilder;
-      this.continueStartDrawing(BuilderClass, {});
+      this.continueStartDrawing(BuilderClass, preset);
     } else if (toolType === TOOLS.STAMPS) {
       const BuilderClass = StampsBuilder;
       const asset = preset.preview;

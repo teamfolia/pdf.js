@@ -87,6 +87,7 @@ class FoliaFloatingBar extends HTMLElement {
     template.innerHTML = foliaFloatingBarHtml;
     this.attachShadow({ mode: "open" });
     this.shadowRoot.appendChild(template.content.cloneNode(true));
+    this.selectedAnnotationsData = null;
   }
 
   static get observedAttributes() {
@@ -157,6 +158,7 @@ class FoliaFloatingBar extends HTMLElement {
 
   show(objects, zoomScale) {
     // console.log("show objectData", objects);
+    this.selectedAnnotationsData = {objects,zoomScale}
     this.zoomScale = zoomScale;
     this.openedPanel = null;
     const padding = 20;
@@ -561,7 +563,7 @@ class FoliaFloatingBar extends HTMLElement {
         break;
       }
       case "comment_thread":{
-        this.#eventBus.dispatch("comment_thread", {type:"COMMENT_THREAD"});
+        this.#eventBus.dispatch("attach-comment-for-annotation", this.selectedAnnotationsData);
         break;
       }
       default:
