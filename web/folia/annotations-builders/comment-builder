@@ -23,7 +23,7 @@ class CommentBuilder extends BaseBuilder {
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);
 
-    if (CommentBuilder.initialPreset["parentAnnotationId"]) {
+    if (CommentBuilder.initialPreset["parentAnnotationId"] && this.foliaPageLayer.pageNumber == CommentBuilder.initialPreset["pageNumber"]) {
       this.createCommentView(CommentBuilder.initialPreset["x"], CommentBuilder.initialPreset["y"]);
     }
   }
@@ -135,7 +135,7 @@ class CommentBuilder extends BaseBuilder {
       if (!createCommentEl.parentNode.parentNode) {
         return;
       }
-      
+
       const left = parseInt(window.getComputedStyle(commentPointer).left, 10);
       if (
         left + createCommentEl.clientWidth + 40 >

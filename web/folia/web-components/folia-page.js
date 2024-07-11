@@ -462,7 +462,7 @@ class FoliaPage extends HTMLElement {
   attachCommentForAnnotation() {
     console.log("Attching comment for annotation");
     const BuilderClass = CommentBuilder;
-    BuilderClass.initialPreset = {"parentAnnotationId": "3244342", "x": 230, "y": 200};
+    BuilderClass.initialPreset = {"parentAnnotationId": "3244342", "x": 230, "y": 200, "pageNumber": 0};
     this.startDrawing(BuilderClass);
   }
   selectAnnotation({ id, scrollIntoView = false }) {
