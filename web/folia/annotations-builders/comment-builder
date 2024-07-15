@@ -24,7 +24,7 @@ class CommentBuilder extends BaseBuilder {
     this.foliaPageLayer.parentNode.appendChild(this.canvas);
 
     if (CommentBuilder.initialPreset["parentAnnotationId"] && this.foliaPageLayer.pageNumber == CommentBuilder.initialPreset["pageNumber"]) {
-      this.createCommentView(CommentBuilder.initialPreset["x"], CommentBuilder.initialPreset["y"]);
+      this.createCommentView(CommentBuilder.initialPreset["x"], CommentBuilder.initialPreset["y"], CommentBuilder.initialPreset["parentAnnotationId"]);
     }
   }
 
@@ -69,10 +69,10 @@ class CommentBuilder extends BaseBuilder {
 
     let { x, y } = this.getRelativePoint(e);
     y -= 25;
-    this.createCommentView(x, y);
+    this.createCommentView(x, y, "");
   }
 
-  createCommentView(x, y) {
+  createCommentView(x, y, parentAnnotationId) {
     const { pageNumber } = this.foliaPageLayer;
     this.foliaPageLayer.eventBus.dispatch("reset-drawing", pageNumber);
 
@@ -124,6 +124,7 @@ class CommentBuilder extends BaseBuilder {
         collaboratorName: this.foliaPageLayer.userName,
         permissions: this.foliaPageLayer.permissions,
         userRole: this.foliaPageLayer.userRole,
+        parentAnnotationId: parentAnnotationId,
       };
 
       this.annotationData = [comment, initialReply];

@@ -12,6 +12,7 @@ class CommentObject extends BaseAnnoObject {
   anchorPoint;
   pointWidth = 36;
   pointHeight = 36;
+  parentAnnotationId = ""
 
   submitReplyBinded = this.submitReply.bind(this);
   closeBinded = this.close.bind(this);
@@ -22,11 +23,11 @@ class CommentObject extends BaseAnnoObject {
 
   constructor(annoData, viewport, eventBus) {
     super(annoData, viewport, eventBus);
-
-    const { anchorPoint, replies } = annoData;
+    const { anchorPoint, replies, parentAnnotationId } = annoData;
     this.anchorPoint = anchorPoint;
     this.replies = replies;
     this.no_corners = true;
+    this.parentAnnotationId = parentAnnotationId;
   }
 
   update(annoData) {
@@ -46,6 +47,7 @@ class CommentObject extends BaseAnnoObject {
     return {
       ...super.toObjectData(),
       anchorPoint: this.anchorPoint,
+      parentAnnotationId: this.parentAnnotationId,
     };
   }
 
