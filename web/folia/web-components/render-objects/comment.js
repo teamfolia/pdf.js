@@ -9,24 +9,50 @@ import FoliaCreateComment from "../folia-create-comment";
 
 class CommentObject extends BaseAnnoObject {
   lineWidth = 0;
+
   anchorPoint;
+
   pointWidth = 36;
+
   pointHeight = 36;
 
+  parentAnnotationId = "";
+
   submitReplyBinded = this.submitReply.bind(this);
+
   closeBinded = this.close.bind(this);
+
   removeBinded = this.remove.bind(this);
+
   changeReadStatusBinded = this.changeReadStatus.bind(this);
+
   setAllRepliesAsUnreadBinded = this.setAllRepliesAsUnread.bind(this);
+
   setAllRepliesAsReadBinded = this.setAllRepliesAsRead.bind(this);
 
   constructor(annoData, viewport, eventBus) {
     super(annoData, viewport, eventBus);
 
-    const { anchorPoint, replies } = annoData;
+    const { anchorPoint, replies, parentAnnotationId } = annoData;
     this.anchorPoint = anchorPoint;
     this.replies = replies;
     this.no_corners = true;
+    this.parentAnnotationId = parentAnnotationId;
+    this.handleAnnotationMovement = this.handleAnnotationMovement.bind(this);
+    this.removeWithParentAnnotation = this.removeWithParentAnnotation.bind(this);
+    this.eventBus.on("move-comment-annotation", this.handleAnnotationMovement);
+    this.eventBus.on("delete-comment-annotation", this.removeWithParentAnnotation);
+  }
+
+  handleAnnotationMovement(payload) {
+    const { anchorPoint, annotationObject } = payload;
+    const modifiedObject = { ...annotationObject, anchorPoint };
+    if (this.parentAnnotationId === annotationObject?.parentAnnotationId) {
+      this.changeManually(modifiedObject, annotationObject);
+    }
+
+    // this.changeManually(modifiedObject, annotationObject);
+    // this.makeUnselected();
   }
 
   update(annoData) {
@@ -46,6 +72,7 @@ class CommentObject extends BaseAnnoObject {
     return {
       ...super.toObjectData(),
       anchorPoint: this.anchorPoint,
+      parentAnnotationId: this.parentAnnotationId,
     };
   }
 
@@ -57,7 +84,8 @@ class CommentObject extends BaseAnnoObject {
   }
 
   render(ctx) {
-    if (!ctx) return;
+    if (!ctx) {
+    }
   }
 
   renderUI(uiContainer) {
@@ -72,7 +100,7 @@ class CommentObject extends BaseAnnoObject {
         "user-initials",
         getInitials(this.collaboratorName || this.collaboratorEmail)
       );
-      this.annotationUI.appendChild(userInitialsEl);
+      this.annotationUI.append(userInitialsEl);
     }
 
     const hasError = Boolean(this.error) || this.replies.some((reply) => Boolean(reply.error));
@@ -109,7 +137,7 @@ class CommentObject extends BaseAnnoObject {
     super.makeSelected();
     const stepan = document.createElement("span");
     stepan.className = "stepan";
-    this.annotationUI.appendChild(stepan);
+    this.annotationUI.append(stepan);
   }
 
   makeUnselected() {
@@ -118,9 +146,15 @@ class CommentObject extends BaseAnnoObject {
   }
 
   move(deltaX = 0, deltaY = 0) {
-    if (!this.viewport) throw new Error("not found viewport");
-    if (!this.canManage) return;
-
+    if (!this.viewport) {
+      throw new Error("not found viewport");
+    }
+    if (!this.canManage) {
+      return;
+    }
+    if (this.parentAnnotationId && this.parentAnnotationId !== "") {
+      return;
+    }
     const { left, top, width, height, right, bottom } = this.startPosition.bounds;
     const annoData = {
       addedAt: new Date().toISOString(),
@@ -145,7 +179,9 @@ class CommentObject extends BaseAnnoObject {
   commentAnnotationMutaionCallback(mutations) {
     // here we observe <selected> class of this.annotationUI
     mutations.forEach((mutation) => {
-      if (mutation.target !== this.annotationUI) return;
+      if (mutation.target !== this.annotationUI) {
+        return;
+      }
       const stepanAdded = Array.from(mutation.addedNodes).some((el) => el.classList.contains("stepan"));
       const stepanRemoved = Array.from(mutation.removedNodes).some((el) => el.classList.contains("stepan"));
       if (stepanAdded) {
@@ -167,7 +203,7 @@ class CommentObject extends BaseAnnoObject {
         this.commentEl.permissions = this.permissions;
         this.commentEl.userRole = this.userRole;
         this.commentEl.replies = this.replies;
-        this.annotationUI.appendChild(this.commentEl);
+        this.annotationUI.append(this.commentEl);
         //
       } else if (stepanRemoved) {
         // console.log("remove folia-comment");
@@ -193,7 +229,7 @@ class CommentObject extends BaseAnnoObject {
       const annotationData = {
         __typename: ANNOTATION_TYPES.REPLY,
         id,
-        addedAt: addedAt,
+        addedAt,
         createdAt: addedAt,
         collaboratorEmail: this.userEmail,
         collaboratorName: this.userName,
@@ -221,6 +257,19 @@ class CommentObject extends BaseAnnoObject {
     this.eventBus.dispatch("unselect-object", this);
   }
 
+  removeWithParentAnnotation({ parentAnnotationId, commentId }) {
+    console.log("deleting comment with parent deletiion trigger..");
+    if (this.parentAnnotationId === parentAnnotationId && commentId) {
+      this.changeManually({ deletedAt: new Date().toISOString() });
+      this.eventBus.dispatch(
+        "objects-were-updated",
+        this.replies.map((reply) => {
+          return { ...reply, deletedAt: new Date().toISOString() };
+        })
+      );
+    }
+  }
+
   remove(e) {
     const { commentId, replyId } = e.detail;
     if (commentId) {
@@ -245,16 +294,22 @@ class CommentObject extends BaseAnnoObject {
     const addedAt = new Date().toISOString();
     this.eventBus.dispatch("set-replies-read-status", [{ commentId, replyId, isRead, addedAt }]);
     const reply = this.annotationRawData.replies.find((reply) => reply.id === replyId);
-    if (reply) reply.isRead = isRead;
+    if (reply) {
+      reply.isRead = isRead;
+    }
   }
 
   setAllRepliesAsRead() {
-    if (this.userRole === USER_ROLE.PUBLIC_VIEWER) return;
+    if (this.userRole === USER_ROLE.PUBLIC_VIEWER) {
+      return;
+    }
     this.changeAllReadStatuses(true);
   }
 
   setAllRepliesAsUnread() {
-    if (this.userRole === USER_ROLE.PUBLIC_VIEWER) return;
+    if (this.userRole === USER_ROLE.PUBLIC_VIEWER) {
+      return;
+    }
     this.changeAllReadStatuses(false);
     if (this.commentEl) {
       this.commentEl.replies = this.replies;
@@ -269,7 +324,7 @@ class CommentObject extends BaseAnnoObject {
       .map((r) => ({
         commentId,
         replyId: r.id,
-        isRead: isRead,
+        isRead,
         addedAt: now,
       }));
 

@@ -5,7 +5,6 @@ class SquareObject extends BaseAnnoObject {
   color;
   lineWidth;
   rect;
-
   constructor(annoData, viewport, eventBus) {
     super(annoData, viewport, eventBus);
 

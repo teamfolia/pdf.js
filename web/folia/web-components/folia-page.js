@@ -40,6 +40,7 @@ import {
 } from "../folia-util";
 import PixelEraser from "../annotations-builders/pixel-eraser";
 import CommentBuilder from "../annotations-builders/comment-builder";
+import BaseAnnoObject from "./render-objects/base";
 
 class EventBusRequest {
   constructor(eventBus) {
@@ -163,6 +164,7 @@ class FoliaPage extends HTMLElement {
   #pasteAnnotationFromClipboardBinded = this.pasteAnnotationFromClipboard.bind(this);
   #showFloatingBarBinded = this.showFloatingBar.bind(this);
   #attachCommentForAnnotation = this.attachCommentForAnnotation.bind(this);
+  #moveCommentWithParentAnnotation = this.moveCommentWithParentAnnotation.bind(this);
 
   constructor() {
     super();
@@ -206,6 +208,7 @@ class FoliaPage extends HTMLElement {
     this.#eventBus.on("paste-from-clipboard", this.#pasteAnnotationFromClipboardBinded);
     this.#eventBus.on("show-floating-bar", this.#showFloatingBarBinded);
     this.#eventBus.on("attach-comment-for-annotation", this.#attachCommentForAnnotation);
+    this.#eventBus.on("move-comment-annotation", this.#moveCommentWithParentAnnotation);
 
     const floatingBar = document.createElement("folia-floating-bar");
     this.floatingBar = this.shadowRoot.appendChild(floatingBar);
@@ -479,9 +482,19 @@ class FoliaPage extends HTMLElement {
     this.showFloatingBar(true);
   }
   attachCommentForAnnotation(payload) {
-    const BuilderClass = CommentBuilder;
-    BuilderClass.initialPreset = payload;
-    this.startDrawing(BuilderClass);
+    // console.log({payload});
+    // const BuilderClass = CommentBuilder;
+    // BuilderClass.initialPreset = payload;
+    // this.startDrawing(BuilderClass);
+  }
+  moveCommentWithParentAnnotation(payload){
+    // const {anchorPoint, annotationObject} =payload;
+    // console.log({
+    //   annotationObjectFromFoliaPage: annotationObject
+    // });
+
+    // new CommentObject({...annotationObject}).changeManually({anchorPoint:{...anchorPoint},addedAt: '2024-07-19T05:22:10.182Z'},{...annotationObject})
+    // new BaseAnnoObject(annotationObject).changeManually({anchorPoint:{...anchorPoint},addedAt: '2024-07-19T05:22:10.182Z'},{...annotationObject})
   }
   addAnnotationObject(dataObject, makeSelected = false) {
     const AnnoObjClass = FoliaPage.AnnoClasses[dataObject.__typename];

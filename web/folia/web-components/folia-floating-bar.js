@@ -158,7 +158,7 @@ class FoliaFloatingBar extends HTMLElement {
 
   show(objects, zoomScale) {
     // console.log("show objectData", objects);
-    this.selectedAnnotationsData = {objects,zoomScale}
+    this.selectedAnnotationsData = { objects, zoomScale };
     this.zoomScale = zoomScale;
     this.openedPanel = null;
     const padding = 20;

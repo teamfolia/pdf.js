@@ -30,6 +30,7 @@ class BaseAnnoObject {
   #userRole;
   #permissions;
 
+
   onMouseDownBinded = this.onMouseDown.bind(this);
 
   constructor(annoData, viewport, eventBus) {
@@ -94,7 +95,6 @@ class BaseAnnoObject {
       this[key] = value;
     }
     const currentState = this.toObjectData();
-
     clearTimeout(this.changeTimer);
     this.changeTimer = setTimeout(() => {
       this.eventBus.dispatch("objects-were-updated", [this.toObjectData()]);
@@ -112,6 +112,7 @@ class BaseAnnoObject {
       deletedAt: this.deletedAt,
       page: this.page,
       collaboratorEmail: this.collaboratorEmail,
+      boundingData: this.getBoundingRect(),
     };
   }
 
