@@ -104,6 +104,15 @@ class BaseAnnoObject {
   }
 
   toObjectData() {
+
+    let boundingRect = this.getBoundingRect();
+    let boundingData = {
+      left: boundingRect.left / this.viewport.width,
+      right: boundingRect.right / this.viewport.width,
+      top: boundingRect.top / this.viewport.height,
+      bottom: boundingRect.bottom / this.viewport.height
+    }
+
     return {
       __typename: this.__typename,
       id: this.id,
@@ -112,7 +121,7 @@ class BaseAnnoObject {
       deletedAt: this.deletedAt,
       page: this.page,
       collaboratorEmail: this.collaboratorEmail,
-      boundingData: this.getBoundingRect(),
+      boundingData,
     };
   }
 
