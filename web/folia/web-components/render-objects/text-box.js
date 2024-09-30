@@ -190,12 +190,18 @@ class TextBoxObject extends BaseAnnoObject {
         let paste = (e.clipboardData || window.clipboardData).getData("text");
         document.execCommand("insertText", false, paste);
       };
-
-      editorEl.oninput = (e) => {
+      editorEl.addEventListener("blur", () => {
         this.changeManually({
           addedAt: new Date().toISOString(),
-          text: e.target.innerText,
+          text: this.text,
         });
+      });
+      editorEl.oninput = (e) => {
+        this.text = e.target.innerText;
+        // this.changeManually({
+        //   addedAt: new Date().toISOString(),
+        //   text: e.target.innerText,
+        // });
         this.adjustHeight();
       };
 
