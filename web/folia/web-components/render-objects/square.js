@@ -45,11 +45,15 @@ class SquareObject extends BaseAnnoObject {
 
   render(ctx) {
     if (!ctx) return;
-    const rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height).map(
-      (item) => item * window.devicePixelRatio
-    );
     const lineWidth = this.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const color = hexColor2RGBA(this.color);
+    rect = fromPdfRect(this.rect, this.viewport.width, this.viewport.height).map(
+      (item) => item * window.devicePixelRatio
+    );
+    rect[0] += 0.5 * lineWidth;
+    rect[1] += 0.5 * lineWidth;
+    rect[2] -= lineWidth;
+    rect[3] -= lineWidth;
     return SquareObject._render(ctx, rect, lineWidth, color);
   }
 

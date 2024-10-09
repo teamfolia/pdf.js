@@ -107,10 +107,10 @@ class BaseAnnoObject {
 
     let boundingRect = this.getBoundingRect();
     let boundingData = {
-      left: boundingRect.left / this.viewport.width,
-      right: boundingRect.right / this.viewport.width,
-      top: boundingRect.top / this.viewport.height,
-      bottom: boundingRect.bottom / this.viewport.height
+      left: boundingRect.points[0].x / this.viewport.width,
+      right: boundingRect.points[2].x / this.viewport.width,
+      top: boundingRect.points[0].y / this.viewport.height,
+      bottom: boundingRect.points[2].y / this.viewport.height
     }
 
     return {
