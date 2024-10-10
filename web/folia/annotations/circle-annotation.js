@@ -44,10 +44,10 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
   updateRects() {
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     const viewRect = [
-      this.annotationDIV.offsetLeft + lineWidth / 2,
-      this.annotationDIV.offsetTop + lineWidth / 2,
-      this.annotationDIV.clientWidth - lineWidth,
-      this.annotationDIV.clientHeight - lineWidth,
+      this.annotationDIV.offsetLeft,
+      this.annotationDIV.offsetTop,
+      this.annotationDIV.clientWidth,
+      this.annotationDIV.clientHeight,
     ];
     this.annotationRawData.rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
     if (this.updateRectsTimer) cancelAnimationFrame(this.updateRectsTimer);
@@ -66,8 +66,8 @@ class FoliaCircleAnnotation extends FoliaBaseAnnotation {
     const annoHeight = annoBoundingRect.height * window.devicePixelRatio;
     const x = annoLeft + annoWidth / 2;
     const y = annoTop + annoHeight / 2;
-    const radiusX = annoWidth / 2;
-    const radiusY = annoHeight / 2;
+    const radiusX = 0.5 * (annoWidth - lineWidth);
+    const radiusY = 0.5 * (annoHeight - lineWidth);
 
     ctx.beginPath();
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);

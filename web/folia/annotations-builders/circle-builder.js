@@ -43,10 +43,10 @@ class CircleBuilder extends BaseBuilder {
     return this.circles.map(({ addedAt, color, lineWidth, startPoint, endPoint }) => {
       const rect = toPdfRect(
         [
-          Math.min(startPoint.x, endPoint.x),
-          Math.min(startPoint.y, endPoint.y),
-          Math.max(Math.abs(startPoint.x - endPoint.x), lineWidth * 3),
-          Math.max(Math.abs(startPoint.y - endPoint.y), lineWidth * 3),
+          Math.min(startPoint.x, endPoint.x) - 0.5 * lineWidth,
+          Math.min(startPoint.y, endPoint.y) - 0.5 * lineWidth,
+          Math.max(Math.abs(startPoint.x - endPoint.x), lineWidth * 3) + lineWidth,
+          Math.max(Math.abs(startPoint.y - endPoint.y), lineWidth * 3) + lineWidth,
         ],
         this.viewport.width,
         this.viewport.height

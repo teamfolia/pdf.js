@@ -355,10 +355,10 @@ class ArrowObject extends BaseAnnoObject {
       };
     }
 
-    const left = Math.min(source1.x, source2.x, target1.x, target2.x);
-    const top = Math.min(source1.y, source2.y, target1.y, target2.y);
-    const right = Math.max(source1.x, source2.x, target1.x, target2.x);
-    const bottom = Math.max(source1.y, source2.y, target1.y, target2.y);
+    const left = Math.min(source1.x, source2.x, target1.x, target2.x) - 0.5 * lineWidth;
+    const top = Math.min(source1.y, source2.y, target1.y, target2.y) - 0.5 * lineWidth;
+    const right = Math.max(source1.x, source2.x, target1.x, target2.x) + 0.5 * lineWidth;
+    const bottom = Math.max(source1.y, source2.y, target1.y, target2.y) + 0.5 * lineWidth;
 
     return {
       left,
@@ -368,10 +368,10 @@ class ArrowObject extends BaseAnnoObject {
       width: right - left,
       height: bottom - top,
       points: [
-        { x: left - lineWidth / 2, y: top - lineWidth / 2 },
-        { x: right + lineWidth / 2, y: top - lineWidth / 2 },
-        { x: right + lineWidth / 2, y: bottom + lineWidth / 2 },
-        { x: left - lineWidth / 2, y: bottom + lineWidth / 2 },
+        { x: left, y: top },
+        { x: right, y: top },
+        { x: right, y: bottom },
+        { x: left, y: bottom },
       ],
     };
   }

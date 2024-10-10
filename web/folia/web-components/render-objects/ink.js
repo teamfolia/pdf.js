@@ -117,17 +117,22 @@ class InkObject extends BaseAnnoObject {
   }
 
   static _getBoundingRect(paths, lineWidth) {
-    const { left, top, right, bottom } = [].concat.apply([], paths).reduce(
+    const { mleft, mtop, mright, mbottom } = [].concat.apply([], paths).reduce(
       (acc, point) => {
         return {
-          left: Math.min(acc.left, point.x),
-          top: Math.min(acc.top, point.y),
-          right: Math.max(acc.right, point.x),
-          bottom: Math.max(acc.bottom, point.y),
+          mleft: Math.min(acc.mleft, point.x),
+          mtop: Math.min(acc.mtop, point.y),
+          mright: Math.max(acc.mright, point.x),
+          mbottom: Math.max(acc.mbottom, point.y),
         };
       },
-      { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
+      { mleft: Infinity, mright: -Infinity, mtop: Infinity, mbottom: -Infinity }
     );
+
+    const left = mleft - 0.5 * lineWidth;
+    const top = mtop - 0.5 * lineWidth;
+    const right = mright + 0.5 * lineWidth;
+    const bottom = mbottom + 0.5 * lineWidth;
 
     return {
       left,
@@ -137,10 +142,10 @@ class InkObject extends BaseAnnoObject {
       right,
       bottom,
       points: [
-        { x: left - lineWidth / 2, y: top - lineWidth / 2 },
-        { x: right + lineWidth / 2, y: top - lineWidth / 2 },
-        { x: right + lineWidth / 2, y: bottom + lineWidth / 2 },
-        { x: left - lineWidth / 2, y: bottom + lineWidth / 2 },
+        { x: left, y: top },
+        { x: right, y: top },
+        { x: right, y: bottom },
+        { x: left, y: bottom },
       ],
     };
   }

@@ -45,10 +45,10 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
   updateRects() {
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     const viewRect = [
-      this.annotationDIV.offsetLeft + lineWidth / 2,
-      this.annotationDIV.offsetTop + lineWidth / 2,
-      this.annotationDIV.clientWidth - lineWidth,
-      this.annotationDIV.clientHeight - lineWidth,
+      this.annotationDIV.offsetLeft,
+      this.annotationDIV.offsetTop,
+      this.annotationDIV.clientWidth,
+      this.annotationDIV.clientHeight,
     ];
     this.annotationRawData.rect = toPdfRect(viewRect, this.viewport.width, this.viewport.height);
     if (this.updateRectsTimer) cancelAnimationFrame(this.updateRectsTimer);
@@ -60,10 +60,10 @@ class FoliaSquareAnnotation extends FoliaBaseAnnotation {
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale * window.devicePixelRatio;
     const ctx = this.canvas.getContext("2d");
     const annoBoundingRect = this.getBoundingRect();
-    const annoLeft = annoBoundingRect.left * window.devicePixelRatio;
-    const annoTop = annoBoundingRect.top * window.devicePixelRatio;
-    const annoWidth = annoBoundingRect.width * window.devicePixelRatio;
-    const annoHeight = annoBoundingRect.height * window.devicePixelRatio;
+    const annoLeft = annoBoundingRect.left * window.devicePixelRatio + 0.5 * lineWidth;
+    const annoTop = annoBoundingRect.top * window.devicePixelRatio + 0.5 * lineWidth;
+    const annoWidth = annoBoundingRect.width * window.devicePixelRatio - lineWidth;
+    const annoHeight = annoBoundingRect.height * window.devicePixelRatio - lineWidth;
 
     ctx.strokeStyle = hexColor2RGBA(this.annotationRawData.color);
     ctx.lineWidth = lineWidth;

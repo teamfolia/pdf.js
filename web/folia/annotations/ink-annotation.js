@@ -57,8 +57,8 @@ class FoliaInkAnnotation extends FoliaBaseAnnotation {
   updateRects() {
     const lineWidth = this.annotationRawData.lineWidth * this.viewport.scale;
     const { left, top } = this.getBoundingRect();
-    const offsetLeft = this.annotationDIV.offsetLeft + lineWidth / 2 - left;
-    const offsetTop = this.annotationDIV.offsetTop + lineWidth / 2 - top;
+    const offsetLeft = this.annotationDIV.offsetLeft - left;
+    const offsetTop = this.annotationDIV.offsetTop - top;
 
     const paths = this.annotationRawData.paths
       .map((pdfPath) => fromPdfPath(pdfPath, this.viewport.width, this.viewport.height))
