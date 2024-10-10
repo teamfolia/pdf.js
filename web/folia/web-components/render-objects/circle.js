@@ -57,8 +57,8 @@ class CircleObject extends BaseAnnoObject {
   static _render(ctx, rect, lineWidth, color) {
     const x = rect[0] + rect[2] / 2;
     const y = rect[1] + rect[3] / 2;
-    const radiusX = (rect[2] - 0.5 * lineWidth) / 2;
-    const radiusY = (rect[3] - 0.5 * lineWidth) / 2;
+    const radiusX = 0.5 * (rect[2] - lineWidth);
+    const radiusY = 0.5 * (rect[3] - lineWidth);
 
     ctx.beginPath();
     ctx.strokeStyle = color;

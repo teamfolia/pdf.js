@@ -132,7 +132,6 @@ class ArrowObject extends BaseAnnoObject {
         ? targetY - (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle)
         : targetY + (arrowHeight - arrowLeavesHeight) * Math.sin(annotationAgle);
 
-    ctx.lineWidth = lineWidth;
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
     ctx.lineWidth = lineWidth;
@@ -368,7 +367,12 @@ class ArrowObject extends BaseAnnoObject {
       bottom,
       width: right - left,
       height: bottom - top,
-      points: [source1, target1, target2, source2],
+      points: [
+        { x: left - lineWidth / 2, y: top - lineWidth / 2 },
+        { x: right + lineWidth / 2, y: top - lineWidth / 2 },
+        { x: right + lineWidth / 2, y: bottom + lineWidth / 2 },
+        { x: left - lineWidth / 2, y: bottom + lineWidth / 2 },
+      ],
     };
   }
 
