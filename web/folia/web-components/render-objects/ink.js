@@ -192,7 +192,7 @@ class InkObject extends BaseAnnoObject {
     const annoData = {
       addedAt: new Date().toISOString(),
     };
-    const safeArea = 10
+    const safeArea = 10;
     const isProportional = shiftKey ? !this.useFixedAspectRatio : this.useFixedAspectRatio;
     const scaleX = (bounds.width + deltaX) / bounds.width;
     const scaleY = (bounds.height + deltaY) / bounds.height;
