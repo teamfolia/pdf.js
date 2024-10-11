@@ -174,11 +174,11 @@ export const foliaDateFormat = (isoDate) => {
     const isYesterday = now.add(-1, "day").isSame(printedDate, "day");
 
     if (isToday) {
-      return `Today, at ${printedDate.format("hh:mm A")}`;
+      return `Today at ${printedDate.format("hh:mm A")}`;
     } else if (isYesterday) {
-      return `Yesterday, at ${printedDate.format("hh:mm A")}`;
+      return `Yesterday at ${printedDate.format("hh:mm A")}`;
     } else {
-      return printedDate.format("MMMM D, YYYY") + " at " + printedDate.format("hh:mm A");
+      return printedDate.format("MMMM D YYYY") + " at " + printedDate.format("hh:mm A");
     }
   } catch (e) {
     console.error(e);
