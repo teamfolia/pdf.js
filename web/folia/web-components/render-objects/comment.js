@@ -8,8 +8,6 @@ import FoliaReply from "../folia-reply";
 import FoliaCreateComment from "../folia-create-comment";
 
 class CommentObject extends BaseAnnoObject {
-  lineWidth = 0;
-
   anchorPoint;
 
   pointWidth = 36;
@@ -159,12 +157,10 @@ class CommentObject extends BaseAnnoObject {
     const annoData = {
       addedAt: new Date().toISOString(),
     };
-    const safeArea = (this.lineWidth * this.viewport.scale) / 2;
-
     annoData.anchorPoint = toPdfPoint(
       {
-        x: Math.min(this.viewport.width - (safeArea + width), Math.max(safeArea, left + deltaX)),
-        y: Math.min(this.viewport.height - (safeArea + height), Math.max(safeArea, top + deltaY)),
+        x: Math.min(this.viewport.width - width, left + deltaX),
+        y: Math.min(this.viewport.height - height, top + deltaY),
       },
       this.viewport.width,
       this.viewport.height

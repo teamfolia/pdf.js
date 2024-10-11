@@ -158,7 +158,6 @@ class InkObject extends BaseAnnoObject {
     const annoData = {
       addedAt: new Date().toISOString(),
     };
-    const safeArea = (this.lineWidth / 2) * this.viewport.scale;
 
     const { bounds, paths } = this.startPosition;
     annoData.paths = paths.map((path) => {
@@ -169,12 +168,12 @@ class InkObject extends BaseAnnoObject {
         const bottomShiftPointY = Math.abs(point.y - bounds.bottom);
         return {
           x: Math.min(
-            width - safeArea - rightShiftPointX,
-            Math.max(point.x + deltaX, safeArea + leftShiftPointX)
+            width - rightShiftPointX,
+            Math.max(point.x + deltaX, leftShiftPointX)
           ),
           y: Math.min(
-            height - safeArea - bottomShiftPointY,
-            Math.max(point.y + deltaY, safeArea + topShiftPointY)
+            height - bottomShiftPointY,
+            Math.max(point.y + deltaY, topShiftPointY)
           ),
         };
       });
@@ -193,7 +192,7 @@ class InkObject extends BaseAnnoObject {
     const annoData = {
       addedAt: new Date().toISOString(),
     };
-    const safeArea = Math.max(10, ((this.lineWidth * this.viewport.scale) / 2) * 3);
+    const safeArea = 10
     const isProportional = shiftKey ? !this.useFixedAspectRatio : this.useFixedAspectRatio;
     const scaleX = (bounds.width + deltaX) / bounds.width;
     const scaleY = (bounds.height + deltaY) / bounds.height;

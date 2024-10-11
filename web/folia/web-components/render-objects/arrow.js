@@ -355,6 +355,7 @@ class ArrowObject extends BaseAnnoObject {
       };
     }
 
+    // Note: this will make the bounding-box too big, esp. when annotationAngle is not a multiple of 90
     const left = Math.min(source1.x, source2.x, target1.x, target2.x) - 0.5 * lineWidth;
     const top = Math.min(source1.y, source2.y, target1.y, target2.y) - 0.5 * lineWidth;
     const right = Math.max(source1.x, source2.x, target1.x, target2.x) + 0.5 * lineWidth;
@@ -367,12 +368,7 @@ class ArrowObject extends BaseAnnoObject {
       bottom,
       width: right - left,
       height: bottom - top,
-      points: [
-        { x: left, y: top },
-        { x: right, y: top },
-        { x: right, y: bottom },
-        { x: left, y: bottom },
-      ],
+      points: [source1, target1, target2, source2],
     };
   }
 
@@ -386,7 +382,6 @@ class ArrowObject extends BaseAnnoObject {
     const right = Math.max(this.startPosition.sourcePoint.x, this.startPosition.targetPoint.x);
     const bottom = Math.max(this.startPosition.sourcePoint.y, this.startPosition.targetPoint.y);
 
-    const safeArea = (this.lineWidth * this.viewport.scale) / 2;
     const startPoints = [this.startPosition.sourcePoint, this.startPosition.targetPoint];
 
     const [sourcePoint, targetPoint] = startPoints.map((point) => {
@@ -396,12 +391,12 @@ class ArrowObject extends BaseAnnoObject {
       const bottomShiftPointY = Math.abs(point.y - bottom);
       return {
         x: Math.min(
-          width - safeArea - rightShiftPointX,
-          Math.max(point.x + deltaX, safeArea + leftShiftPointX)
+          width - rightShiftPointX,
+          Math.max(point.x + deltaX, leftShiftPointX)
         ),
         y: Math.min(
-          height - safeArea - bottomShiftPointY,
-          Math.max(point.y + deltaY, safeArea + topShiftPointY)
+          height - bottomShiftPointY,
+          Math.max(point.y + deltaY, topShiftPointY)
         ),
       };
     });
@@ -427,7 +422,7 @@ class ArrowObject extends BaseAnnoObject {
     const annoData = {
       addedAt: new Date().toISOString(),
     };
-    const safeArea = Math.max(10, (this.lineWidth * this.viewport.scale) / 2);
+    const safeArea = 10;
 
     // console.log("resize arrow", deltaX, deltaY, arrowPoint);
     switch (arrowPoint) {

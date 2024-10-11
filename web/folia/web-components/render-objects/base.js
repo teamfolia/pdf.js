@@ -235,18 +235,17 @@ class BaseAnnoObject {
     const annoData = {
       addedAt: new Date().toISOString(),
     };
-    const safeArea = (this.lineWidth * scale) / 2;
 
     if (this.startPosition.rect) {
       annoData.rect = toPdfRect(
         [
           Math.min(
-            width - (safeArea + this.startPosition.rect[2]),
-            Math.max(safeArea, this.startPosition.rect[0] + deltaX)
+            width - this.startPosition.rect[2],
+            this.startPosition.rect[0] + deltaX
           ),
           Math.min(
-            height - (safeArea + this.startPosition.rect[3]),
-            Math.max(safeArea, this.startPosition.rect[1] + deltaY)
+            height - this.startPosition.rect[3],
+            this.startPosition.rect[1] + deltaY
           ),
           this.startPosition.rect[2],
           this.startPosition.rect[3],
@@ -269,7 +268,7 @@ class BaseAnnoObject {
     const annoData = {
       addedAt: new Date().toISOString(),
     };
-    const safeArea = Math.max(10, ((this.lineWidth * this.viewport.scale) / 2) * 3);
+    const safeArea = 10;
     const isProportional = shiftKey ? !this.useFixedAspectRatio : this.useFixedAspectRatio;
 
     switch (corner) {
@@ -441,11 +440,10 @@ class BaseAnnoObject {
       }
     }
 
-    const lineWidth = this.lineWidth * this.viewport.scale;
-    annotationUI.style.left = left - lineWidth / 2 + "px";
-    annotationUI.style.top = top - lineWidth / 2 + "px";
-    annotationUI.style.width = width + lineWidth + "px";
-    annotationUI.style.height = height + lineWidth + "px";
+    annotationUI.style.left = left + "px";
+    annotationUI.style.top = top + "px";
+    annotationUI.style.width = width + "px";
+    annotationUI.style.height = height + "px";
   }
 
   render() {
