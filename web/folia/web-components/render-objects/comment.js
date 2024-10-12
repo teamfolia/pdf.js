@@ -159,8 +159,8 @@ class CommentObject extends BaseAnnoObject {
     };
     annoData.anchorPoint = toPdfPoint(
       {
-        x: Math.min(this.viewport.width - width, left + deltaX),
-        y: Math.min(this.viewport.height - height, top + deltaY),
+        x: Math.min(this.viewport.width - width, Math.max(0, left + deltaX)),
+        y: Math.min(this.viewport.height - height, Math.max(0, top + deltaY)),
       },
       this.viewport.width,
       this.viewport.height

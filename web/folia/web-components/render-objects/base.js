@@ -241,11 +241,11 @@ class BaseAnnoObject {
         [
           Math.min(
             width - this.startPosition.rect[2],
-            this.startPosition.rect[0] + deltaX
+            Math.max(0, this.startPosition.rect[0] + deltaX)
           ),
           Math.min(
             height - this.startPosition.rect[3],
-            this.startPosition.rect[1] + deltaY
+            Math.max(0, this.startPosition.rect[1] + deltaY)
           ),
           this.startPosition.rect[2],
           this.startPosition.rect[3],
