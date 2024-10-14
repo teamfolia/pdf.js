@@ -376,8 +376,8 @@ class TextBoxObject extends BaseAnnoObject {
     }
 
     const rect = toPdfRect(uiRect, this.viewport.width, this.viewport.height);
-    this.rect[1] = rect[1];
-    this.rect[3] = rect[3];
+    // this.rect[1] = rect[1];
+    // this.rect[3] = rect[3];
     // console.log("adjustHeight", );
   }
 
