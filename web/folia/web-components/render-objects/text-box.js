@@ -45,6 +45,8 @@ class TextBoxObject extends BaseAnnoObject {
   }
 
   update(annoData) {
+    console.log({annoData});
+    
     if (super.update(annoData)) {
       const {
         color = this.color,
@@ -75,7 +77,11 @@ class TextBoxObject extends BaseAnnoObject {
       this.editorEl.style.fontWeight = FONT_WEIGHT[this.fontWeight];
       this.editorEl.style.fontFamily = FONT_FAMILY[this.fontFamily];
       this.editorEl.style.lineHeight = "140%";
-      this.adjustHeight();
+      // this.adjustHeight();
+      /* this additional method call is 
+      setting a new value to rect which cases the original y value sync.
+      not calling this method doesnt prevent any issue: need further testing.
+      */
     }
   }
 
