@@ -147,7 +147,12 @@ class CommentObject extends BaseAnnoObject {
     if (!this.viewport) {
       throw new Error("not found viewport");
     }
-    if (!this.canManage) {
+    // if (!this.canManage) {
+    //   return;
+    // }
+    // this does not return proper permission from base annotation model.
+    // not sure why, need investigation later
+    if (!this.permissions.includes(PERMISSIONS.MANAGE_ANNOTATION)) {
       return;
     }
     if (this.parentAnnotationId && this.parentAnnotationId !== "") {
