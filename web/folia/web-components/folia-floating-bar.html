@@ -171,14 +171,30 @@
     align-items: center;
     padding: 16px 16px 16px 16px;
     gap: 16px;
-    height: 56px;
+    /* height: 56px; */
+    flex-wrap: wrap;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 100px;
     box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
-    /* min-width: 100px; */
+    min-width: 90%;
   }
-
+  @media (max-width: 460px) {
+    .folia-floating-bar{
+      max-width: 400px;
+    }
+  }
+  @media (max-width: 728px) {
+    .folia-floating-bar{
+      max-width: 728px;
+    }
+  }
+  @media (min-width: 1026px) {
+    .folia-floating-bar{
+      min-width: 30%;
+      flex-wrap: nowrap;
+    }
+  }
   .folia-floating-bar.trasparent {
     display: flex;
     opacity: 0;

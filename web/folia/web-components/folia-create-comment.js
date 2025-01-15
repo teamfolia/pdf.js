@@ -33,7 +33,6 @@ class FoliaCreateComment extends HTMLElement {
     textArea.style.height = textArea.scrollHeight + "px";
     textArea.onkeydown = (e) => this.editorOnKeyDown(e);
     textArea.oninput = (e) => this.editorOnInput(e.target);
-
     const submitBtn = this.shadowRoot.querySelector(".folia-create-comment-button.submit");
     submitBtn.onclick = (e) => this.submitComment(e);
     const smileBtn = this.shadowRoot.querySelector(".folia-create-comment-button.smile");
@@ -45,7 +44,9 @@ class FoliaCreateComment extends HTMLElement {
       textArea.value = previouslyTypedText;
       this.editorOnInput(textArea);
     }
-    textArea.focus();
+    setTimeout(() => {
+      textArea.focus();
+    }, 1000);
 
     const smiles = this.shadowRoot.querySelector(".folia-create-comment-smiles-body");
     for (let code = 0x1f600; code <= 0x1f64f; code++) {

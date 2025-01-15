@@ -251,7 +251,19 @@ class FoliaFloatingBar extends HTMLElement {
         this.bar.style.top = top + (bottom - top) / 2 - barHeight / 2 + "px";
         // right middle
       } else if (bottom + padding + barHeight + colorPanelHeight < pageHeigth) {
-        this.bar.style.left = left + (right - left) / 2 - barWidth / 2 + "px";
+        // this.bar.style.left = left + (right - left) / 2 - barWidth / 2 + "px";
+        const toolbar = this.bar;
+        const toolbarRect = toolbar.getBoundingClientRect();
+        const offsetLeft = toolbarRect.left - toolbar.offsetLeft;
+        if (barWidth > window.innerWidth / 2) {
+          this.bar.style.left = `${-offsetLeft}px`;
+        } else {
+          if (toolbarRect.left <= 0) {
+            this.bar.style.left = `0px`;
+          } else {
+            this.bar.style.left = left + (right - left) / 2 - barWidth / 2 + "px";
+          }
+        }
         this.bar.style.top = bottom + padding + "px";
         // middle bottom
       } else if (top - padding - barHeight > 0) {
@@ -264,7 +276,9 @@ class FoliaFloatingBar extends HTMLElement {
         // middle middle
       }
       this.bar.classList.toggle("shown", true);
-
+      if (window.innerWidth < 768) {
+        this.bar.style.minWidth = `${window.innerWidth}-20 px`;
+      }
       // pointing for tooltips to show on the bottom side when is not enough height to show on top
       this.shadowRoot.querySelectorAll("folia-button").forEach((btn) => {
         const topEdge = this.bar.offsetTop - document.getElementById("viewerContainer").scrollTop;
