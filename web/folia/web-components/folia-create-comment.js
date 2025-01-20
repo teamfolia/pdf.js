@@ -46,7 +46,7 @@ class FoliaCreateComment extends HTMLElement {
     }
     setTimeout(() => {
       textArea.focus();
-    }, 1000);
+    }, 10);
 
     const smiles = this.shadowRoot.querySelector(".folia-create-comment-smiles-body");
     for (let code = 0x1f600; code <= 0x1f64f; code++) {
