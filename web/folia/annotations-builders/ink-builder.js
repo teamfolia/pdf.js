@@ -26,12 +26,58 @@ class InkBuilder extends BaseBuilder {
       this.canvas.onmousedown = this.onMouseDown.bind(this);
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
-
+      const that = this;
       // Mobile Browsers
-      this.canvas.ontouchstart = this.onMouseDown.bind(this); 
-      this.canvas.ontouchmove = this.onMouseMove.bind(this);
-      this.canvas.ontouchend = this.onMouseUp.bind(this); 
-      this.canvas.touchcancel =  this.onMouseUp.bind(this);
+      this.canvas.ontouchstart = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const point = that.getRelativeTouchPoint(event);
+        that.drawingPath = {
+          color: that.preset.color,
+          lineWidth: that.preset.lineWidth,
+          path: [{ x: point.x * window.devicePixelRatio, y: point.y * window.devicePixelRatio }],
+        };
+      };
+      this.canvas.ontouchmove = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const point = that.getRelativeTouchPoint(event);
+        that.drawingPath.path.push({
+          x: point.x * window.devicePixelRatio,
+          y: point.y * window.devicePixelRatio,
+        });
+      };
+      this.canvas.ontouchend = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const prevState = { page: that.foliaPageLayer.pageNumber, data: that.paths.slice() };
+        that.paths.push({
+          addedAt: new Date().toISOString(),
+          color: that.preset.color,
+          lineWidth: that.preset.lineWidth,
+          path: that.simplifyPath(that.drawingPath.path),
+        });
+        const newState = { page: that.foliaPageLayer.pageNumber, data: that.paths.slice() };
+        that.undoRedoManager?.addToolStep(prevState, newState);
+        that.drawingPath = null;
+      };
+      this.canvas.touchcancel = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const prevState = { page: that.foliaPageLayer.pageNumber, data: that.paths.slice() };
+        that.paths.push({
+          addedAt: new Date().toISOString(),
+          color: that.preset.color,
+          lineWidth: that.preset.lineWidth,
+          path: that.simplifyPath(that.drawingPath.path),
+        });
+        const newState = { page: that.foliaPageLayer.pageNumber, data: that.paths.slice() };
+        that.undoRedoManager?.addToolStep(prevState, newState);
+        that.drawingPath = null;
+      };
+      // this.canvas.ontouchmove = this.onMouseMove.bind(this);
+      // this.canvas.ontouchend = this.onMouseUp.bind(this); 
+      // this.canvas.touchcancel =  this.onMouseUp.bind(this);
 
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);
@@ -103,9 +149,12 @@ class InkBuilder extends BaseBuilder {
   }
 
   onMouseDown(e) {
+    console.log("mouse down");
+    
     e.preventDefault();
     e.stopPropagation();
     const point = this.getRelativePoint(e);
+    console.log("point", point);
     this.drawingPath = {
       color: this.preset.color,
       lineWidth: this.preset.lineWidth,

@@ -102,6 +102,25 @@ class BaseBuilder {
     };
   }
 
+  getRelativeTouchPoint(touch) {
+    let reference;
+    const offset = {
+      left: touch.target.offsetLeft,
+      top: touch.target.offsetTop,
+    };
+    reference = touch.target.offsetParent;
+    do {
+      offset.left += reference.offsetLeft - reference.scrollLeft;
+      offset.top += reference.offsetTop - reference.scrollTop;
+      reference = reference.offsetParent;
+    } while (reference);
+
+    return {
+      x: touch.touches[0].pageX - offset.left,
+      y: touch.touches[0].pageY - offset.top,
+    };
+  }
+
   onMouseClick(e) {
     e.preventDefault();
     e.stopPropagation();

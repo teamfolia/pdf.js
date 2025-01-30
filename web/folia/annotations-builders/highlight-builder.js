@@ -31,11 +31,58 @@ class HighlightBuilder extends BaseBuilder {
         this.canvas.onmouseup = this.onMouseUp.bind(this);
         this.canvas.onmouseout = this.onMouseUp.bind(this);
 
+        const that = this;
         // Mobile Browsers
-        this.canvas.ontouchstart = this.onMouseDown.bind(this); 
-        this.canvas.ontouchmove = this.onMouseMove.bind(this);
-        this.canvas.ontouchend = this.onMouseUp.bind(this); 
-        this.canvas.touchcancel =  this.onMouseUp.bind(this);
+        this.canvas.ontouchstart = function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          const point = that.getRelativeTouchPoint(event);
+          that.mouseIsDown = true;
+          that.startPoint = point;
+          that.selectedBlocks = [];
+        };
+
+        this.canvas.ontouchmove = function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          const point = that.getRelativeTouchPoint(event);
+          if (!that.mouseIsDown) {
+            return;
+          }
+          that.mouseIsMove = true;
+          const endPoint = point;
+          const selectedRect = {
+            left: Math.min(that.startPoint.x, endPoint.x),
+            top: Math.min(that.startPoint.y, endPoint.y),
+            right: Math.max(that.startPoint.x, endPoint.x),
+            bottom: Math.max(that.startPoint.y, endPoint.y),
+          };
+          that.selectedBlocks = that.textBlocks.filter((symbolArea) => {
+            const { left, top, right, bottom, width, height } = symbolArea;
+            return (
+              ((right > selectedRect.left && bottom > selectedRect.top) || top > selectedRect.top) &&
+              ((top < selectedRect.bottom && left < selectedRect.right) || bottom < selectedRect.bottom)
+            );
+          });
+        };
+
+        this.canvas.ontouchend = function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          that.onMouseUp(e);
+        };
+
+        this.canvas.touchcancel = function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          that.onMouseUp(e);
+        };
+
+        // Mobile Browsers
+        // this.canvas.ontouchstart = this.onMouseDown.bind(this); 
+        // this.canvas.ontouchmove = this.onMouseMove.bind(this);
+        // this.canvas.ontouchend = this.onMouseUp.bind(this); 
+        // this.canvas.touchcancel =  this.onMouseUp.bind(this);
 
       }
       this.foliaPageLayer.parentNode.appendChild(this.canvas);

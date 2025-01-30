@@ -26,11 +26,51 @@ class SquareBuilder extends BaseBuilder {
       this.canvas.onmouseup = this.onMouseUp.bind(this);
       this.canvas.onmouseout = this.onMouseOut.bind(this);
 
+      const that = this;
       // Mobile Browsers
-      this.canvas.ontouchstart = this.onMouseDown.bind(this); 
-      this.canvas.ontouchmove = this.onMouseMove.bind(this);
-      this.canvas.ontouchend = this.onMouseUp.bind(this); 
-      this.canvas.touchcancel =  this.onMouseUp.bind(this);
+      this.canvas.ontouchstart = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const point = that.getRelativeTouchPoint(event);
+        if (that.drawingStarted === true) {
+          that.currentSquare.endPoint = point;
+          that.stopDrawing();
+        } else {
+          that.startDrawing(point);
+        }
+      };
+
+      this.canvas.ontouchmove = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const point = that.getRelativeTouchPoint(event);
+        if (!that.drawingStarted) {
+          return;
+        }
+        that.mouseHasBeenMoved = true;
+        that.currentSquare.endPoint = point;
+      };
+
+      this.canvas.ontouchend = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (that.mouseHasBeenMoved) {
+          that.stopDrawing();
+        }
+      };
+
+      this.canvas.touchcancel = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        that.stopDrawing();
+      };
+
+
+      // // Mobile Browsers
+      // this.canvas.ontouchstart = this.onMouseDown.bind(this); 
+      // this.canvas.ontouchmove = this.onMouseMove.bind(this);
+      // this.canvas.ontouchend = this.onMouseUp.bind(this); 
+      // this.canvas.touchcancel =  this.onMouseUp.bind(this);
       
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);

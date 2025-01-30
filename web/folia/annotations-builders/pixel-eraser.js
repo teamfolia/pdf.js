@@ -51,12 +51,63 @@ class PixelEraser {
       this.canvas.onmousemove = this.onMouseMove.bind(this);
       this.canvas.onmouseup = this.onMouseUp.bind(this);
 
+      const that = this;
       // Mobile Browsers
-      this.canvas.ontouchstart = this.onMouseDown.bind(this); 
-      this.canvas.ontouchmove = this.onMouseMove.bind(this);
-      this.canvas.ontouchend = this.onMouseUp.bind(this); 
-      this.canvas.touchcancel =  this.onMouseUp.bind(this);
-      
+      this.canvas.ontouchstart = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const point = that.getRelativeTouchPoint(event);
+        that.undoData = that.toJSON();
+
+        that.mouseDown = true;
+        that.mouseMoved = false;
+        that.intersectsPoints = [];
+        that.controlPoints = [];
+        that.erasingPath = [point];
+      };
+
+      this.canvas.ontouchmove = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const point = that.getRelativeTouchPoint(event);
+        that.eraserPointer = point;
+        if (!that.mouseDown) {
+          return;
+        }
+        that.mouseMoved = true;
+
+        if (that.thresholdFlag === true) {
+          return;
+        }
+        that.thresholdFlag = true;
+        that.erasingPath.push(point);
+        that.findIntersectsAroundPoint(point);
+        clearTimeout(that.thresholdTimer);
+        that.thresholdTimer = setTimeout(() => {
+          // this.findIntersectsWithLine(...this.erasingPath);
+          that.erasingPath = [point];
+          that.thresholdFlag = false;
+        }, 20);
+      };
+
+      this.canvas.ontouchend = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        that.onMouseUp(e);
+      };
+
+      this.canvas.touchcancel = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        that.onMouseUp(e);
+      };
+
+      // // Mobile Browsers
+      // this.canvas.ontouchstart = this.onMouseDown.bind(this);
+      // this.canvas.ontouchmove = this.onMouseMove.bind(this);
+      // this.canvas.ontouchend = this.onMouseUp.bind(this);
+      // this.canvas.touchcancel =  this.onMouseUp.bind(this);
+
       this.canvas.style.backgroundColor = "rgba(0, 90, 90, 0)";
     }
     this.foliaPageLayer.parentNode.appendChild(this.canvas);
@@ -173,6 +224,25 @@ class PixelEraser {
     return {
       x: e.pageX - offset.left,
       y: e.pageY - offset.top,
+    };
+  }
+
+  getRelativeTouchPoint(touch) {
+    let reference;
+    const offset = {
+      left: touch.target.offsetLeft,
+      top: touch.target.offsetTop,
+    };
+    reference = touch.target.offsetParent;
+    do {
+      offset.left += reference.offsetLeft - reference.scrollLeft;
+      offset.top += reference.offsetTop - reference.scrollTop;
+      reference = reference.offsetParent;
+    } while (reference);
+
+    return {
+      x: touch.touches[0].pageX - offset.left,
+      y: touch.touches[0].pageY - offset.top,
     };
   }
 

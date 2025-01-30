@@ -151,6 +151,12 @@ class FoliaPage extends HTMLElement {
   #refreshFoliaPageBinded = this.refreshFoliaPage.bind(this);
   #onMouseDownBinded = this.onMouseDown.bind(this);
   #onMouseMoveBinded = this.onMouseMove.bind(this);
+  // mobile
+  #onTouchMoveBinded = this.onTouchMove.bind(this);
+  #onTouchStartBinded = this.onTouchStart.bind(this);
+  #onTouchEndBinded = this.onTouchEnd.bind(this);
+
+  // end touch
   #onMouseUpBinded = this.onMouseUp.bind(this);
   #onMouseOverBinded = this.onMouseOver.bind(this);
   #onMouseOutBinded = this.onMouseOut.bind(this);
@@ -193,6 +199,12 @@ class FoliaPage extends HTMLElement {
     this.viewerContainer = document.getElementById("viewerContainer");
     this.viewerContainer.addEventListener("mousedown", this.#onMouseDownBinded, { passive: false });
     this.viewerContainer.addEventListener("mousemove", this.#onMouseMoveBinded, { passive: false });
+    // mobile
+    this.viewerContainer.addEventListener("touchmove", this.#onTouchMoveBinded, { passive: false });
+    this.viewerContainer.addEventListener("touchstart", this.#onTouchStartBinded, { passive: false });
+    this.viewerContainer.addEventListener("touchend", this.#onTouchEndBinded, { passive: false });
+
+    // end of mobile
     this.viewerContainer.addEventListener("mouseup", this.#onMouseUpBinded, { passive: false });
 
     this.addEventListener("mouseover", this.#onMouseOverBinded, { passive: false });
@@ -236,6 +248,12 @@ class FoliaPage extends HTMLElement {
     this.viewerContainer.removeEventListener("mouseup", this.#onMouseUpBinded, { passive: false });
     this.removeEventListener("mouseover", this.#onMouseOverBinded, { passive: false });
     this.removeEventListener("mouseout", this.#onMouseOutBinded, { passive: false });
+    // mobile
+    this.viewerContainer.removeEventListener("touchstart", this.#onTouchStartBinded, { passive: false });
+    this.viewerContainer.removeEventListener("touchmove", this.#onTouchMoveBinded, { passive: false });
+    this.viewerContainer.removeEventListener("touchend", this.#onTouchEndBinded, { passive: false });
+    // end of mobile
+
     if (this.#eventBus) {
       this.#eventBus.off("project-updated", this.#projectHasBeenUpdatedBinded);
       this.#eventBus.off("refresh-folia-page", this.#refreshFoliaPageBinded);
@@ -455,6 +473,33 @@ class FoliaPage extends HTMLElement {
       y: Math.min(this.parentNode.clientHeight, Math.max(0, e.layerY)),
     };
   }
+
+  isTouchPointInRect(point, rect) {
+    return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+  }
+
+  normalizeTouchPoint(touch) {
+    let reference;
+    const offset = {
+      left: touch.target.offsetLeft,
+      top: touch.target.offsetTop,
+    };
+    reference = touch.target.offsetParent;
+    let offsetTop = 0;
+    do {
+      offset.left += reference.offsetLeft - reference.scrollLeft;
+      offset.top += reference.offsetTop - reference.scrollTop;
+      if (reference) {
+        offsetTop += reference.offsetTop - reference.scrollTop;
+      }
+      reference = reference.offsetParent;
+    } while (reference);
+    return {
+      x: Math.round(touch.touches[0].pageX - offset.left),
+      y: Math.round(touch.touches[0].pageY - offsetTop),
+    };
+  }
+
   unselectObject(object) {
     this.#multipleSelection.delete(object);
   }
@@ -487,12 +532,11 @@ class FoliaPage extends HTMLElement {
     // BuilderClass.initialPreset = payload;
     // this.startDrawing(BuilderClass);
   }
-  moveCommentWithParentAnnotation(payload){
+  moveCommentWithParentAnnotation(payload) {
     // const {anchorPoint, annotationObject} =payload;
     // console.log({
     //   annotationObjectFromFoliaPage: annotationObject
     // });
-
     // new CommentObject({...annotationObject}).changeManually({anchorPoint:{...anchorPoint},addedAt: '2024-07-19T05:22:10.182Z'},{...annotationObject})
     // new BaseAnnoObject(annotationObject).changeManually({anchorPoint:{...anchorPoint},addedAt: '2024-07-19T05:22:10.182Z'},{...annotationObject})
   }
@@ -621,9 +665,13 @@ class FoliaPage extends HTMLElement {
 
   overlappingObjects = [];
   overlappedObjectIndex = 0;
+
   findObjectByCoordinates(point) {
     if (!point) throw new Error("required point");
     const { x, y } = point;
+    this.#objects.forEach((obj) => {
+      console.log({ bounds: obj.getBoundingRect() });
+    });
     const overlappingObjects = this.#objects
       .slice()
       .sort(sortObjects)
@@ -671,6 +719,87 @@ class FoliaPage extends HTMLElement {
     });
   }
 
+  onTouchStart(e) {
+    if (e.target !== this) return;
+    const touchPoints = this.normalizeTouchPoint(e);
+    this.touchStartPoints = touchPoints;
+    this.activeObject = this.findObjectByCoordinates(touchPoints) || e.objectInstance;
+    this.touchdown = true;
+    // e.preventDefault();
+    // console.log("touch start", e);
+    // this.activeObjectRole = e.objectRole || e.target.dataset["role"];
+
+    // console.log({ activeObject: this.activeObject });
+    // if (!this.activeObject && this.activeObjectRole === ROLE_PAGE) {
+    //   this.resetObjectsSelection();
+    //   this.startMousePoint = touchPoints;
+    // } else if (this.activeObject && this.activeObjectRole) {
+    //   this.startMousePoint = touchPoints;
+    // }
+    // this.mouseWasPressedDown = true;
+    // console.log({ touches: touchPoints });
+    // this.#objects.find((obj) => {
+    //   const bounds = obj.getBoundingRect();
+    //   console.log({ bounds });
+    //   const objRect = obj.getBoundingRect();
+    //   const isIn = isPointInRect(touchPoints, objRect);
+    //   // const isIn = this.isTouchPointInRect(this.touchPoints, bounds);
+    //   console.log({ isIn });
+    // });
+  }
+
+  onTouchMove(e) {
+    if (e.target !== this) return;
+    if (!this.touchdown) return;
+
+    if (this.activeObject) {
+      console.log("prevent default here");
+      e.preventDefault();
+      const touchPoints = this.normalizeTouchPoint(e);
+      this.freeMousePoint = touchPoints;
+      this.touchMoved = true;
+      console.log("touch Move");
+      // prettier-ignore
+      const cornersRoles = [
+      ROLE_CORNER_LB, ROLE_CORNER_LT, ROLE_CORNER_RB, ROLE_CORNER_RT,
+      ROLE_ARROW_SOURCE, ROLE_ARROW_TARGET,
+      ROLE_TEXTBOX_LEFT_TOP, ROLE_TEXTBOX_RIGHT_TOP,
+    ];
+      const deltaX = this.freeMousePoint.x - this.touchStartPoints.x;
+      const deltaY = this.freeMousePoint.y - this.touchStartPoints.y;
+      this.showFloatingBar(false);
+      this.activeObject.move(deltaX, deltaY);
+    }
+
+    // if (this.activeObjectRole === ROLE_OBJECT) {
+    //   if (this.#multipleSelection.size === 0) {
+    //     this.activeObject.move(deltaX, deltaY);
+    //   } else {
+    //     this.#multipleSelection.forEach((object) => object.move(deltaX, deltaY));
+    //   }
+    //   //
+    // } else if (cornersRoles.includes(this.activeObjectRole)) {
+    //   this.#multipleSelection.remainOnly(this.activeObject);
+    //   this.#multipleSelection.forEach((object) =>
+    //     object.resize(deltaX, deltaY, this.activeObjectRole, e.shiftKey)
+    //   );
+    //   //
+    // } else if (this.activeObjectRole === ROLE_PAGE) {
+    //   const foundObjects = this.findObjectsByArea(this.startMousePoint, this.freeMousePoint);
+    //   this.resetObjectsSelection();
+    //   foundObjects.forEach((object) => this.#multipleSelection.add(object));
+    //   //
+    // }
+  }
+
+  onTouchEnd(e) {
+    if (e.target !== this) return;
+    this.onMouseUp(e);
+    this.touchdown = false;
+    this.touchStartPoints = null;
+    this.touchMoved = false;
+  }
+
   onMouseDown(e) {
     if (e.target !== this) return;
     this.freeMousePoint = this.normalizeMousePoin(e);
@@ -697,6 +826,7 @@ class FoliaPage extends HTMLElement {
     }
     this.mouseWasPressedDown = true;
   }
+
   onMouseMove(e) {
     this.freeMousePoint = this.normalizeMousePoin(e);
     if (!this.mouseWasPressedDown) return;
@@ -731,6 +861,7 @@ class FoliaPage extends HTMLElement {
       //
     }
   }
+
   onMouseUp(e) {
     if (!this.mouseWasPressedDown) return;
     this.selectionArea = null;
@@ -772,9 +903,11 @@ class FoliaPage extends HTMLElement {
     this.activeObject = null;
     this.activeObjectRole = null;
   }
+
   onMouseOver(e) {
     this.pageIsActive = true;
   }
+
   onMouseOut(e) {
     this.pageIsActive = false;
     this.onMouseUp(e);
@@ -802,7 +935,7 @@ class FoliaPage extends HTMLElement {
     }
   }
 
-  startDrawing(BuilderClass,) {
+  startDrawing(BuilderClass) {
     this.resetObjectsSelection();
     this.stopDrawing();
     this.annotationBuilderClass = BuilderClass;
