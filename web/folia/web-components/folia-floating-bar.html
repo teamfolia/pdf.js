@@ -65,7 +65,7 @@
   </div>
   <div class="folia-floating-bar-color-panel">
     <input type="range" min="10" max="100" step="1" class="panel-slider opacity" id="opacity-slider" />
-    <div class="folia-floating-bar-label-container">
+    <div class="folia-floating-bar-label-container" id="opacity-label">
       <span class="folia-floating-bar-label">Opacity</span>
       <span class="folia-floating-bar-label" id="opacity-value">100%</span>
     </div>
@@ -264,7 +264,18 @@
   .stroke-property.shown {
     display: flex;
   }
-
+#opacity-label{
+  display:none;
+}
+#opacity-slider{
+  display:none;
+} 
+#opacity-label.shown{
+  display: flex;
+}
+#opacity-slider.shown{
+  display: flex;
+}
   .font-family,
   .font-size {
     display: flex;

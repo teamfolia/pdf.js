@@ -128,6 +128,7 @@ class FoliaFloatingBar extends HTMLElement {
 
     this.strokeSlider = this.shadowRoot.getElementById("stroke-slider");
     this.opacitySlider = this.shadowRoot.getElementById("opacity-slider");
+    this.opacitySlideLabel = this.shadowRoot.getElementById("opacity-label");
     this.strokeSlider.addEventListener("input", this.strokeSliderOnInputBinded);
     this.opacitySlider.addEventListener("input", this.opacitySliderOnInputBinded);
 
@@ -293,6 +294,7 @@ class FoliaFloatingBar extends HTMLElement {
   }
 
   get canManage() {}
+
   set canManage(value) {
     this.strokeBtn.toggleAttribute("disabled", !value);
     this.colorBtn.toggleAttribute("disabled", !value);
@@ -303,7 +305,7 @@ class FoliaFloatingBar extends HTMLElement {
     this.alignCenterBtn.toggleAttribute("disabled", !value);
     this.alignRightBtn.toggleAttribute("disabled", !value);
     this.fontFamilyDropDown.toggleAttribute("disabled", !value);
-    this.fontSizeDropDown.toggleAttribute("disabled", !value);
+    this.fontSizeDropDown.toggleAttribute("disabled", !value);    
   }
 
   get eventBus() {
@@ -316,8 +318,8 @@ class FoliaFloatingBar extends HTMLElement {
   get openedPanel() {
     return this.#openedPanel;
   }
+
   set openedPanel(value) {
-    // console.log("set openedPanel", value);
     switch (value) {
       case STROKE_PANEL:
         this.strokeBtn.toggleAttribute("selected", true);
@@ -336,6 +338,12 @@ class FoliaFloatingBar extends HTMLElement {
         this.strokePanel.classList.toggle("shown", false);
         this.colorPanel.classList.toggle("shown", true);
         this.infoPanel.classList.toggle("shown", false);
+        this.opacitySlider.classList.toggle("shown", true);
+        this.opacitySlideLabel.classList.toggle("shown", true);
+        if (this.selectedAnnotationsData.objects.some((e) => e?.kind === "MARKER")) {
+          this.opacitySlider.classList.toggle("shown", false);
+          this.opacitySlideLabel.classList.toggle("shown", false);
+        }
         break;
       case INFO_PANEL:
         this.strokeBtn.toggleAttribute("selected", false);
